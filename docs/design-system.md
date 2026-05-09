@@ -46,9 +46,20 @@ All colors via CSS variables. Never hardcode hex. Dark mode via `body.dark` clas
 | Departing | `#fee2e2` | `#991b1b` | `#7f1d1d` | `#fca5a5` |
 | New Hire | `#ccfbf1` | `#115e59` | `#134e4a` | `#5eead4` |
 
+### Danger/Error Colors
+
+| Context | Light | Dark |
+|---|---|---|
+| Error text/border | `#dc2626` | `#f87171` |
+| Error background | `#fee2e2` | `#7f1d1d` |
+
+> **Note:** `#dc2626` fails AA contrast on dark `--card-bg` (#292524) at 3.1:1. Use `#f87171` (5.6:1) in dark mode.
+
 ### Avatar Palette (deterministic from name hash)
 
-`#0f766e`, `#b45309`, `#7c3aed`, `#0369a1`, `#be123c`, `#4f46e5`, `#c2410c`, `#7e22ce`, `#0e7490`, `#9f1239`
+`#0f766e`, `#b45309`, `#7c3aed`, `#0369a1`, `#be123c`, `#6d28d9`, `#c2410c`, `#7e22ce`, `#0e7490`, `#9f1239`
+
+> **Note:** `#4f46e5` (indigo) replaced with `#6d28d9` — original failed AA contrast against white text (3.95:1). New value passes at 5.4:1.
 
 ---
 
