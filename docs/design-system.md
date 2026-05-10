@@ -204,11 +204,26 @@ All colors via CSS variables. Never hardcode hex. Dark mode via `body.dark` clas
 
 ## Motion
 
-- **Micro-interactions:** `150ms ease` (hover, toggle, badge change)
-- **Layout shifts:** `250ms ease-out` (panel open/close, card appear)
-- **Modal enter:** `200ms ease-out` (scale 0.95→1, opacity 0→1)
+### Motion Tokens
+
+| CSS Variable | Value | Use |
+|---|---|---|
+| `--transition-fast` | `150ms` | Micro-interactions: hover, toggle, checkbox, badge |
+| `--transition-normal` | `250ms` | State transitions: modal open, panel expand, page enter |
+| `--transition-slow` | `350ms` | Layout shifts: list reorder, chart entrance, stagger sequences |
+| `--ease-out` | `cubic-bezier(0.16, 1, 0.3, 1)` | Elements entering view (modal open, toast appear, card mount) |
+| `--ease-in` | `cubic-bezier(0.7, 0, 0.84, 0)` | Elements leaving view (modal close, toast dismiss, panel collapse) |
+| `--ease-in-out` | `cubic-bezier(0.45, 0, 0.55, 1)` | Continuous motion: tab slide, view toggle, drag reorder |
+
+### Motion Patterns
+
+- **Micro-interactions:** `var(--transition-fast) var(--ease-out)` (hover, toggle, badge change)
+- **Layout shifts:** `var(--transition-normal) var(--ease-out)` (panel open/close, card appear)
+- **Modal enter:** `var(--transition-normal) var(--ease-out)` (scale 0.95→1, opacity 0→1)
+- **Modal exit:** `var(--transition-fast) var(--ease-in)` (scale 1→0.95, opacity 1→0)
+- **List stagger:** `var(--transition-slow)` with `30–50ms` delay between siblings
 - **Skeleton loading:** Pulse animation, `var(--bg2)` to `var(--border)` gradient
-- **Respect `prefers-reduced-motion`:** Disable all transitions when set
+- **Respect `prefers-reduced-motion`:** Replace all spatial movement with `opacity` crossfade at `var(--transition-fast)`. No transforms, no slides, no scale.
 
 ---
 
