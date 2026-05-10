@@ -134,7 +134,7 @@ All colors via CSS variables. Never hardcode hex. Dark mode via `body.dark` clas
 ## Core Components
 
 ### Avatar
-- Sizes: `sm` (32px), `md` (36px), `lg` (64px)
+- Sizes: `sm` (32px), `md` (40px), `lg` (64px)
 - Circle, white text, deterministic background from name hash
 - `aria-label` with full name
 
@@ -165,7 +165,7 @@ All colors via CSS variables. Never hardcode hex. Dark mode via `body.dark` clas
 
 ### Toast
 - Bottom-right, `border-radius: 8px`, `padding: 12px 16px`
-- Auto-dismiss after 4s, manual dismiss via X
+- Auto-dismiss after 5s, manual dismiss via X
 - Types: success (teal bg), error (red bg), info (neutral)
 
 ### Form Inputs
@@ -173,6 +173,15 @@ All colors via CSS variables. Never hardcode hex. Dark mode via `body.dark` clas
 - Focus: `border-color: var(--accent)`, `box-shadow: var(--focus-ring)`
 - Label: `font-size: 12px`, `font-weight: 500`, `color: var(--fg2)`, above input
 - Error: `border-color: #dc2626`, error text below in red
+
+### Inline Form (Expand Pattern)
+- Used for add/edit-in-place (skills, todos, action items, document links)
+- **Collapsed:** Ghost button ("+ Add item") or edit icon
+- **Expand:** `max-height` transition from `0` → content height, `var(--transition-normal) var(--ease-out)`. Focus moves to first input.
+- **Collapse:** `var(--transition-fast) var(--ease-in)`. Focus returns to trigger button.
+- **Reduced motion:** Opacity crossfade `150ms`, no spatial movement
+- **Keyboard:** Enter submits, Escape cancels and collapses
+- **CSS:** `transition: max-height var(--transition-normal) var(--ease-out), opacity var(--transition-fast) var(--ease-out);`
 
 ### Empty State
 - Centered in container, `max-width: 320px`
