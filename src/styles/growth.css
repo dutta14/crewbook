@@ -1,0 +1,233 @@
+.growth__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.growth__title {
+  margin: 0;
+  font-size: var(--text-section);
+  font-weight: 600;
+}
+
+.growth__title:focus {
+  outline: none;
+}
+
+.growth__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.growth__loading {
+  margin: 0;
+  padding: var(--space-4) 0;
+  color: var(--fg2);
+  font-size: var(--text-body);
+}
+
+.growth__current {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.growth__current-label {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-weight: 500;
+}
+
+.growth__current-value {
+  font-size: var(--text-section);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.growth-timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.growth-entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr);
+  column-gap: var(--space-4);
+  margin-bottom: var(--space-4);
+  animation: growth-entry-in var(--transition-normal) var(--ease-out) both;
+}
+
+.growth-entry:last-child {
+  margin-bottom: 0;
+}
+
+.growth-entry__node {
+  z-index: 1;
+  grid-column: 1;
+  grid-row: 1;
+  width: 12px;
+  height: 12px;
+  margin-top: var(--space-5);
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Runs from this node down to the top of the next one. */
+.growth-entry__line {
+  position: absolute;
+  top: calc(var(--space-5) + 12px);
+  bottom: calc(-1 * (var(--space-4) + var(--space-5)));
+  left: 5px;
+  width: 2px;
+  background: var(--border);
+}
+
+.growth-entry:last-child .growth-entry__line {
+  display: none;
+}
+
+.growth-entry__card {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.growth-entry__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  /* The 44px edit button would otherwise make the card taller than its text needs. */
+  margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-3)) calc(-1 * var(--space-2)) 0;
+}
+
+.growth-entry__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.growth-entry__date {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-feature-settings: 'tnum';
+}
+
+.growth-badge {
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--bg2);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.growth-badge[data-change-type='promotion'] {
+  background: var(--status-active-bg);
+  color: var(--status-active-fg);
+}
+
+.growth-badge[data-change-type='role_change'] {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+.growth-badge[data-change-type='team_transfer'] {
+  background: var(--status-on-leave-bg);
+  color: var(--status-on-leave-fg);
+}
+
+.growth-entry__change {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.growth-entry__notes {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-body);
+  font-style: italic;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.growth-form__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.growth-form__notes {
+  resize: vertical;
+}
+
+/* Pushed to the bottom-left of the footer, away from Save. */
+.growth-modal__delete {
+  margin-right: auto;
+}
+
+@keyframes growth-entry-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .growth-entry {
+    animation: none;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .growth-entry {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-2);
+  }
+
+  .growth-entry__node {
+    grid-row: 1;
+    margin-top: 0;
+  }
+
+  .growth-entry__card {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .growth-entry__line {
+    display: none;
+  }
+
+  .growth-form__pair {
+    grid-template-columns: 1fr;
+  }
+}

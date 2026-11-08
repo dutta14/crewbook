@@ -249,6 +249,57 @@ export async function seedDecisions(
   ).toBeVisible();
 }
 
+export interface SeedGrowthEntry {
+  memberIndex: number;
+  /** ISO date (YYYY-MM-DD) the change took effect. */
+  date: string;
+  changeType: 'promotion' | 'role_change' | 'title_update' | 'team_transfer';
+  from?: string;
+  to?: string;
+  notes?: string;
+}
+
+/** Writes growth entries into the private encrypted envelope. Seed members first. */
+export async function seedGrowth(
+  page: Page,
+  entries: SeedGrowthEntry[],
+  passphrase = TEST_PASSPHRASE,
+) {
+  const base = Date.now() - 60_000;
+  const stored = entries.map(({ memberIndex, date, changeType, from, to, notes }, index) => ({
+    id: `00000000-0000-4000-d000-${String(index).padStart(12, '0')}`,
+    engineerId: seedId(memberIndex),
+    date,
+    changeType,
+    from: from ?? '',
+    to: to ?? '',
+    notes: notes ?? '',
+    createdAt: new Date(base + index * 1000).toISOString(),
+    updatedAt: new Date(base + index * 1000).toISOString(),
+  }));
+  await page.evaluate(
+    async ({ data, secret }) => {
+      const modulePath = '/src/data/StorageManager.ts';
+      const { StorageManager } = (await import(
+        /* @vite-ignore */ modulePath
+      )) as typeof import('../../src/data/StorageManager');
+      const manager = new StorageManager();
+      await manager.unlock(secret);
+      await manager.loadPrivate();
+      manager.setPrivateData('growth', data);
+      const failure = await manager.flush();
+      if (failure) throw failure;
+      await manager.lock();
+    },
+    { data: stored, secret: passphrase },
+  );
+  await page.reload();
+  await unlock(page, passphrase);
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
+}
+
 export interface SeedMood {
   /** Index into the seeded list of members. */
   memberIndex: number;

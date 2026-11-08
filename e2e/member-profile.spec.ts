@@ -119,7 +119,10 @@ test.describe('member profile', () => {
     await page.keyboard.press('End');
     await expect(page.getByRole('tab', { name: 'Timeline' })).toBeFocused();
     await page.keyboard.press('ArrowLeft');
-    await expect(page.getByRole('tab', { name: 'Goals' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tab', { name: 'Growth' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
   });
 
   test('manager link in profile navigates to manager profile', async ({ page }) => {
@@ -184,12 +187,12 @@ test.describe('member profile', () => {
 test.describe('member profile on a narrow screen', () => {
   test.use({ viewport: { width: 390, height: 800 } });
 
-  test('stacks the header and keeps all six tabs reachable', async ({ unlockedApp: page }) => {
+  test('stacks the header and keeps all seven tabs reachable', async ({ unlockedApp: page }) => {
     await seedMembers(page, TEAM);
     await openProfile(page);
 
     await expect(page.getByRole('heading', { level: 1, name: 'Alex Chen' })).toBeVisible();
-    await expect(page.getByRole('tab')).toHaveCount(6);
+    await expect(page.getByRole('tab')).toHaveCount(7);
     const noOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
     );

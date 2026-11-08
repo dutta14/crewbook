@@ -4,6 +4,7 @@ import { AddMemberModal } from '../components/AddMemberModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DecisionsPanel } from '../components/DecisionsPanel';
 import { EmptyState } from '../components/EmptyState';
+import { GrowthPanel } from '../components/GrowthPanel';
 import { TeamIcon } from '../components/icons';
 import { KeyDates } from '../components/KeyDates';
 import { LiveMode } from '../components/LiveMode';
@@ -22,6 +23,7 @@ import { Timeline } from '../components/Timeline';
 import { deleteActionItemsForMember } from '../data/actionItems';
 import { deleteDecisionsForMember } from '../data/decisions';
 import { deleteDateEventsForMember } from '../data/dateEvents';
+import { deleteGrowthForMember } from '../data/growthStore';
 import { deleteLeaveForMember } from '../data/leave';
 import { deleteMember, getMember, listMembers, updateMember } from '../data/members';
 import { deleteMoodEntriesForMember } from '../data/moodEntries';
@@ -110,7 +112,7 @@ export function Profile() {
 
   const goToRoster = () => navigate('/roster');
 
-  // A removed person's 1:1 history, action items, decisions, tasks, reminders, key dates, leave and mood ratings must not linger in the
+  // A removed person's 1:1 history, action items, decisions, tasks, reminders, key dates, leave, growth history and mood ratings must not linger in the
   // encrypted store. Best effort: the person is already gone, so a failure here must not turn a
   // successful delete into an error.
   const purgePrivateData = async (memberId: string) => {
@@ -129,6 +131,7 @@ export function Profile() {
     await deleteRemindersForMember(memberId, storage).catch(() => undefined);
     await deleteDateEventsForMember(memberId, storage).catch(() => undefined);
     await deleteLeaveForMember(memberId, storage).catch(() => undefined);
+    await deleteGrowthForMember(memberId, storage).catch(() => undefined);
   };
 
   const handleDelete = async () => {
@@ -230,6 +233,13 @@ export function Profile() {
             id: 'goals',
             label: 'Goals',
             content: <p className="profile-placeholder">Goals are coming in a future update.</p>,
+          },
+          {
+            id: 'growth',
+            label: 'Growth',
+            // Mounted only while open, so career history is not in the page until it is asked for.
+            content:
+              activeTab === 'growth' ? <GrowthPanel key={member.id} member={member} /> : null,
           },
           { id: 'timeline', label: 'Timeline', content: <Timeline entries={timeline} /> },
         ]}

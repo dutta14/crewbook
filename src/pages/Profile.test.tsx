@@ -8,6 +8,7 @@ import {
   createActionItem,
   createDecision,
   createFollowUp,
+  createGrowthEntry,
   createLeave,
   createMember,
   createMoodEntry,
@@ -273,10 +274,12 @@ describe('Profile', () => {
       'Meetings',
       'Decisions & Follow-ups',
       'Goals',
+      'Growth',
       'Timeline',
     ]);
     expect(tabs.map((tab) => tab.getAttribute('aria-selected'))).toEqual([
       'true',
+      'false',
       'false',
       'false',
       'false',
@@ -342,6 +345,90 @@ describe('Profile', () => {
 
     await user.keyboard('{ArrowLeft}');
     expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('Arrow keys move between Goals, Growth and Timeline', async () => {
+    const user = userEvent.setup();
+    renderProfile(ALEX);
+    screen.getByRole('tab', { name: 'Goals' }).focus();
+
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: 'Growth' })).toHaveAttribute('aria-selected', 'true');
+    expect(await screen.findByRole('heading', { name: 'Growth' })).toBeInTheDocument();
+
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: 'Timeline' })).toHaveAttribute('aria-selected', 'true');
+    await user.keyboard('{ArrowLeft}{ArrowLeft}');
+    expect(screen.getByRole('tab', { name: 'Goals' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('shows only the member’s own growth entries on the Growth tab', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Routes>
+        <Route path="/person/:id" element={<Profile />} />
+      </Routes>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          growth: [
+            createGrowthEntry({ engineerId: ALEX, to: 'L5' }),
+            createGrowthEntry({ engineerId: PRIYA, to: 'L9' }),
+          ],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('tab', { name: 'Growth' }));
+
+    const panel = await screen.findByRole('tabpanel', { name: 'Growth' });
+    expect(await within(panel).findByText('L4 → L5')).toBeInTheDocument();
+    expect(within(panel).queryByText(/L9/)).toBeNull();
+  });
+
+  it('deleting a member also purges their growth entries but keeps everyone else’s', async () => {
+    const user = userEvent.setup();
+    function Remaining() {
+      const { getPrivate } = useEncryptedStorage();
+      const growth = getPrivate<Array<{ engineerId: string; to: string }>>('growth') ?? [];
+      return (
+        <output aria-label="Remaining growth">
+          {growth.map((entry) => `${entry.engineerId}:${entry.to}`).join(',')}
+        </output>
+      );
+    }
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/roster" element={<h1>Roster page</h1>} />
+          <Route path="/person/:id" element={<Profile />} />
+        </Routes>
+        <Remaining />
+      </>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          growth: [
+            createGrowthEntry({ engineerId: ALEX, to: 'L5' }),
+            createGrowthEntry({ engineerId: PRIYA, to: 'L7' }),
+          ],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Delete Alex Chen' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Remaining growth' })).toHaveTextContent(
+        `${PRIYA}:L7`,
+      ),
+    );
+    expect(screen.getByRole('status', { name: 'Remaining growth' })).not.toHaveTextContent(ALEX);
   });
 
   it('profile with missing optional fields renders gracefully', () => {

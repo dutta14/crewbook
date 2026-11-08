@@ -2,6 +2,7 @@ import type {
   ActionItem,
   Decision,
   FollowUp,
+  GrowthEntry,
   LeaveEntry,
   MoodEntry,
   Note,
@@ -117,6 +118,22 @@ export function createTodo(overrides: Partial<Todo> = {}): Todo {
     priority: 'medium',
     status: 'todo',
     createdAt: now(),
+    ...overrides,
+  };
+}
+
+export function createGrowthEntry(overrides: Partial<GrowthEntry> = {}): GrowthEntry {
+  const timestamp = now();
+  return {
+    id: crypto.randomUUID(),
+    engineerId: crypto.randomUUID(),
+    date: '2025-03-03',
+    changeType: 'promotion',
+    from: 'L4',
+    to: 'L5',
+    notes: 'Led the payments migration.',
+    createdAt: timestamp,
+    updatedAt: timestamp,
     ...overrides,
   };
 }
