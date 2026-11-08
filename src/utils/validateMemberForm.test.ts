@@ -66,6 +66,40 @@ describe('validateForm', () => {
   });
 });
 
+describe('validateForm departure date', () => {
+  it('is optional', () => {
+    expect(
+      validateForm({ name: 'A', departureDate: '' }, { now: NOW }).departureDate,
+    ).toBeUndefined();
+  });
+
+  it('accepts a real date on or after the start date', () => {
+    const values = { name: 'A', startDate: '2025-01-10' };
+
+    expect(
+      validateForm({ ...values, departureDate: '2025-01-10' }, { now: NOW }).departureDate,
+    ).toBeUndefined();
+    expect(
+      validateForm({ ...values, departureDate: '2026-03-01' }, { now: NOW }).departureDate,
+    ).toBeUndefined();
+  });
+
+  it('rejects a date that does not exist', () => {
+    expect(
+      validateForm({ name: 'A', departureDate: '2025-02-30' }, { now: NOW }).departureDate,
+    ).toBeDefined();
+  });
+
+  it('rejects a date before the start date', () => {
+    expect(
+      validateForm(
+        { name: 'A', startDate: '2025-06-01', departureDate: '2025-05-31' },
+        { now: NOW },
+      ).departureDate,
+    ).toBeDefined();
+  });
+});
+
 describe('stripHtml', () => {
   it('removes tags, including unterminated ones, and trims', () => {
     expect(stripHtml('  <b>Bold</b> name ')).toBe('Bold name');

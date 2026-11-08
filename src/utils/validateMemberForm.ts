@@ -4,6 +4,7 @@ export interface FormErrors {
   name?: string;
   email?: string;
   startDate?: string;
+  departureDate?: string;
 }
 
 export const FORM_LIMITS = {
@@ -69,7 +70,7 @@ export interface ValidateOptions {
 }
 
 export function validateForm(
-  values: Partial<Pick<TeamMemberInput, 'name' | 'email' | 'startDate'>>,
+  values: Partial<Pick<TeamMemberInput, 'name' | 'email' | 'startDate' | 'departureDate'>>,
   { now = new Date(), originalStartDate }: ValidateOptions = {},
 ): FormErrors {
   const errors: FormErrors = {};
@@ -92,6 +93,15 @@ export function validateForm(
   const startDateError =
     startDate === originalStartDate ? undefined : validateStartDate(startDate, now);
   if (startDateError) errors.startDate = startDateError;
+
+  const departureDate = (values.departureDate ?? '').trim();
+  if (departureDate !== '') {
+    if (!isRealDate(departureDate)) {
+      errors.departureDate = 'Enter a valid departure date.';
+    } else if (startDate !== '' && isRealDate(startDate) && departureDate < startDate) {
+      errors.departureDate = 'Departure date can’t be before the start date.';
+    }
+  }
 
   return errors;
 }

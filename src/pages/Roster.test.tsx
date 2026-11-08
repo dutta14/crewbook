@@ -448,6 +448,9 @@ describe('Roster', () => {
     renderRoster(team());
 
     await user.tab();
+    expect(screen.getByRole('link', { name: 'Tenure timeline' })).toHaveFocus();
+
+    await user.tab();
     expect(screen.getByRole('button', { name: 'Import CSV' })).toHaveFocus();
 
     await user.tab();

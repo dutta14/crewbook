@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AddMemberModal } from '../components/AddMemberModal';
 import { CsvImportModal } from '../components/CsvImportModal';
 import { EmptyState } from '../components/EmptyState';
@@ -118,6 +119,9 @@ export function Roster() {
         <div className="roster-header">
           <h1>Team</h1>
           <div className="roster-header__actions">
+            <Link to="/team/tenure" className="btn btn-secondary">
+              Tenure timeline
+            </Link>
             <button type="button" className="btn btn-secondary" onClick={handleImportCsv}>
               Import CSV
             </button>

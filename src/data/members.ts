@@ -13,6 +13,7 @@ import {
   isValidTime,
   parseIsoDate,
 } from '../utils/scheduleCalculator';
+import { toDateAttribute } from '../utils/startDate';
 import { NotFoundError, ValidationError } from './errors';
 import { MAX_HISTORY_ENTRIES, diffMember } from './timeline';
 
@@ -85,6 +86,30 @@ function cleanStartDate(value: unknown): string {
     if (isRealDay && inRange && !Number.isNaN(Date.parse(startDate))) return startDate;
   }
   throw new ValidationError('Start date must be a valid ISO 8601 date between 1970 and 2100');
+}
+
+/** Only a departing member has one; for anyone else a leftover date is dropped, not rejected. */
+function cleanDepartureDate(
+  value: unknown,
+  status: TeamMemberStatus,
+  startDate: string,
+): string | undefined {
+  if (value === undefined || value === null || value === '' || status !== 'departing') {
+    return undefined;
+  }
+  const departureDate = cleanText(value, 'Departure date', MEMBER_LIMITS.textLength);
+  const day = parseIsoDate(departureDate);
+  if (
+    !day ||
+    day.getFullYear() < MEMBER_LIMITS.minYear ||
+    day.getFullYear() > MEMBER_LIMITS.maxYear
+  ) {
+    throw new ValidationError('Departure date must be a valid date between 1970 and 2100');
+  }
+  if (departureDate < toDateAttribute(startDate)) {
+    throw new ValidationError('Departure date cannot be before the start date');
+  }
+  return departureDate;
 }
 
 function cleanAvatarUrl(value: unknown): string | undefined {
@@ -194,14 +219,17 @@ function validate(
   if (!isTeamMemberStatus(input.status)) throw new ValidationError('Status is not valid');
   const avatarUrl = cleanAvatarUrl(input.avatarUrl);
   const schedule = cleanSchedule(input.schedule);
+  const startDate = cleanStartDate(input.startDate);
+  const departureDate = cleanDepartureDate(input.departureDate, input.status, startDate);
   return {
     name: cleanName(input.name),
     role: cleanText(input.role ?? '', 'Role', MEMBER_LIMITS.textLength),
     level: cleanText(input.level ?? '', 'Level', MEMBER_LIMITS.textLength),
-    startDate: cleanStartDate(input.startDate),
+    startDate,
     email: cleanEmail(input.email),
     manager: checkManager(input.manager, members, selfId),
     status: input.status,
+    ...(departureDate === undefined ? {} : { departureDate }),
     ...(avatarUrl === undefined ? {} : { avatarUrl }),
     customFields: cleanCustomFields(input.customFields),
     ...(schedule === undefined ? {} : { schedule }),

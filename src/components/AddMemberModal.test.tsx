@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { axe } from 'vitest-axe';
@@ -236,6 +236,62 @@ describe('AddMemberModal', () => {
       status: 'new_hire',
       customFields: {},
     });
+  });
+
+  it('asks for an expected departure date only while the status is Departing', async () => {
+    const { user } = await openModal();
+
+    expect(screen.queryByLabelText('Expected departure date')).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText('Status'), 'Departing');
+    expect(screen.getByLabelText('Expected departure date')).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText('Status'), 'Active');
+    expect(screen.queryByLabelText('Expected departure date')).not.toBeInTheDocument();
+  });
+
+  it('saves the expected departure date of a departing member', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2025, 5, 10, 12) });
+    const { user } = await openModal();
+
+    await user.type(nameInput(), 'Priya Sharma');
+    await user.selectOptions(screen.getByLabelText('Status'), 'Departing');
+    await user.type(screen.getByLabelText('Expected departure date'), '2025-12-19');
+    await user.click(submit());
+
+    expect(addMemberSpy.mock.calls[0][0]).toMatchObject({
+      status: 'departing',
+      departureDate: '2025-12-19',
+    });
+  });
+
+  it('does not save a departure date typed before the status changed back', async () => {
+    const { user } = await openModal();
+
+    await user.type(nameInput(), 'Priya Sharma');
+    await user.selectOptions(screen.getByLabelText('Status'), 'Departing');
+    await user.type(screen.getByLabelText('Expected departure date'), '2025-12-19');
+    await user.selectOptions(screen.getByLabelText('Status'), 'Active');
+    await user.click(submit());
+
+    expect(addMemberSpy.mock.calls[0][0].departureDate).toBeUndefined();
+  });
+
+  it('flags a departure date before the start date and keeps the form open', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2025, 5, 10, 12) });
+    const { user } = await openModal();
+
+    await user.type(nameInput(), 'Priya Sharma');
+    await user.selectOptions(screen.getByLabelText('Status'), 'Departing');
+    fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2025-06-10' } });
+    fireEvent.change(screen.getByLabelText('Expected departure date'), {
+      target: { value: '2025-06-01' },
+    });
+    await user.click(submit());
+
+    expect(screen.getByLabelText('Expected departure date')).toHaveFocus();
+    expect(screen.getByText('Departure date can’t be before the start date.')).toBeInTheDocument();
+    expect(addMemberSpy).not.toHaveBeenCalled();
   });
 
   it('strips HTML tags and surrounding whitespace before saving', async () => {

@@ -31,6 +31,7 @@ interface FormValues {
   email: string;
   manager: string;
   status: TeamMemberStatus;
+  departureDate: string;
 }
 
 const initialValues = (editMember?: TeamMember): FormValues =>
@@ -43,6 +44,7 @@ const initialValues = (editMember?: TeamMember): FormValues =>
         email: editMember.email,
         manager: editMember.manager ?? '',
         status: editMember.status,
+        departureDate: editMember.departureDate ?? '',
       }
     : {
         name: '',
@@ -52,6 +54,7 @@ const initialValues = (editMember?: TeamMember): FormValues =>
         email: '',
         manager: '',
         status: 'active',
+        departureDate: '',
       };
 
 export interface AddMemberFormProps {
@@ -71,6 +74,7 @@ export function AddMemberForm({ members, editMember, onClose, onSuccess }: AddMe
   const nameRef = useRef<HTMLInputElement>(null);
   const startDateRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
+  const departureDateRef = useRef<HTMLInputElement>(null);
 
   const ids = {
     name: `${prefix}-name`,
@@ -80,6 +84,7 @@ export function AddMemberForm({ members, editMember, onClose, onSuccess }: AddMe
     email: `${prefix}-email`,
     manager: `${prefix}-manager`,
     status: `${prefix}-status`,
+    departureDate: `${prefix}-departure-date`,
   };
   const errorProps = (field: keyof FormErrors) =>
     errors[field]
@@ -87,7 +92,7 @@ export function AddMemberForm({ members, editMember, onClose, onSuccess }: AddMe
       : {};
 
   const handleText =
-    (field: 'name' | 'role' | 'level' | 'startDate' | 'email' | 'manager') =>
+    (field: 'name' | 'role' | 'level' | 'startDate' | 'email' | 'manager' | 'departureDate') =>
     (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { value } = event.target;
       setValues((current) => ({ ...current, [field]: value }));
@@ -98,19 +103,30 @@ export function AddMemberForm({ members, editMember, onClose, onSuccess }: AddMe
     if (isTeamMemberStatus(value)) setValues((current) => ({ ...current, status: value }));
   };
 
+  const isDeparting = values.status === 'departing';
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
 
-    const nextErrors = validateForm(values, {
-      originalStartDate: editMember ? initialValues(editMember).startDate : undefined,
-    });
+    const departureDate = isDeparting ? values.departureDate.trim() : '';
+    const nextErrors = validateForm(
+      { ...values, departureDate },
+      { originalStartDate: editMember ? initialValues(editMember).startDate : undefined },
+    );
     setErrors(nextErrors);
-    const firstInvalid = (['name', 'startDate', 'email'] as const).find(
+    const firstInvalid = (['name', 'startDate', 'departureDate', 'email'] as const).find(
       (field) => nextErrors[field],
     );
     if (firstInvalid) {
-      ({ name: nameRef, startDate: startDateRef, email: emailRef })[firstInvalid].current?.focus();
+      (
+        ({
+          name: nameRef,
+          startDate: startDateRef,
+          departureDate: departureDateRef,
+          email: emailRef,
+        }) as const
+      )[firstInvalid].current?.focus();
       return;
     }
 
@@ -122,6 +138,8 @@ export function AddMemberForm({ members, editMember, onClose, onSuccess }: AddMe
       email: values.email.trim(),
       manager: values.manager || null,
       status: values.status,
+      // Always present so an edit that stops being "departing" clears the stored date.
+      departureDate: departureDate || undefined,
       customFields: editMember?.customFields ?? {},
     };
 
@@ -245,6 +263,24 @@ export function AddMemberForm({ members, editMember, onClose, onSuccess }: AddMe
           ))}
         </select>
       </FormField>
+      {isDeparting ? (
+        <FormField
+          id={ids.departureDate}
+          label="Expected departure date"
+          error={errors.departureDate}
+        >
+          <input
+            ref={departureDateRef}
+            id={ids.departureDate}
+            type="date"
+            className="form-input"
+            autoComplete="off"
+            value={values.departureDate}
+            onChange={handleText('departureDate')}
+            {...errorProps('departureDate')}
+          />
+        </FormField>
+      ) : null}
       <div className="form-actions">
         <button type="button" className="btn btn-secondary" onClick={onClose}>
           Cancel

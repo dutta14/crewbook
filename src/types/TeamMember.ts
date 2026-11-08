@@ -16,6 +16,8 @@ export interface TeamMember {
   /** The id of this member's manager, or null. */
   manager: string | null;
   status: TeamMemberStatus;
+  /** YYYY-MM-DD. Expected last day; only kept while the status is `departing`. */
+  departureDate?: string;
   avatarUrl?: string;
   customFields: Record<string, string>;
   /** Recurring 1:1 schedule. Stays inside the encrypted member record. */

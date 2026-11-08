@@ -143,6 +143,60 @@ describe('addMember', () => {
   });
 });
 
+describe('departureDate', () => {
+  it('keeps the expected departure of a departing member', async () => {
+    const { storage } = await createStorage();
+
+    const member = await addMember(
+      input({ status: 'departing', startDate: '2023-03-13', departureDate: '2027-02-26' }),
+      storage,
+    );
+
+    expect(member.departureDate).toBe('2027-02-26');
+    expect(getMember(member.id, storage)?.departureDate).toBe('2027-02-26');
+  });
+
+  it('drops a departure date when the member is not departing', async () => {
+    const { storage } = await createStorage();
+
+    const member = await addMember(
+      input({ status: 'active', departureDate: '2027-02-26' }),
+      storage,
+    );
+
+    expect(member).not.toHaveProperty('departureDate');
+  });
+
+  it('clears the date when a departing member returns to active', async () => {
+    const { storage } = await createStorage();
+    const added = await addMember(
+      input({ status: 'departing', startDate: '2023-03-13', departureDate: '2027-02-26' }),
+      storage,
+    );
+
+    const updated = await updateMember(
+      added.id,
+      { status: 'active', departureDate: undefined },
+      storage,
+    );
+
+    expect(updated).not.toHaveProperty('departureDate');
+  });
+
+  it.each([
+    ['not a date', 'Departure date must be a valid date'],
+    ['2027-02-31', 'Departure date must be a valid date'],
+    ['2101-01-01', 'Departure date must be a valid date'],
+    ['2020-01-01', 'Departure date cannot be before the start date'],
+  ])('rejects %s', async (departureDate, message) => {
+    const { storage } = await createStorage();
+
+    await expect(
+      addMember(input({ status: 'departing', startDate: '2023-03-13', departureDate }), storage),
+    ).rejects.toThrow(message);
+  });
+});
+
 describe('customFields validation', () => {
   it.each([
     ['__proto__', 'x'],

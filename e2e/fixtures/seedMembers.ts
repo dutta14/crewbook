@@ -7,6 +7,8 @@ export interface SeedMember {
   level: string;
   status: 'active' | 'on_leave' | 'departing' | 'new_hire';
   startDate: string;
+  /** YYYY-MM-DD; only meaningful for a departing member. */
+  departureDate?: string;
   email?: string;
   /** Index into the seeded list of this member's manager. */
   managerIndex?: number;
