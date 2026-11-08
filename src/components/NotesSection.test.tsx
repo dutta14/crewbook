@@ -301,14 +301,17 @@ describe('NotesSection', () => {
     const storage = {
       isPrivateUnlocked: true,
       loadPrivate: async () => undefined,
+      get: () => null,
       getPrivate: <T,>(key: string) => (data.has(key) ? (data.get(key) as T) : null),
       setPrivate: <T,>(key: string, value: T) => void data.set(key, value),
       flush: async () => new StorageWriteError(true, true),
     } as unknown as EncryptedStorageContextValue;
     render(
-      <EncryptedStorageContext.Provider value={storage}>
-        <NotesSection memberId={MEMBER} />
-      </EncryptedStorageContext.Provider>,
+      <ToastProvider>
+        <EncryptedStorageContext.Provider value={storage}>
+          <NotesSection memberId={MEMBER} />
+        </EncryptedStorageContext.Provider>
+      </ToastProvider>,
     );
 
     await user.type(await textarea(), 'will not land');

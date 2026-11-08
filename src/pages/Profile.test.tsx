@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { axe } from 'vitest-axe';
 import { describe, expect, it } from 'vitest';
-import { createMember } from '../test-utils/factories';
+import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
+import { createActionItem, createMember } from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
 import type { TeamMember } from '../types/TeamMember';
 import { Profile } from './Profile';
@@ -300,6 +301,45 @@ describe('Profile', () => {
 
     expect(await screen.findByRole('heading', { name: 'Roster page' })).toBeInTheDocument();
     expect(screen.getByText('Alex Chen removed from your team')).toBeInTheDocument();
+  });
+
+  it('deleting a member also purges their action items but keeps everyone else’s', async () => {
+    const user = userEvent.setup();
+    function RemainingItems() {
+      const { getPrivate } = useEncryptedStorage();
+      const items = getPrivate<Array<{ title: string }>>('actionItems') ?? [];
+      return <output aria-label="Remaining items">{items.map((i) => i.title).join(',')}</output>;
+    }
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/roster" element={<h1>Roster page</h1>} />
+          <Route path="/person/:id" element={<Profile />} />
+        </Routes>
+        <RemainingItems />
+      </>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          actionItems: [
+            createActionItem({ memberId: ALEX, title: 'Alex item' }),
+            createActionItem({ memberId: PRIYA, title: 'Priya item' }),
+          ],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Delete Alex Chen' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Remaining items' })).toHaveTextContent(
+        /^Priya item$/,
+      ),
+    );
   });
 
   it('shows the 1:1 schedule card below the header and saves a new schedule through storage', async () => {

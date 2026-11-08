@@ -139,3 +139,11 @@ export function PencilIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function ChecklistIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m3 6 1.5 1.5L7.5 4.5M3 13l1.5 1.5 3-3M3 20l1.5 1.5 3-3M11 6h10M11 13h10M11 20h10" />
+    </Icon>
+  );
+}

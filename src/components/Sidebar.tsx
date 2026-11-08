@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import '../styles/button.css';
 import {
   CalendarIcon,
+  ChecklistIcon,
   CloseIcon,
   DashboardIcon,
   MoonIcon,
@@ -21,6 +22,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: <DashboardIcon />, end: true },
   { to: '/roster', label: 'Team', icon: <TeamIcon /> },
+  { to: '/actions', label: 'Action Items', icon: <ChecklistIcon /> },
   { to: '/calendar', label: 'Calendar', icon: <CalendarIcon /> },
   { to: '/settings', label: 'Settings', icon: <SettingsIcon /> },
 ];

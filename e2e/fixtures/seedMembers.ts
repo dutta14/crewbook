@@ -103,6 +103,61 @@ export async function seedNotes(page: Page, notes: SeedNote[], passphrase = TEST
   await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
 }
 
+export interface SeedActionItem {
+  /** Index into the seeded list of members. */
+  memberIndex: number;
+  title: string;
+  /** Days from today; negative is overdue. Omit for no due date. */
+  dueInDays?: number;
+  status?: 'open' | 'done' | 'cancelled';
+}
+
+const isoDateInDays = (days: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
+/** Writes action items, owned by the manager, into the private envelope. Seed members first. */
+export async function seedActionItems(
+  page: Page,
+  items: SeedActionItem[],
+  passphrase = TEST_PASSPHRASE,
+) {
+  const at = new Date().toISOString();
+  const stored = items.map(({ memberIndex, title, dueInDays, status }, index) => ({
+    id: `00000000-0000-4000-a000-${String(index).padStart(12, '0')}`,
+    memberId: seedId(memberIndex),
+    title,
+    ownerId: 'manager',
+    ownerName: 'Me',
+    ...(dueInDays === undefined ? {} : { dueDate: isoDateInDays(dueInDays) }),
+    status: status ?? 'open',
+    createdAt: at,
+    updatedAt: at,
+  }));
+  await page.evaluate(
+    async ({ data, secret }) => {
+      const modulePath = '/src/data/StorageManager.ts';
+      const { StorageManager } = (await import(
+        /* @vite-ignore */ modulePath
+      )) as typeof import('../../src/data/StorageManager');
+      const manager = new StorageManager();
+      await manager.unlock(secret);
+      await manager.loadPrivate();
+      manager.setPrivateData('actionItems', data);
+      const failure = await manager.flush();
+      if (failure) throw failure;
+      await manager.lock();
+    },
+    { data: stored, secret: passphrase },
+  );
+  await page.reload();
+  await unlock(page, passphrase);
+  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+}
+
 export const SEED_TEAM: SeedMember[] = [
   {
     name: 'Alice Park',

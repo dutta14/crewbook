@@ -15,6 +15,12 @@
   box-shadow: var(--card-shadow);
 }
 
+.notes__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .notes__textarea {
   width: 100%;
   min-height: 120px;

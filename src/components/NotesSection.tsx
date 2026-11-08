@@ -13,6 +13,8 @@ import { formatCount } from '../utils/noteFormat';
 import '../styles/button.css';
 import '../styles/form.css';
 import '../styles/notes.css';
+import { ActionItemList } from './ActionItemList';
+import { AddActionItem } from './ActionItemInline';
 import { SearchIcon } from './icons';
 import { NoteEntry } from './NoteEntry';
 
@@ -187,55 +189,60 @@ function NotesPanel({ memberId }: NotesSectionProps) {
 
   return (
     <div className="notes">
-      <form
-        className="notes__composer"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void handleSave();
-        }}
-      >
-        <label className="sr-only" htmlFor={`notes-input-${memberId}`}>
-          1:1 Notes
-        </label>
-        <textarea
-          ref={textareaRef}
-          id={`notes-input-${memberId}`}
-          className="form-input notes__textarea"
-          placeholder="What came up in your 1:1? Markdown is supported."
-          value={text}
-          aria-describedby={`notes-count-${memberId}`}
-          aria-invalid={isOver}
-          onChange={(event) => handleChange(event.target.value)}
-        />
-        <div className="notes__meta">
-          <span
-            className={`notes__status${status.visible ? ' notes__status--visible' : ''}`}
-            role="status"
-            aria-live="polite"
-          >
-            {status.label}
-          </span>
-          <span
-            id={`notes-count-${memberId}`}
-            className={`notes__count${isOver ? ' notes__count--over' : ''}`}
-          >
-            {describeCount(text.length)}
-          </span>
-        </div>
-        {saveError ? (
-          <p className="form-error" role="alert">
-            {saveError}
+      <ActionItemList memberId={memberId} />
+      <div className="notes__composer">
+        <form
+          className="notes__form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleSave();
+          }}
+        >
+          <label className="sr-only" htmlFor={`notes-input-${memberId}`}>
+            1:1 Notes
+          </label>
+          <textarea
+            ref={textareaRef}
+            id={`notes-input-${memberId}`}
+            className="form-input notes__textarea"
+            placeholder="What came up in your 1:1? Markdown is supported."
+            value={text}
+            aria-describedby={`notes-count-${memberId}`}
+            aria-invalid={isOver}
+            onChange={(event) => handleChange(event.target.value)}
+          />
+          <div className="notes__meta">
+            <span
+              className={`notes__status${status.visible ? ' notes__status--visible' : ''}`}
+              role="status"
+              aria-live="polite"
+            >
+              {status.label}
+            </span>
+            <span
+              id={`notes-count-${memberId}`}
+              className={`notes__count${isOver ? ' notes__count--over' : ''}`}
+            >
+              {describeCount(text.length)}
+            </span>
+          </div>
+          {saveError ? (
+            <p className="form-error" role="alert">
+              {saveError}
+            </p>
+          ) : null}
+          <p className="notes__hint">
+            Notes are private to you. Avoid recording sensitive personal details shared in
+            confidence.
           </p>
-        ) : null}
-        <p className="notes__hint">
-          Notes are private to you. Avoid recording sensitive personal details shared in confidence.
-        </p>
-        <div className="notes__actions">
-          <button type="submit" className="btn btn-primary" disabled={!canSave}>
-            Save Note
-          </button>
-        </div>
-      </form>
+          <div className="notes__actions">
+            <button type="submit" className="btn btn-primary" disabled={!canSave}>
+              Save Note
+            </button>
+          </div>
+        </form>
+        <AddActionItem memberId={memberId} />
+      </div>
 
       {notes.length === 0 ? (
         <p className="notes__empty">No notes yet. Add your first 1:1 note above.</p>

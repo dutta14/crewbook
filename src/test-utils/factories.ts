@@ -33,14 +33,16 @@ export function createNote(overrides: Partial<Note> = {}): Note {
 }
 
 export function createActionItem(overrides: Partial<ActionItem> = {}): ActionItem {
+  const timestamp = now();
   return {
     id: crypto.randomUUID(),
     memberId: crypto.randomUUID(),
     title: 'Share the design doc draft',
-    owner: 'report',
-    dueDate: null,
+    ownerId: 'manager',
+    ownerName: 'Me',
     status: 'open',
-    createdAt: now(),
+    createdAt: timestamp,
+    updatedAt: timestamp,
     ...overrides,
   };
 }

@@ -10,6 +10,7 @@ import { NotesSection } from '../components/NotesSection';
 import { ScheduleCard } from '../components/ScheduleCard';
 import { Tabs } from '../components/Tabs';
 import { Timeline } from '../components/Timeline';
+import { deleteActionItemsForMember } from '../data/actionItems';
 import { deleteMember, getMember, listMembers, updateMember } from '../data/members';
 import { deleteNotesForMember } from '../data/notes';
 import { buildTimeline } from '../data/timeline';
@@ -46,15 +47,19 @@ export function Profile() {
 
   const goToRoster = () => navigate('/roster');
 
-  // A removed person's 1:1 history must not linger in the encrypted store. Best effort: the person
-  // is already gone, so a failure here must not turn a successful delete into an error.
-  const purgeNotes = async (memberId: string) => {
+  // A removed person's 1:1 history and action items must not linger in the encrypted store. Best
+  // effort: the person is already gone, so a failure here must not turn a successful delete into
+  // an error.
+  const purgePrivateData = async (memberId: string) => {
     try {
       await storage.loadPrivate();
-      await deleteNotesForMember(memberId, storage);
     } catch {
-      // Left in the private envelope; the next successful write does not resurrect the member.
+      return;
     }
+    // Left in the private envelope on failure; the next successful write does not resurrect the
+    // member. Each purge runs on its own so one failure does not strand the other's data.
+    await deleteNotesForMember(memberId, storage).catch(() => undefined);
+    await deleteActionItemsForMember(memberId, storage).catch(() => undefined);
   };
 
   const handleDelete = async () => {
@@ -64,7 +69,7 @@ export function Profile() {
     setIsDeleting(true);
     try {
       await deleteMember(member.id, storage);
-      await purgeNotes(member.id);
+      await purgePrivateData(member.id);
       showToast(`${name} removed from your team`, 'success');
       goToRoster();
     } catch {

@@ -42,7 +42,7 @@ describe('App', () => {
     const nav = screen.getByRole('navigation', { name: 'Main navigation' });
     const links = Array.from(nav.querySelectorAll('a')).map((link) => link.textContent);
 
-    expect(links).toEqual(['Dashboard', 'Team', 'Calendar', 'Settings']);
+    expect(links).toEqual(['Dashboard', 'Team', 'Action Items', 'Calendar', 'Settings']);
   });
 
   it('dark mode toggle adds "dark" class to body', async () => {
