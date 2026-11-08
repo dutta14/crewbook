@@ -187,6 +187,8 @@ test.describe('roster with members', () => {
         await expect(page.locator('body')).toHaveClass(/dark/);
       }
       await expect(rows(page)).toHaveCount(4);
+      // Axe reads colors mid-fade if the page transition is still running.
+      await page.emulateMedia({ reducedMotion: 'reduce' });
 
       const { violations } = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa'])

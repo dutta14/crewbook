@@ -171,9 +171,9 @@ test.describe('add member on a narrow screen', () => {
     await expect.poll(async () => (await dialog(page).boundingBox())?.width).toBeCloseTo(390, 0);
     await expect.poll(async () => (await dialog(page).boundingBox())?.height).toBeCloseTo(800, 0);
     const close = dialog(page).getByRole('button', { name: 'Close dialog' });
-    const box = await close.boundingBox();
-    expect(box?.width).toBeGreaterThanOrEqual(44);
-    expect(box?.height).toBeGreaterThanOrEqual(44);
+    // Polled because the sheet's open animation can leave the size a hair under 44px under load.
+    await expect.poll(async () => (await close.boundingBox())?.width).toBeGreaterThanOrEqual(44);
+    await expect.poll(async () => (await close.boundingBox())?.height).toBeGreaterThanOrEqual(44);
 
     await dialog(page).getByLabel('Name').fill('Mobile Mia');
     await dialog(page).getByRole('button', { name: 'Add Member', exact: true }).click();

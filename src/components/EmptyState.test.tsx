@@ -45,6 +45,25 @@ describe('EmptyState', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
+  it('renders a secondary action that calls its own handler', async () => {
+    const user = userEvent.setup();
+    const onPrimary = vi.fn();
+    const onSecondary = vi.fn();
+    render(
+      <EmptyState
+        icon={icon}
+        title="Empty"
+        action={{ label: 'Add member', onClick: onPrimary }}
+        secondaryAction={{ label: 'Import CSV', onClick: onSecondary }}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Import CSV' }));
+
+    expect(onSecondary).toHaveBeenCalledTimes(1);
+    expect(onPrimary).not.toHaveBeenCalled();
+  });
+
   it('has no accessibility violations', async () => {
     const { container } = render(
       <EmptyState

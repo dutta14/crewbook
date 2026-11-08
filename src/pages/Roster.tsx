@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { AddMemberModal } from '../components/AddMemberModal';
+import { CsvImportModal } from '../components/CsvImportModal';
 import { EmptyState } from '../components/EmptyState';
 import { FilterChips } from '../components/FilterChips';
 import { SearchIcon, TeamIcon } from '../components/icons';
@@ -63,6 +64,7 @@ export function Roster() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortBy, setSortBy] = useState<SortField>('name');
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const members = useMemo(() => listMembers(storage), [storage]);
   const visibleMembers = useMemo(() => {
@@ -79,90 +81,104 @@ export function Roster() {
   }, [members, search, statusFilter, sortBy]);
 
   const handleAddMember = () => setIsAddOpen(true);
-  const addMemberModal = (
-    <AddMemberModal
-      isOpen={isAddOpen}
-      onClose={() => setIsAddOpen(false)}
-      onSuccess={(member) => showToast(`${member.name} added to your team`, 'success')}
-      members={members}
-    />
+  const handleImportCsv = () => setIsImportOpen(true);
+  // The modals are always the second child of the same fragment, so they stay mounted when the
+  // first member arrives (for example from an import) and the empty state gives way to the list.
+  const modals = (
+    <>
+      <AddMemberModal
+        isOpen={isAddOpen}
+        onClose={() => setIsAddOpen(false)}
+        onSuccess={(member) => showToast(`${member.name} added to your team`, 'success')}
+        members={members}
+      />
+      <CsvImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
+    </>
   );
 
-  if (members.length === 0) {
-    return (
+  const content =
+    members.length === 0 ? (
       <>
         <h1>Team</h1>
         <EmptyState
           icon={<TeamIcon size={48} />}
           title="No team members yet"
           action={{ label: 'Add your first team member', onClick: handleAddMember }}
+          secondaryAction={{ label: 'Import CSV', onClick: handleImportCsv }}
         />
-        {addMemberModal}
+      </>
+    ) : (
+      <>
+        <div className="roster-header">
+          <h1>Team</h1>
+          <div className="roster-header__actions">
+            <button type="button" className="btn btn-secondary" onClick={handleImportCsv}>
+              Import CSV
+            </button>
+            <button type="button" className="btn btn-primary" onClick={handleAddMember}>
+              Add member
+            </button>
+          </div>
+        </div>
+        <div className="roster-search" role="search">
+          <label className="sr-only" htmlFor="roster-search">
+            Search team members by name or role
+          </label>
+          <div className="search-field">
+            <SearchIcon size={16} />
+            <input
+              id="roster-search"
+              type="search"
+              className="form-input search-field__input"
+              placeholder="Search by name or role..."
+              autoComplete="off"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </div>
+        </div>
+        <div className="roster-controls">
+          <FilterChips
+            ariaLabel="Filter by status"
+            options={FILTER_OPTIONS}
+            value={statusFilter}
+            onChange={(value) => setStatusFilter(isTeamMemberStatus(value) ? value : 'all')}
+          />
+          <div className="roster-sort">
+            <label htmlFor="roster-sort">Sort by</label>
+            <select
+              id="roster-sort"
+              className="form-input"
+              value={sortBy}
+              onChange={(event) => {
+                if (isSortField(event.target.value)) setSortBy(event.target.value);
+              }}
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="sr-only" role="status" aria-live="polite">
+          {countLabel(visibleMembers.length)}
+        </div>
+        {visibleMembers.length === 0 ? (
+          <p className="roster-empty">No members found</p>
+        ) : isMobile ? (
+          <RosterCards members={visibleMembers} />
+        ) : (
+          <RosterTable members={visibleMembers} />
+        )}
       </>
     );
-  }
 
   return (
     <>
-      <div className="roster-header">
-        <h1>Team</h1>
-        <button type="button" className="btn btn-primary" onClick={handleAddMember}>
-          Add member
-        </button>
-      </div>
-      <div className="roster-search" role="search">
-        <label className="sr-only" htmlFor="roster-search">
-          Search team members by name or role
-        </label>
-        <div className="search-field">
-          <SearchIcon size={16} />
-          <input
-            id="roster-search"
-            type="search"
-            className="form-input search-field__input"
-            placeholder="Search by name or role..."
-            autoComplete="off"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </div>
-      </div>
-      <div className="roster-controls">
-        <FilterChips
-          ariaLabel="Filter by status"
-          options={FILTER_OPTIONS}
-          value={statusFilter}
-          onChange={(value) => setStatusFilter(isTeamMemberStatus(value) ? value : 'all')}
-        />
-        <div className="roster-sort">
-          <label htmlFor="roster-sort">Sort by</label>
-          <select
-            id="roster-sort"
-            className="form-input"
-            value={sortBy}
-            onChange={(event) => {
-              if (isSortField(event.target.value)) setSortBy(event.target.value);
-            }}
-          >
-            {SORT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      <div className="sr-only" role="status" aria-live="polite">
-        {countLabel(visibleMembers.length)}
-      </div>
-      {visibleMembers.length === 0 ? (
-        <p className="roster-empty">No members found</p>
-      ) : isMobile ? (
-        <RosterCards members={visibleMembers} />
-      ) : (
-        <RosterTable members={visibleMembers} />
-      )}
-      {addMemberModal}
+      {content}
+      {modals}
     </>
   );
 }

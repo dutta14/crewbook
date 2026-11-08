@@ -1,4 +1,4 @@
-import { act, screen, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { axe } from 'vitest-axe';
@@ -384,6 +384,33 @@ describe('Roster', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('the header Import CSV button opens the import dialog', async () => {
+    const user = userEvent.setup();
+    renderRoster(team());
+
+    await user.click(screen.getByRole('button', { name: 'Import CSV' }));
+
+    expect(screen.getByRole('dialog', { name: 'Import team from CSV' })).toBeInTheDocument();
+  });
+
+  it('importing from the empty state shows the imported members and a summary toast', async () => {
+    const user = userEvent.setup();
+    renderRoster([]);
+
+    await user.click(screen.getByRole('button', { name: 'Import CSV' }));
+    await user.upload(
+      screen.getByLabelText('Choose a .csv file'),
+      new File(['name,role\nAda Lovelace,Engineer\nGrace Hopper,Admiral'], 'team.csv', {
+        type: 'text/csv',
+      }),
+    );
+    await user.click(await screen.findByRole('button', { name: 'Import 2 members' }));
+
+    expect(await screen.findByText('Imported 2 of 2 members')).toBeInTheDocument();
+    expect(rowNames()).toEqual(['Ada Lovelace', 'Grace Hopper']);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
   it('lists existing members in the new member manager dropdown', async () => {
     const user = userEvent.setup();
     renderRoster(team());
@@ -399,6 +426,11 @@ describe('Roster', () => {
     renderRoster(team());
 
     await user.tab();
+    expect(screen.getByRole('button', { name: 'Import CSV' })).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Add member' })).toHaveFocus();
+
     await user.tab();
     expect(screen.getByRole('searchbox')).toHaveFocus();
 

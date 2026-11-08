@@ -10,6 +10,10 @@ interface EmptyStateProps {
     label: string;
     onClick: () => void;
   };
+  secondaryAction?: {
+    label: string;
+    onClick: () => void;
+  };
   /** The heading level; use 1 when the empty state is the page's only heading. */
   headingLevel?: 1 | 2;
   /** Makes the heading programmatically focusable so a page can move focus to it. */
@@ -21,6 +25,7 @@ export function EmptyState({
   title,
   description,
   action,
+  secondaryAction,
   headingLevel = 2,
   titleRef,
 }: EmptyStateProps) {
@@ -37,6 +42,15 @@ export function EmptyState({
       {action ? (
         <button type="button" className="btn btn-primary" onClick={action.onClick}>
           {action.label}
+        </button>
+      ) : null}
+      {secondaryAction ? (
+        <button
+          type="button"
+          className="btn btn-secondary empty-state__secondary"
+          onClick={secondaryAction.onClick}
+        >
+          {secondaryAction.label}
         </button>
       ) : null}
     </div>
