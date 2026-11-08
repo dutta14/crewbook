@@ -3,6 +3,7 @@ import type { EncryptedStorageContextValue } from '../components/EncryptedStorag
 /** A property on the decrypted `crewbook_data` object; AppData types its values as strings. */
 const STORAGE_KEY = 'settings';
 const MOOD_TRACKING_KEY = 'moodTrackingEnabled';
+const HIDE_RISK_KEY = 'hideRiskIndicators';
 const LIVE_SHORTCUTS_KEY = 'liveModeShortcuts';
 const LIVE_NOTICE_KEY = 'liveModeNoticeDismissed';
 
@@ -45,6 +46,15 @@ export async function writeSetting(
 /** Turning tracking off hides mood controls and charts but keeps stored ratings. */
 export function setMoodTrackingEnabled(enabled: boolean, storage: SettingsStorage): Promise<void> {
   return writeSetting(MOOD_TRACKING_KEY, String(enabled), storage);
+}
+
+/** Visible unless the manager hides them, for example before sharing their screen. */
+export function areRiskIndicatorsHidden(storage: Pick<SettingsStorage, 'get'>): boolean {
+  return readSettings(storage)[HIDE_RISK_KEY] === 'true';
+}
+
+export function setRiskIndicatorsHidden(hidden: boolean, storage: SettingsStorage): Promise<void> {
+  return writeSetting(HIDE_RISK_KEY, String(hidden), storage);
 }
 
 /** On unless the manager turns them off, because live mode's shortcuts can clash with a browser's. */

@@ -15,6 +15,7 @@ import { ProfileHeader } from '../components/ProfileHeader';
 import { ProfileOverview } from '../components/ProfileOverview';
 import { NotesSection } from '../components/NotesSection';
 import { PrepPrompts } from '../components/PrepPrompts';
+import { PrivateNotes } from '../components/PrivateNotes';
 import { ReminderForm } from '../components/ReminderForm';
 import { ReminderList } from '../components/ReminderList';
 import { ScheduleCard } from '../components/ScheduleCard';
@@ -28,6 +29,7 @@ import { deleteLeaveForMember } from '../data/leave';
 import { deleteMember, getMember, listMembers, updateMember } from '../data/members';
 import { deleteMoodEntriesForMember } from '../data/moodEntries';
 import { deleteNotesForMember } from '../data/notes';
+import { deletePrivateNotesForMember } from '../data/privateStore';
 import { deleteRemindersForMember } from '../data/reminders';
 import { deleteTodosForMember } from '../data/todos';
 import { isMoodTrackingEnabled } from '../data/settings';
@@ -112,7 +114,7 @@ export function Profile() {
 
   const goToRoster = () => navigate('/roster');
 
-  // A removed person's 1:1 history, action items, decisions, tasks, reminders, key dates, leave, growth history and mood ratings must not linger in the
+  // A removed person's 1:1 history, action items, decisions, tasks, reminders, key dates, leave, growth history, private notes and mood ratings must not linger in the
   // encrypted store. Best effort: the person is already gone, so a failure here must not turn a
   // successful delete into an error.
   const purgePrivateData = async (memberId: string) => {
@@ -132,6 +134,7 @@ export function Profile() {
     await deleteDateEventsForMember(memberId, storage).catch(() => undefined);
     await deleteLeaveForMember(memberId, storage).catch(() => undefined);
     await deleteGrowthForMember(memberId, storage).catch(() => undefined);
+    await deletePrivateNotesForMember(memberId, storage).catch(() => undefined);
   };
 
   const handleDelete = async () => {
@@ -205,6 +208,7 @@ export function Profile() {
               <>
                 <ProfileOverview member={member} manager={manager} />
                 <KeyDates key={member.id} member={member} />
+                <PrivateNotes key={member.id} member={member} />
               </>
             ),
           },

@@ -10,6 +10,7 @@ export type {
   LeadTimeConfig,
   StoredDateEventType,
 } from './dateEvent';
+export type { FlightRiskLevel, PrivateNote } from './flightRisk';
 export type { GrowthChangeType, GrowthEntry, GrowthEntryInput } from './growth';
 export type { Note } from './Note';
 export type {

@@ -52,6 +52,21 @@ describe('Settings', () => {
     expect(screen.getByRole('switch', { name: 'Track energy/mood after 1:1s' })).toBeChecked();
   });
 
+  it('offers a Hide risk indicators switch, off by default, that stores the choice', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+    const toggle = screen.getByRole('switch', { name: 'Hide risk indicators' });
+    expect(toggle).not.toBeChecked();
+    expect(toggle).toHaveAccessibleDescription(/Hides the dots on the roster/);
+
+    await user.click(toggle);
+
+    expect(toggle).toBeChecked();
+    expect(screen.getByRole('status', { name: 'Stored settings' })).toHaveTextContent(
+      '"hideRiskIndicators":"true"',
+    );
+  });
+
   it('has no accessibility violations', async () => {
     const { container } = renderSettings();
 

@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom';
 import type { GapAlertData } from '../types/meeting';
 import type { TeamMember } from '../types/TeamMember';
 import '../styles/table.css';
-import { Avatar } from './Avatar';
 import { GapAlert } from './GapAlert';
 import { NewHireCountdown } from './NewHireCountdown';
 import { NextOneOnOne } from './NextOneOnOne';
+import { RosterAvatar } from './RosterAvatar';
 import { StatusBadge, toBadgeStatus } from './StatusBadge';
 
 interface RosterTableProps {
@@ -31,7 +31,7 @@ export function RosterTable({ members, gapAlerts }: RosterTableProps) {
           <tr key={member.id} className="roster-row" data-testid="member-row">
             <td>
               <div className="roster-identity">
-                <Avatar name={member.name} avatarUrl={member.avatarUrl} aria-hidden />
+                <RosterAvatar member={member} />
                 <div className="roster-identity__text">
                   <span className="roster-name">
                     <Link className="roster-link" to={`/person/${member.id}`}>

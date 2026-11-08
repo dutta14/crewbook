@@ -200,6 +200,14 @@ All colors via CSS variables. Never hardcode hex. Dark mode via `body.dark` clas
 | Private section header | `🔒 Private Notes` label with muted background `var(--bg2)` |
 | Confirmation dialogs | Yellow warning banner inside modal for privacy-changing actions |
 
+### Flight risk notes (private by design)
+
+- Notes and the derived level live only in the private envelope (`flightRisk` key, `src/data/privateStore.ts`). Notes are append-only: no edit, no single delete; they are purged when the member is deleted.
+- The dot (`FlightRiskIndicator`) puts the level in no attribute or class name. Screen readers get a visually hidden "Flight risk: High" text node, so it must never render inside a shared or exported view.
+- The section header uses `var(--card-bg)` rather than `var(--bg2)`: `--fg2` text on `--bg2` is 4.42:1, below WCAG AA.
+- Seam for sharing, export and summary features: never import `privateStore`, `PrivateNotes` or `FlightRiskIndicator` from share or export code, and build those payloads from an allowlist of fields.
+- The section collapses on tab blur and after five minutes idle (`usePrivateViewGuard`, timeout is a parameter for a future auto-lock setting). Envelope-level auto-lock is not part of this feature.
+
 ---
 
 ## Motion

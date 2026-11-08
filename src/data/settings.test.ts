@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import type { StorageWriteError } from '../utils/encryptedStorage';
 import {
   areLiveShortcutsEnabled,
+  areRiskIndicatorsHidden,
   dismissLiveNotice,
   isLiveNoticeDismissed,
   isMoodTrackingEnabled,
   setLiveShortcutsEnabled,
   setMoodTrackingEnabled,
+  setRiskIndicatorsHidden,
   type SettingsStorage,
 } from './settings';
 
@@ -47,6 +49,28 @@ describe('settings', () => {
     await expect(setMoodTrackingEnabled(true, storage)).rejects.toBe(failure);
 
     expect(isMoodTrackingEnabled(storage)).toBe(false);
+  });
+});
+
+describe('risk indicator setting', () => {
+  it('shows indicators until the manager hides them', async () => {
+    const { storage, store } = createStorage({ other: 'kept' });
+    expect(areRiskIndicatorsHidden(storage)).toBe(false);
+
+    await setRiskIndicatorsHidden(true, storage);
+
+    expect(areRiskIndicatorsHidden(storage)).toBe(true);
+    expect(store.get('settings')).toEqual({ other: 'kept', hideRiskIndicators: 'true' });
+  });
+
+  it('restores the previous value when the write fails', async () => {
+    const { storage } = createStorage();
+    const failure = new Error('full') as StorageWriteError;
+    storage.failWith = failure;
+
+    await expect(setRiskIndicatorsHidden(true, storage)).rejects.toBe(failure);
+
+    expect(areRiskIndicatorsHidden(storage)).toBe(false);
   });
 });
 

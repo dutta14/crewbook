@@ -192,7 +192,7 @@
     'next next next';
 }
 
-.roster-card > .avatar {
+.roster-card > .roster-avatar {
   grid-area: avatar;
 }
 

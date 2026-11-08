@@ -431,6 +431,62 @@ describe('Profile', () => {
     expect(screen.getByRole('status', { name: 'Remaining growth' })).not.toHaveTextContent(ALEX);
   });
 
+  it('deleting a member also purges their private notes but keeps everyone else’s', async () => {
+    const user = userEvent.setup();
+    function Remaining() {
+      const { getPrivate } = useEncryptedStorage();
+      const notes = getPrivate<Array<{ engineerId: string; text: string }>>('flightRisk') ?? [];
+      return (
+        <output aria-label="Remaining private notes">
+          {notes.map((note) => `${note.engineerId}:${note.text}`).join(',')}
+        </output>
+      );
+    }
+    const note = (engineerId: string, text: string) => ({
+      id: text,
+      engineerId,
+      text,
+      flightRisk: 'high',
+      createdAt: '2025-01-01T00:00:00.000Z',
+    });
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/roster" element={<h1>Roster page</h1>} />
+          <Route path="/person/:id" element={<Profile />} />
+        </Routes>
+        <Remaining />
+      </>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: { flightRisk: [note(ALEX, 'mine'), note(PRIYA, 'hers')] },
+      },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Delete Alex Chen' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Remaining private notes' })).toHaveTextContent(
+        `${PRIYA}:hers`,
+      ),
+    );
+    expect(screen.getByRole('status', { name: 'Remaining private notes' })).not.toHaveTextContent(
+      'mine',
+    );
+  });
+
+  it('shows the private notes section collapsed on the Overview tab', () => {
+    renderProfile(ALEX, team());
+
+    expect(
+      screen.getByRole('button', { name: 'Private Notes (visible only to you)' }),
+    ).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('profile with missing optional fields renders gracefully', () => {
     renderProfile(ALEX, [
       createMember({
