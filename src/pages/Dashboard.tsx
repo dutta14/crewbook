@@ -2,6 +2,7 @@ import { BriefingCelebrations } from '../components/BriefingCelebrations';
 import { BriefingEmptyState } from '../components/BriefingEmptyState';
 import { BriefingOnLeave } from '../components/BriefingOnLeave';
 import { BriefingTodos } from '../components/BriefingTodos';
+import { BriefingWhosOut } from '../components/BriefingWhosOut';
 import { DashboardReminders } from '../components/DashboardReminders';
 import { GapAlertCard } from '../components/GapAlert';
 import { TodaysOneOnes } from '../components/TodaysOneOnes';
@@ -56,6 +57,12 @@ export function Dashboard({ now }: DashboardProps) {
           />
           <BriefingCelebrations celebrations={sections.celebrations} members={members} index={4} />
           <BriefingOnLeave people={sections.onLeave} members={members} index={5} />
+          <BriefingWhosOut
+            people={sections.whosOut}
+            members={members}
+            today={briefing.isoDate}
+            index={6}
+          />
         </div>
       )}
     </div>

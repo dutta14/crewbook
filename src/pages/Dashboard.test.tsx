@@ -5,6 +5,7 @@ import { axe } from 'vitest-axe';
 import { describe, expect, it } from 'vitest';
 import {
   createActionItem,
+  createLeave,
   createMember,
   createNote,
   createReminder,
@@ -245,6 +246,92 @@ describe('Dashboard', () => {
       const row = within(section).getByRole('link', { name: 'Kai Mori, Away' });
       expect(row).toHaveAttribute('href', `/person/${member.id}`);
       expect(section.innerHTML).not.toMatch(/data-leave/);
+    });
+
+    it('labels people on leave today with their leave type from the calendar', async () => {
+      const kai = createMember({ name: 'Kai Mori', status: 'on_leave' });
+      renderDashboard({
+        initialData: { members: [ALEX, PRIYA, kai] },
+        initialPrivateData: {
+          leave: [
+            createLeave({
+              memberId: kai.id,
+              type: 'parental',
+              startDate: TODAY,
+              endDate: '2026-06-30',
+            }),
+            createLeave({
+              memberId: PRIYA.id,
+              type: 'sick',
+              startDate: '2026-06-14',
+              endDate: TODAY,
+            }),
+            createLeave({
+              memberId: ALEX.id,
+              type: 'pto',
+              startDate: '2026-06-16',
+              endDate: '2026-06-16',
+            }),
+          ],
+        },
+      });
+
+      const section = await screen.findByRole('region', { name: 'On Leave' });
+      expect(within(section).getByRole('link', { name: 'Kai Mori, Parental' })).toBeInTheDocument();
+      expect(within(section).getByRole('link', { name: 'Priya Nair, Sick' })).toBeInTheDocument();
+      expect(within(section).queryByText('Alex Chen')).not.toBeInTheDocument();
+      expect(within(section).queryByText('Away')).not.toBeInTheDocument();
+    });
+
+    it("lists this week's leave with dates and a type badge", async () => {
+      renderDashboard({
+        initialData: { members: [ALEX, PRIYA] },
+        initialPrivateData: {
+          leave: [
+            createLeave({
+              memberId: PRIYA.id,
+              type: 'sick',
+              startDate: '2026-06-17',
+              endDate: '2026-06-18',
+            }),
+            createLeave({
+              memberId: ALEX.id,
+              type: 'pto',
+              startDate: '2026-06-08',
+              endDate: '2026-06-15',
+            }),
+            createLeave({
+              memberId: ALEX.id,
+              type: 'pto',
+              startDate: '2026-06-22',
+              endDate: '2026-06-23',
+            }),
+          ],
+        },
+      });
+
+      const section = await screen.findByRole('region', { name: "Who's Out This Week" });
+      const rows = within(section).getAllByRole('link');
+      expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual([
+        'Alex Chen, PTO, Jun 8 to Jun 15',
+        'Priya Nair, Sick, Jun 17 to Jun 18',
+      ]);
+      expect(within(rows[1]).getByText('Sick')).toHaveAttribute('data-leave-type', 'sick');
+      expect(await axe(section)).toHaveNoViolations();
+    });
+
+    it('says nobody is out when the week has no leave', async () => {
+      renderDashboard({
+        initialData: { members: [ALEX] },
+        initialPrivateData: {
+          leave: [
+            createLeave({ memberId: ALEX.id, startDate: '2026-06-22', endDate: '2026-06-22' }),
+          ],
+        },
+      });
+
+      const section = await screen.findByRole('region', { name: "Who's Out This Week" });
+      expect(within(section).getByText('Nobody is out this week')).toBeInTheDocument();
     });
 
     it('shows a count for each section that is present', async () => {

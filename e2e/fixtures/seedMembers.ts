@@ -364,6 +364,49 @@ export async function seedTodos(page: Page, todos: SeedTodo[], passphrase = TEST
   ).toBeVisible();
 }
 
+export interface SeedLeave {
+  /** Index into the seeded list of members. */
+  memberIndex: number;
+  type: 'pto' | 'sick' | 'personal' | 'parental';
+  /** Days from today, inclusive. */
+  startInDays: number;
+  endInDays: number;
+}
+
+/** Writes leave into the private envelope. Seed members first. */
+export async function seedLeave(page: Page, leave: SeedLeave[], passphrase = TEST_PASSPHRASE) {
+  const at = new Date().toISOString();
+  const stored = leave.map(({ memberIndex, type, startInDays, endInDays }, index) => ({
+    id: `00000000-0000-4000-e000-${String(index).padStart(12, '0')}`,
+    memberId: seedId(memberIndex),
+    type,
+    startDate: isoDateInDays(startInDays),
+    endDate: isoDateInDays(endInDays),
+    createdAt: at,
+  }));
+  await page.evaluate(
+    async ({ data, secret }) => {
+      const modulePath = '/src/data/StorageManager.ts';
+      const { StorageManager } = (await import(
+        /* @vite-ignore */ modulePath
+      )) as typeof import('../../src/data/StorageManager');
+      const manager = new StorageManager();
+      await manager.unlock(secret);
+      await manager.loadPrivate();
+      manager.setPrivateData('leave', data);
+      const failure = await manager.flush();
+      if (failure) throw failure;
+      await manager.lock();
+    },
+    { data: stored, secret: passphrase },
+  );
+  await page.reload();
+  await unlock(page, passphrase);
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
+}
+
 export interface SeedDateEvent {
   /** Index into the seeded list of members. */
   memberIndex: number;

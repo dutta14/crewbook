@@ -18,6 +18,7 @@ export type {
   SnoozeOption,
   TriggerType,
 } from './reminder';
+export type { LeaveEntry, LeaveType } from './leave';
 export type { Priority, Todo, TodoFilters, TodoSortField, TodoStatus } from './todo';
 export type { Cadence, DayOfWeek, Schedule } from './Schedule';
 export type { TeamMember, TeamMemberInput, TeamMemberStatus, TeamMemberUpdate } from './TeamMember';

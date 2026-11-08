@@ -34,6 +34,15 @@
   --status-new-bg: #ccfbf1;
   --status-new-fg: #115e59;
 
+  /* Color: leave types. PTO, sick and personal reuse the status pairs; parental is its own. */
+  --leave-pto-bg: var(--status-active-bg);
+  --leave-pto-fg: var(--status-active-fg);
+  --leave-sick-bg: var(--status-on-leave-bg);
+  --leave-sick-fg: var(--status-on-leave-fg);
+  --leave-personal-bg: var(--status-new-bg);
+  --leave-personal-fg: var(--status-new-fg);
+  --leave-parental-bg: #ede9fe;
+  --leave-parental-fg: #5b21b6;
   /* Typography */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
@@ -117,4 +126,14 @@ body.dark {
   --status-departing-fg: #fca5a5;
   --status-new-bg: #134e4a;
   --status-new-fg: #5eead4;
+
+  /* Restated here: a var() reference resolves where it is declared, so :root would keep light. */
+  --leave-pto-bg: var(--status-active-bg);
+  --leave-pto-fg: var(--status-active-fg);
+  --leave-sick-bg: var(--status-on-leave-bg);
+  --leave-sick-fg: var(--status-on-leave-fg);
+  --leave-personal-bg: var(--status-new-bg);
+  --leave-personal-fg: var(--status-new-fg);
+  --leave-parental-bg: #4c1d95;
+  --leave-parental-fg: #c4b5fd;
 }

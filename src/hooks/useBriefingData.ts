@@ -1,13 +1,20 @@
 import { useMemo } from 'react';
 import { listAll } from '../data/actionItems';
+import { leaveCoversDay, leaveOverlapsRange, LEAVE_TYPE_LABELS } from '../data/leave';
 import { listMembers } from '../data/members';
 import { listNotes } from '../data/notes';
 import { sortTodos } from '../data/todos';
-import type { BriefingCelebration, BriefingData } from '../types/briefing';
+import type {
+  BriefingCelebration,
+  BriefingData,
+  BriefingLeave,
+  BriefingWhosOut,
+} from '../types/briefing';
 import type { DateReminderData } from '../types/dateEvent';
 import type { SnoozeOption } from '../types/reminder';
 import type { TeamMember } from '../types/TeamMember';
 import { formatBriefingDate, getGreeting } from '../utils/briefingFormat';
+import { getWeekDays } from '../utils/calendarDates';
 import { isSensitiveDateEvent } from '../utils/dateEventFormat';
 import {
   getNextUpcoming,
@@ -19,6 +26,7 @@ import { formatUpcomingDay } from '../utils/scheduleFormat';
 import { formatStartDate } from '../utils/startDate';
 import { useDateReminders } from './useDateEvents';
 import { useEncryptedStorage } from './useEncryptedStorage';
+import { useLeave } from './useLeave';
 import { useGapAlerts } from './useMeetingStats';
 import { usePrivateEnvelope } from './usePrivateEnvelope';
 import { useReminders } from './useReminders';
@@ -66,6 +74,7 @@ export function useBriefingData(now?: Date): UseBriefingData {
   const dateReminders = useDateReminders(clock);
   const overdueMeetings = useGapAlerts();
   const { todos, toggleStatus } = useTodos();
+  const { entries: leave } = useLeave();
 
   const members = useMemo(() => listMembers(storage), [storage]);
   const isoDate = toIsoDate(clock);
@@ -111,13 +120,49 @@ export function useBriefingData(now?: Date): UseBriefingData {
     [dateReminders],
   );
 
-  const onLeave = useMemo(
-    () =>
-      members
-        .filter((member) => member.status === 'on_leave')
-        .map((member) => ({ engineerId: member.id, name: member.name, leaveType: 'Away' })),
-    [members],
-  );
+  const onLeave = useMemo<BriefingLeave[]>(() => {
+    if (!isReady) return [];
+    const names = new Map(members.map((member) => [member.id, member.name]));
+    const coveringToday = new Map<string, BriefingLeave>();
+    for (const entry of leave) {
+      const name = names.get(entry.memberId);
+      if (name && leaveCoversDay(entry, isoDate) && !coveringToday.has(entry.memberId)) {
+        coveringToday.set(entry.memberId, {
+          engineerId: entry.memberId,
+          name,
+          leaveType: LEAVE_TYPE_LABELS[entry.type],
+          leaveKind: entry.type,
+        });
+      }
+    }
+    // A member marked "on leave" with no calendar entry still shows, without a type.
+    for (const member of members) {
+      if (member.status === 'on_leave' && !coveringToday.has(member.id)) {
+        coveringToday.set(member.id, {
+          engineerId: member.id,
+          name: member.name,
+          leaveType: 'Away',
+        });
+      }
+    }
+    return [...coveringToday.values()];
+  }, [isReady, isoDate, leave, members]);
+
+  const whosOut = useMemo<BriefingWhosOut[]>(() => {
+    if (!isReady) return [];
+    const week = getWeekDays(isoDate);
+    const names = new Map(members.map((member) => [member.id, member.name]));
+    return leave
+      .filter((entry) => names.has(entry.memberId) && leaveOverlapsRange(entry, week[0], week[6]))
+      .map((entry) => ({
+        id: entry.id,
+        engineerId: entry.memberId,
+        name: names.get(entry.memberId) ?? '',
+        leaveKind: entry.type,
+        startDate: entry.startDate,
+        endDate: entry.endDate,
+      }));
+  }, [isReady, isoDate, leave, members]);
 
   const nextDay = nextMeeting ? formatUpcomingDay(nextMeeting.date, clock) : null;
   const nextMeetingInfo =
@@ -131,6 +176,7 @@ export function useBriefingData(now?: Date): UseBriefingData {
     importantDates,
     celebrations,
     onLeave,
+    whosOut,
   };
   const isEmpty = Object.values(sections).every((items) => items.length === 0);
 

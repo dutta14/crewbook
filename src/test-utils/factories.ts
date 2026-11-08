@@ -2,6 +2,7 @@ import type {
   ActionItem,
   Decision,
   FollowUp,
+  LeaveEntry,
   MoodEntry,
   Note,
   Reminder,
@@ -92,6 +93,18 @@ export function createFollowUp(overrides: Partial<FollowUp> = {}): FollowUp {
     status: 'pending',
     linkedMeetingId: crypto.randomUUID(),
     linkedMeetingDate: '2025-01-15',
+    createdAt: now(),
+    ...overrides,
+  };
+}
+
+export function createLeave(overrides: Partial<LeaveEntry> = {}): LeaveEntry {
+  return {
+    id: crypto.randomUUID(),
+    memberId: crypto.randomUUID(),
+    type: 'pto',
+    startDate: '2026-06-15',
+    endDate: '2026-06-15',
     createdAt: now(),
     ...overrides,
   };

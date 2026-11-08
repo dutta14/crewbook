@@ -6,6 +6,7 @@ import {
   isoDateInDays,
   isoDateYearsAgo,
   seedDateEvents,
+  seedLeave,
   seedMembers,
   seedReminders,
   seedTodos,
@@ -166,6 +167,73 @@ test.describe('daily briefing dashboard', () => {
     ).toBeVisible();
   });
 
-  // Not covered here: the PTO / Sick / Parental leave colour pairs. The PTO calendar (#22) is not
-  // built yet, so a leave type is not recorded and every absence reads "Away".
+  test('labels each person on leave with their leave type and colour, in light and dark', async ({
+    unlockedApp: page,
+  }) => {
+    await seedMembers(page, [
+      { ...ALICE, ...NEW_ENOUGH },
+      { ...BOB, ...NEW_ENOUGH },
+      { ...CARMEN, ...NEW_ENOUGH },
+      { ...SEED_TEAM[3], ...NEW_ENOUGH },
+    ]);
+    await seedLeave(page, [
+      { memberIndex: 0, type: 'pto', startInDays: 0, endInDays: 0 },
+      { memberIndex: 1, type: 'parental', startInDays: -2, endInDays: 20 },
+      { memberIndex: 2, type: 'sick', startInDays: -1, endInDays: 1 },
+      { memberIndex: 3, type: 'personal', startInDays: 0, endInDays: 2 },
+    ]);
+
+    const onLeave = section(page, 'On Leave');
+    await expect(onLeave.getByRole('link', { name: 'Alice Park, PTO' })).toBeVisible();
+    await expect(onLeave.getByRole('link', { name: 'Bob Singh, Parental' })).toBeVisible();
+    await expect(onLeave.getByRole('link', { name: 'Carmen Diaz, Sick' })).toBeVisible();
+    await expect(onLeave.getByRole('link', { name: 'Dev Patel, Personal' })).toBeVisible();
+    await expect(onLeave.getByText('Away')).toHaveCount(0);
+
+    const badge = (type: string) => onLeave.locator(`[data-leave-type="${type}"]`);
+    const light = {
+      pto: ['rgb(209, 250, 229)', 'rgb(6, 95, 70)'],
+      sick: ['rgb(254, 243, 199)', 'rgb(146, 64, 14)'],
+      personal: ['rgb(204, 251, 241)', 'rgb(17, 94, 89)'],
+      parental: ['rgb(237, 233, 254)', 'rgb(91, 33, 182)'],
+    };
+    for (const [type, [background, color]] of Object.entries(light)) {
+      await expect(badge(type)).toHaveCSS('background-color', background);
+      await expect(badge(type)).toHaveCSS('color', color);
+    }
+    await expectNoViolations(page);
+
+    await page.getByRole('button', { name: 'Toggle dark mode' }).click();
+    await expect(page.locator('body')).toHaveClass(/dark/);
+    const dark = {
+      pto: ['rgb(6, 78, 59)', 'rgb(110, 231, 183)'],
+      sick: ['rgb(120, 53, 15)', 'rgb(252, 211, 77)'],
+      personal: ['rgb(19, 78, 74)', 'rgb(94, 234, 212)'],
+      parental: ['rgb(76, 29, 149)', 'rgb(196, 181, 253)'],
+    };
+    for (const [type, [background, color]] of Object.entries(dark)) {
+      await expect(badge(type)).toHaveCSS('background-color', background);
+      await expect(badge(type)).toHaveCSS('color', color);
+    }
+    await expectNoViolations(page);
+  });
+
+  test("lists this week's leave with dates and falls back to Away without an entry", async ({
+    unlockedApp: page,
+  }) => {
+    await seedMembers(page, [
+      { ...ALICE, ...NEW_ENOUGH },
+      { ...BOB, ...NEW_ENOUGH },
+    ]);
+    // A leave that ended well before this week, and one that starts after it, are not listed.
+    await seedLeave(page, [
+      { memberIndex: 0, type: 'pto', startInDays: -30, endInDays: -20 },
+      { memberIndex: 0, type: 'sick', startInDays: 21, endInDays: 22 },
+    ]);
+
+    await expect(
+      section(page, 'On Leave').getByRole('link', { name: 'Bob Singh, Away' }),
+    ).toBeVisible();
+    await expect(section(page, "Who's Out This Week")).toContainText('Nobody is out this week');
+  });
 });

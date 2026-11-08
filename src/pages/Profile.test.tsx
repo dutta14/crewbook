@@ -8,6 +8,7 @@ import {
   createActionItem,
   createDecision,
   createFollowUp,
+  createLeave,
   createMember,
   createMoodEntry,
   createNote,
@@ -547,6 +548,48 @@ describe('Profile', () => {
     await waitFor(() =>
       expect(screen.getByRole('status', { name: 'Remaining tasks' })).toHaveTextContent(
         /^About Priya,Unlinked$/,
+      ),
+    );
+  });
+
+  it("deleting a member also purges their leave but keeps everyone else's", async () => {
+    const user = userEvent.setup();
+    function RemainingLeave() {
+      const { getPrivate } = useEncryptedStorage();
+      const entries = getPrivate<Array<{ memberId: string }>>('leave') ?? [];
+      return (
+        <output aria-label="Remaining leave">{entries.map((e) => e.memberId).join(',')}</output>
+      );
+    }
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/roster" element={<h1>Roster page</h1>} />
+          <Route path="/person/:id" element={<Profile />} />
+        </Routes>
+        <RemainingLeave />
+      </>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          leave: [
+            createLeave({ memberId: ALEX, type: 'sick' }),
+            createLeave({ memberId: PRIYA }),
+            createLeave({ memberId: ALEX }),
+          ],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Delete Alex Chen' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Remaining leave' })).toHaveTextContent(
+        new RegExp(`^${PRIYA}$`),
       ),
     );
   });

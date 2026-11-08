@@ -4,6 +4,7 @@ import type { TeamMember } from '../types/TeamMember';
 import '../styles/todays-one-ones.css';
 import { Avatar } from './Avatar';
 import { BriefingSection } from './BriefingSection';
+import { LeaveTypeBadge } from './LeaveTypeBadge';
 
 interface BriefingOnLeaveProps {
   people: BriefingLeave[];
@@ -12,10 +13,7 @@ interface BriefingOnLeaveProps {
   index?: number;
 }
 
-/**
- * Who is away. The label is kept to "Away" because a specific kind of leave can reveal health or
- * family details, and it stays out of attributes, titles and the URL.
- */
+/** Who is away today, with the kind of leave. It stays out of titles and the URL. */
 export function BriefingOnLeave({ people, members, index }: BriefingOnLeaveProps) {
   return (
     <BriefingSection id="on-leave" title="On Leave" count={people.length} index={index}>
@@ -41,7 +39,7 @@ export function BriefingOnLeave({ people, members, index }: BriefingOnLeaveProps
                   />
                   <span className="digest-row__name">{person.name}</span>
                 </span>
-                <span className="briefing-badge briefing-badge--leave">{person.leaveType}</span>
+                <LeaveTypeBadge type={person.leaveKind} label={person.leaveType} />
               </Link>
             </li>
           ))}

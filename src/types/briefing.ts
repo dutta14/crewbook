@@ -1,4 +1,5 @@
 import type { DateReminderData } from './dateEvent';
+import type { LeaveType } from './leave';
 import type { GapAlertData } from './meeting';
 import type { Reminder } from './reminder';
 import type { Priority, TodoStatus } from './todo';
@@ -34,8 +35,22 @@ export interface BriefingCelebration {
 export interface BriefingLeave {
   engineerId: string;
   name: string;
-  /** "Away" until the PTO calendar records a leave type. */
+  /** "PTO", "Sick", "Personal" or "Parental"; "Away" when only the member's status says so. */
   leaveType: string;
+  /** Picks the badge colour. Absent for "Away". */
+  leaveKind?: LeaveType;
+}
+
+export interface BriefingWhosOut {
+  /** The leave entry. A person with two entries this week appears twice. */
+  id: string;
+  engineerId: string;
+  name: string;
+  leaveKind: LeaveType;
+  /** YYYY-MM-DD */
+  startDate: string;
+  /** YYYY-MM-DD */
+  endDate: string;
 }
 
 /** Everything the dashboard shows, derived from decrypted in-memory data and never stored. */
@@ -55,6 +70,8 @@ export interface BriefingData {
     importantDates: DateReminderData[];
     celebrations: BriefingCelebration[];
     onLeave: BriefingLeave[];
+    /** Leave overlapping the Monday to Sunday week that holds today, earliest start first. */
+    whosOut: BriefingWhosOut[];
   };
   isEmpty: boolean;
   /** "Your next 1:1 is with Dana on Thursday." Only set when there is no 1:1 today. */
