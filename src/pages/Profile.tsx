@@ -5,6 +5,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DecisionsPanel } from '../components/DecisionsPanel';
 import { EmptyState } from '../components/EmptyState';
 import { TeamIcon } from '../components/icons';
+import { KeyDates } from '../components/KeyDates';
 import { LiveMode } from '../components/LiveMode';
 import { MeetingsPanel } from '../components/MeetingsPanel';
 import { MoodPrompt } from '../components/MoodPrompt';
@@ -20,6 +21,7 @@ import { Tabs } from '../components/Tabs';
 import { Timeline } from '../components/Timeline';
 import { deleteActionItemsForMember } from '../data/actionItems';
 import { deleteDecisionsForMember } from '../data/decisions';
+import { deleteDateEventsForMember } from '../data/dateEvents';
 import { deleteMember, getMember, listMembers, updateMember } from '../data/members';
 import { deleteMoodEntriesForMember } from '../data/moodEntries';
 import { deleteNotesForMember } from '../data/notes';
@@ -107,7 +109,7 @@ export function Profile() {
 
   const goToRoster = () => navigate('/roster');
 
-  // A removed person's 1:1 history, action items, decisions, tasks, reminders and mood ratings must not linger in the
+  // A removed person's 1:1 history, action items, decisions, tasks, reminders, key dates and mood ratings must not linger in the
   // encrypted store. Best effort: the person is already gone, so a failure here must not turn a
   // successful delete into an error.
   const purgePrivateData = async (memberId: string) => {
@@ -124,6 +126,7 @@ export function Profile() {
     await deleteDecisionsForMember(memberId, storage).catch(() => undefined);
     await deleteTodosForMember(memberId, storage).catch(() => undefined);
     await deleteRemindersForMember(memberId, storage).catch(() => undefined);
+    await deleteDateEventsForMember(memberId, storage).catch(() => undefined);
   };
 
   const handleDelete = async () => {
@@ -193,7 +196,12 @@ export function Profile() {
           {
             id: 'overview',
             label: 'Overview',
-            content: <ProfileOverview member={member} manager={manager} />,
+            content: (
+              <>
+                <ProfileOverview member={member} manager={manager} />
+                <KeyDates key={member.id} member={member} />
+              </>
+            ),
           },
           {
             id: 'notes',

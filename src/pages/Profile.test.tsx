@@ -358,7 +358,9 @@ describe('Profile', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Sam Lee' })).toBeInTheDocument();
     const overview = screen.getByRole('tabpanel', { name: 'Overview' });
-    expect(within(overview).getAllByText('Not set')).toHaveLength(4);
+    const keyDates = within(overview).getByRole('region', { name: 'Key Dates' });
+    expect(within(keyDates).getAllByText('Not set')).toHaveLength(3);
+    expect(within(overview).getAllByText('Not set')).toHaveLength(7);
   });
 
   it('renders freeform custom field content as text, not markup', () => {
@@ -588,6 +590,53 @@ describe('Profile', () => {
         /^About Priya$/,
       ),
     );
+  });
+
+  it('deleting a member also purges their key dates but keeps everyone else’s', async () => {
+    const user = userEvent.setup();
+    function RemainingDates() {
+      const { getPrivate } = useEncryptedStorage();
+      const dates = getPrivate<Array<{ engineerId: string }>>('dateEvents') ?? [];
+      return (
+        <output aria-label="Remaining dates">
+          {dates.map((d) => (d.engineerId === ALEX ? 'alex' : 'priya')).join(',')}
+        </output>
+      );
+    }
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/roster" element={<h1>Roster page</h1>} />
+          <Route path="/person/:id" element={<Profile />} />
+        </Routes>
+        <RemainingDates />
+      </>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          dateEvents: [
+            { engineerId: ALEX, type: 'visa_expiry', date: '2030-01-01' },
+            { engineerId: PRIYA, type: 'visa_expiry', date: '2030-01-01' },
+          ],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Delete Alex Chen' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Remaining dates' })).toHaveTextContent(/^priya$/),
+    );
+  });
+
+  it('shows the Key Dates section on the Overview tab', () => {
+    renderProfile(ALEX);
+
+    expect(screen.getByRole('region', { name: 'Key Dates' })).toBeInTheDocument();
   });
 
   it('adds a reminder from the profile and lists it under Reminders', async () => {

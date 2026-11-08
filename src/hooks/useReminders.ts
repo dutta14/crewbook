@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   createReminder as createReminderRecord,
   dismissReminder as dismissReminderRecord,
@@ -11,6 +11,7 @@ import {
 import { ValidationError } from '../data/errors';
 import type { Reminder, ReminderContext, SnoozeOption } from '../types/reminder';
 import { useEncryptedStorage } from './useEncryptedStorage';
+import { usePrivateEnvelope } from './usePrivateEnvelope';
 import { useToast } from './useToast';
 
 const SAVE_FAILED = "Couldn't save your reminder. Try again.";
@@ -50,20 +51,8 @@ export interface UseReminders {
 
 export function useReminders({ personId, context, now }: UseRemindersOptions = {}): UseReminders {
   const storage = useEncryptedStorage();
-  const { isPrivateUnlocked, loadPrivate } = storage;
+  const { isReady: isPrivateUnlocked, loadFailed } = usePrivateEnvelope();
   const { showToast } = useToast();
-  const [loadFailed, setLoadFailed] = useState(false);
-
-  useEffect(() => {
-    if (isPrivateUnlocked) return undefined;
-    let isCurrent = true;
-    loadPrivate().catch(() => {
-      if (isCurrent) setLoadFailed(true);
-    });
-    return () => {
-      isCurrent = false;
-    };
-  }, [isPrivateUnlocked, loadPrivate]);
 
   // `storage` is a new value after every write, so these follow edits made while on screen.
   const reminders = useMemo(

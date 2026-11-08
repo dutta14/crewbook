@@ -5,11 +5,9 @@ import { SEED_TEAM, seedId, seedMembers, seedReminders } from './fixtures/seedMe
 
 const TEAM = SEED_TEAM.slice(0, 2);
 
-const expectNoViolations = async (page: Page, exclude?: string) => {
+const expectNoViolations = async (page: Page) => {
   await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
-  const axe = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']);
-  if (exclude) axe.exclude(exclude);
-  const { violations } = await axe.analyze();
+  const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
   expect(violations).toEqual([]);
 };
 
@@ -152,7 +150,7 @@ test.describe('contextual reminders', () => {
     await expect(page.getByText('Check on the offsite')).toBeVisible();
   });
 
-  test('the profile lists active reminders, then past ones below a divider at reduced opacity', async ({
+  test('the profile lists active reminders, then past ones below a divider with a dashed outline', async ({
     unlockedApp: page,
   }) => {
     await seedReminders(
@@ -175,9 +173,9 @@ test.describe('contextual reminders', () => {
     const past = page.getByRole('region', { name: 'Past reminders' });
     await expect(past.getByText('Already done')).toBeVisible();
     await expect(page.getByRole('separator')).toBeVisible();
-    await expect(past.locator('.reminder-card')).toHaveCSS('opacity', '0.6');
+    await expect(past.locator('.reminder-card')).toHaveCSS('border-top-style', 'dashed');
+    await expect(past.locator('.reminder-card')).toHaveCSS('opacity', '1');
     await expect(past.getByRole('button')).toHaveCount(0);
-    // Past reminders are dimmed to 0.6 opacity by design, so their text is outside the contrast rule.
-    await expectNoViolations(page, '.reminder-card--past');
+    await expectNoViolations(page);
   });
 });

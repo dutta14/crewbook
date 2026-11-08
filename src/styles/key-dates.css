@@ -1,0 +1,314 @@
+/* Key dates on a profile */
+.key-dates {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+}
+
+.key-dates__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.key-dates__title {
+  margin: 0;
+  color: var(--fg2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.key-dates__reveal {
+  min-height: 44px;
+}
+
+.key-dates__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.key-dates__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-4);
+  min-height: 44px;
+}
+
+.key-dates__label {
+  flex: none;
+  width: 140px;
+  color: var(--fg2);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.key-dates__value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg);
+  font-size: 14px;
+}
+
+.key-dates__auto {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+.key-dates__empty {
+  margin: 0;
+  color: var(--fg2);
+  font-size: 14px;
+}
+
+.key-dates__unset,
+.key-dates__edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--space-1);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--fg2);
+  font: inherit;
+  cursor: pointer;
+}
+
+.key-dates__unset {
+  font-size: 14px;
+  text-decoration: underline dashed;
+  text-underline-offset: 4px;
+}
+
+.key-dates__unset:hover,
+.key-dates__edit:hover {
+  background: var(--accent-subtle);
+}
+
+.key-dates__unset:focus-visible,
+.key-dates__edit:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring);
+}
+
+.key-dates__edit {
+  opacity: 0;
+  transition: opacity var(--transition-fast) var(--ease-out);
+}
+
+.key-dates__row:hover .key-dates__edit,
+.key-dates__edit:focus-visible {
+  opacity: 1;
+}
+
+/* There is no hover on touch screens, so the edit icon is always visible. */
+@media (hover: none) {
+  .key-dates__edit {
+    opacity: 1;
+  }
+}
+
+.key-dates__form {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.key-dates__input {
+  min-height: 44px;
+}
+
+.key-dates__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.key-dates__button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.key-dates__error {
+  flex-basis: 100%;
+}
+
+.date-input--entering {
+  animation: field-reveal var(--transition-normal) var(--ease-out);
+}
+
+@keyframes field-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sensitive-date-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.sensitive-date-value {
+  animation: sensitive-date-in var(--transition-fast) var(--ease-out);
+}
+
+@media (max-width: 479.98px) {
+  .key-dates__label {
+    width: 100%;
+  }
+}
+
+/* Date reminder cards on the dashboard */
+.reminder-card.date-reminder-card {
+  animation: card-enter var(--transition-normal) var(--ease-out) forwards;
+  animation-delay: calc(var(--card-index, 0) * 30ms);
+  opacity: 0;
+}
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.date-reminder__starter {
+  margin: var(--space-1) 0 0;
+  color: var(--fg2);
+  font-size: 14px;
+  font-style: italic;
+}
+
+.date-reminder__toggle {
+  min-height: 44px;
+  margin-top: var(--space-1);
+  margin-left: calc(var(--space-3) * -1);
+}
+
+/* Reminder lead times in settings */
+.lead-times {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.lead-times th,
+.lead-times td {
+  padding: var(--space-2) 0;
+  font-size: var(--text-body);
+  text-align: left;
+  vertical-align: top;
+}
+
+.lead-times thead th {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-weight: 500;
+}
+
+.lead-times tbody th {
+  padding-right: var(--space-4);
+  font-weight: 400;
+}
+
+.lead-times tbody th label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.lead-times__help {
+  margin: 0 0 var(--space-3);
+}
+
+.lead-times__control {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg2);
+}
+
+.lead-times__input {
+  width: 60px;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  text-align: center;
+}
+
+.lead-times__error {
+  display: block;
+  margin-top: var(--space-1);
+}
+
+.lead-times__save {
+  min-height: 44px;
+  margin-top: var(--space-4);
+}
+
+@media (max-width: 767.98px) {
+  .lead-times,
+  .lead-times tbody,
+  .lead-times tr,
+  .lead-times th,
+  .lead-times td {
+    display: block;
+  }
+
+  .lead-times thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .lead-times tr {
+    padding: var(--space-2) 0;
+  }
+
+  .lead-times tbody th {
+    padding-bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .date-input--entering,
+  .sensitive-date-value,
+  .key-dates__edit {
+    animation: none;
+    transition: none;
+  }
+
+  .reminder-card.date-reminder-card {
+    animation: none;
+    opacity: 1;
+  }
+}

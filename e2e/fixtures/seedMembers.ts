@@ -120,12 +120,16 @@ export interface SeedActionItem {
   status?: 'open' | 'done' | 'cancelled';
 }
 
-const isoDateInDays = (days: number) => {
+export const isoDateInDays = (days: number) => {
   const date = new Date();
   date.setDate(date.getDate() + days);
   const pad = (value: number) => String(value).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 };
+
+/** Today's date, a whole number of years back, e.g. for an anniversary or birthday that is today. */
+export const isoDateYearsAgo = (years: number) =>
+  `${Number(isoDateInDays(0).slice(0, 4)) - years}${isoDateInDays(0).slice(4)}`;
 
 /** Writes action items, owned by the manager, into the private envelope. Seed members first. */
 export async function seedActionItems(
@@ -337,6 +341,46 @@ export async function seedTodos(page: Page, todos: SeedTodo[], passphrase = TEST
       await manager.unlock(secret);
       await manager.loadPrivate();
       manager.setPrivateData('todos', data);
+      const failure = await manager.flush();
+      if (failure) throw failure;
+      await manager.lock();
+    },
+    { data: stored, secret: passphrase },
+  );
+  await page.reload();
+  await unlock(page, passphrase);
+  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+}
+
+export interface SeedDateEvent {
+  /** Index into the seeded list of members. */
+  memberIndex: number;
+  type: 'visa_expiry' | 'probation_end' | 'birthday';
+  /** YYYY-MM-DD */
+  date: string;
+}
+
+/** Writes key dates into the private envelope. Seed members first, since each is about one. */
+export async function seedDateEvents(
+  page: Page,
+  events: SeedDateEvent[],
+  passphrase = TEST_PASSPHRASE,
+) {
+  const stored = events.map(({ memberIndex, type, date }) => ({
+    engineerId: seedId(memberIndex),
+    type,
+    date,
+  }));
+  await page.evaluate(
+    async ({ data, secret }) => {
+      const modulePath = '/src/data/StorageManager.ts';
+      const { StorageManager } = (await import(
+        /* @vite-ignore */ modulePath
+      )) as typeof import('../../src/data/StorageManager');
+      const manager = new StorageManager();
+      await manager.unlock(secret);
+      await manager.loadPrivate();
+      manager.setPrivateData('dateEvents', data);
       const failure = await manager.flush();
       if (failure) throw failure;
       await manager.lock();

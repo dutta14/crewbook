@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { LeadTimeSettings } from '../components/LeadTimeSettings';
 import { isMoodTrackingEnabled, setMoodTrackingEnabled } from '../data/settings';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { useToast } from '../hooks/useToast';
@@ -53,6 +54,7 @@ export function Settings() {
           </span>
         </div>
       </section>
+      <LeadTimeSettings />
     </>
   );
 }

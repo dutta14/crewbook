@@ -228,3 +228,33 @@ export function BellIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function PassportIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="4" y="2" width="16" height="20" rx="2" />
+      <circle cx="12" cy="10" r="3" />
+      <path d="M8 17h8" />
+    </Icon>
+  );
+}
+
+export function CakeIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
+      <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1" />
+      <path d="M2 21h20" />
+      <path d="M7 8v3M12 8v3M17 8v3" />
+      <path d="M7 4h.01M12 4h.01M17 4h.01" />
+    </Icon>
+  );
+}
+
+export function StarIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z" />
+    </Icon>
+  );
+}

@@ -63,8 +63,10 @@
   box-shadow: var(--focus-ring);
 }
 
+/* Dimmed with colour and a dashed edge rather than opacity, which would drop the text below 4.5:1. */
 .reminder-card--past {
-  opacity: 0.6;
+  border-style: dashed;
+  background: transparent;
 }
 
 .reminder-card--past .reminder-card__text {
@@ -272,6 +274,12 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.reminders-card__lists {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .reminder-list {

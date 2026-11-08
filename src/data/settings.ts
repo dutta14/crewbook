@@ -15,12 +15,21 @@ function readSettings(storage: Pick<SettingsStorage, 'get'>): Record<string, str
     : {};
 }
 
+export function getSetting(storage: Pick<SettingsStorage, 'get'>, key: string): string | undefined {
+  const value = readSettings(storage)[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
 /** Off until the manager opts in, because ratings are a private judgement about a person. */
 export function isMoodTrackingEnabled(storage: Pick<SettingsStorage, 'get'>): boolean {
   return readSettings(storage)[MOOD_TRACKING_KEY] === 'true';
 }
 
-async function writeSetting(key: string, value: string, storage: SettingsStorage): Promise<void> {
+export async function writeSetting(
+  key: string,
+  value: string,
+  storage: SettingsStorage,
+): Promise<void> {
   const previous = readSettings(storage);
   storage.set(STORAGE_KEY, { ...previous, [key]: value });
   const failure = await storage.flush();
