@@ -304,3 +304,46 @@ export const SEED_TEAM: SeedMember[] = [
     startDate: '2099-06-15',
   },
 ];
+
+export interface SeedTodo {
+  title: string;
+  /** Days from today; negative is overdue. Omit for no due date. */
+  dueInDays?: number;
+  priority?: 'high' | 'medium' | 'low';
+  status?: 'todo' | 'in_progress' | 'done';
+  /** Index into the seeded list of members. */
+  memberIndex?: number;
+}
+
+/** Writes personal tasks into the private envelope. Seed members first when linking people. */
+export async function seedTodos(page: Page, todos: SeedTodo[], passphrase = TEST_PASSPHRASE) {
+  const at = new Date().toISOString();
+  const stored = todos.map(({ title, dueInDays, priority, status, memberIndex }, index) => ({
+    id: `00000000-0000-4000-c000-${String(index).padStart(12, '0')}`,
+    title,
+    ...(dueInDays === undefined ? {} : { dueDate: isoDateInDays(dueInDays) }),
+    priority: priority ?? 'medium',
+    status: status ?? 'todo',
+    ...(memberIndex === undefined ? {} : { linkedPersonId: seedId(memberIndex) }),
+    createdAt: at,
+  }));
+  await page.evaluate(
+    async ({ data, secret }) => {
+      const modulePath = '/src/data/StorageManager.ts';
+      const { StorageManager } = (await import(
+        /* @vite-ignore */ modulePath
+      )) as typeof import('../../src/data/StorageManager');
+      const manager = new StorageManager();
+      await manager.unlock(secret);
+      await manager.loadPrivate();
+      manager.setPrivateData('todos', data);
+      const failure = await manager.flush();
+      if (failure) throw failure;
+      await manager.lock();
+    },
+    { data: stored, secret: passphrase },
+  );
+  await page.reload();
+  await unlock(page, passphrase);
+  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+}

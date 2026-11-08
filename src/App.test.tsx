@@ -47,6 +47,7 @@ describe('App', () => {
       'Team',
       'Action Items',
       'Decisions & Follow-ups',
+      'Tasks',
       'Calendar',
       'Settings',
     ]);

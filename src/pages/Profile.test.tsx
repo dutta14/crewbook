@@ -11,6 +11,7 @@ import {
   createMember,
   createMoodEntry,
   createNote,
+  createTodo,
 } from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
 import type { TeamMember } from '../types/TeamMember';
@@ -503,6 +504,46 @@ describe('Profile', () => {
     await waitFor(() =>
       expect(screen.getByRole('status', { name: 'Remaining items' })).toHaveTextContent(
         /^Priya item$/,
+      ),
+    );
+  });
+
+  it('deleting a member also purges tasks linked to them but keeps the rest', async () => {
+    const user = userEvent.setup();
+    function RemainingTodos() {
+      const { getPrivate } = useEncryptedStorage();
+      const todos = getPrivate<Array<{ title: string }>>('todos') ?? [];
+      return <output aria-label="Remaining tasks">{todos.map((t) => t.title).join(',')}</output>;
+    }
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/roster" element={<h1>Roster page</h1>} />
+          <Route path="/person/:id" element={<Profile />} />
+        </Routes>
+        <RemainingTodos />
+      </>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          todos: [
+            createTodo({ title: 'About Alex', linkedPersonId: ALEX }),
+            createTodo({ title: 'About Priya', linkedPersonId: PRIYA }),
+            createTodo({ title: 'Unlinked' }),
+          ],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Delete Alex Chen' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Remaining tasks' })).toHaveTextContent(
+        /^About Priya,Unlinked$/,
       ),
     );
   });

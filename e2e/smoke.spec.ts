@@ -15,7 +15,7 @@ test.describe('app shell', () => {
   test('shows the main navigation and navigates between pages', async ({ unlockedApp: page }) => {
     const nav = page.getByRole('navigation', { name: 'Main navigation' });
 
-    await expect(nav.getByRole('link')).toHaveCount(6);
+    await expect(nav.getByRole('link')).toHaveCount(7);
     await nav.getByRole('link', { name: 'Team' }).click();
 
     await expect(page).toHaveURL(/#\/roster$/);

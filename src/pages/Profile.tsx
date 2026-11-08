@@ -21,6 +21,7 @@ import { deleteDecisionsForMember } from '../data/decisions';
 import { deleteMember, getMember, listMembers, updateMember } from '../data/members';
 import { deleteMoodEntriesForMember } from '../data/moodEntries';
 import { deleteNotesForMember } from '../data/notes';
+import { deleteTodosForMember } from '../data/todos';
 import { isMoodTrackingEnabled } from '../data/settings';
 import { buildTimeline } from '../data/timeline';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
@@ -100,7 +101,7 @@ export function Profile() {
 
   const goToRoster = () => navigate('/roster');
 
-  // A removed person's 1:1 history, action items, decisions and mood ratings must not linger in the
+  // A removed person's 1:1 history, action items, decisions, tasks and mood ratings must not linger in the
   // encrypted store. Best effort: the person is already gone, so a failure here must not turn a
   // successful delete into an error.
   const purgePrivateData = async (memberId: string) => {
@@ -115,6 +116,7 @@ export function Profile() {
     await deleteActionItemsForMember(memberId, storage).catch(() => undefined);
     await deleteMoodEntriesForMember(memberId, storage).catch(() => undefined);
     await deleteDecisionsForMember(memberId, storage).catch(() => undefined);
+    await deleteTodosForMember(memberId, storage).catch(() => undefined);
   };
 
   const handleDelete = async () => {

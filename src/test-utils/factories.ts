@@ -1,4 +1,4 @@
-import type { ActionItem, Decision, FollowUp, MoodEntry, Note, TeamMember } from '../types';
+import type { ActionItem, Decision, FollowUp, MoodEntry, Note, TeamMember, Todo } from '../types';
 
 const now = () => new Date().toISOString();
 
@@ -83,6 +83,17 @@ export function createFollowUp(overrides: Partial<FollowUp> = {}): FollowUp {
     status: 'pending',
     linkedMeetingId: crypto.randomUUID(),
     linkedMeetingDate: '2025-01-15',
+    createdAt: now(),
+    ...overrides,
+  };
+}
+
+export function createTodo(overrides: Partial<Todo> = {}): Todo {
+  return {
+    id: crypto.randomUUID(),
+    title: 'Write the promo packet',
+    priority: 'medium',
+    status: 'todo',
     createdAt: now(),
     ...overrides,
   };

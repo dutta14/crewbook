@@ -10,6 +10,7 @@ import { PlaceholderPage } from './pages/PlaceholderPage';
 import { Profile } from './pages/Profile';
 import { Roster } from './pages/Roster';
 import { Settings } from './pages/Settings';
+import { Todos } from './pages/Todos';
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
                 <Route path="person/:id" element={<Profile />} />
                 <Route path="actions" element={<GlobalActions />} />
                 <Route path="decisions" element={<DecisionsGlobalView />} />
+                <Route path="tasks" element={<Todos />} />
                 <Route path="calendar" element={<PlaceholderPage title="Calendar" />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
