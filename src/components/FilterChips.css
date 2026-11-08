@@ -14,7 +14,8 @@
   border: 0;
   border-radius: var(--radius-control);
   background: transparent;
-  color: var(--fg2);
+  /* --fg2 on --bg2 is 4.42:1, just under AA. */
+  color: var(--fg);
   font: inherit;
   font-size: var(--text-body);
   font-weight: 500;
@@ -24,8 +25,8 @@
     color var(--transition-fast) var(--ease-out);
 }
 
-.filter-chip:hover {
-  color: var(--fg);
+.filter-chip:hover:not(.filter-chip--selected) {
+  background: var(--accent-subtle);
 }
 
 .filter-chip:focus-visible {
@@ -33,8 +34,8 @@
   outline-offset: 1px;
 }
 
-.filter-chip--selected {
-  background: var(--card-bg);
-  color: var(--accent);
-  box-shadow: var(--card-shadow);
+.filter-chip--selected,
+.filter-chip--selected:hover {
+  background: var(--accent);
+  color: var(--on-accent);
 }

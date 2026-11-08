@@ -4,6 +4,7 @@ import { EncryptedStorageProvider } from './components/EncryptedStorageProvider'
 import { LockGate } from './components/LockGate';
 import { ToastProvider } from './components/Toast';
 import { PlaceholderPage } from './pages/PlaceholderPage';
+import { Roster } from './pages/Roster';
 
 export default function App() {
   return (
@@ -14,7 +15,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<AppShell />}>
                 <Route index element={<PlaceholderPage title="Dashboard" />} />
-                <Route path="roster" element={<PlaceholderPage title="Roster" />} />
+                <Route path="roster" element={<Roster />} />
                 <Route path="person/:id" element={<PlaceholderPage title="Profile" />} />
                 <Route path="calendar" element={<PlaceholderPage title="Calendar" />} />
                 <Route path="settings" element={<PlaceholderPage title="Settings" />} />

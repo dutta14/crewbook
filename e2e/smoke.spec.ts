@@ -19,7 +19,7 @@ test.describe('app shell', () => {
     await nav.getByRole('link', { name: 'Team' }).click();
 
     await expect(page).toHaveURL(/#\/roster$/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Roster' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Team' })).toBeVisible();
     await expect(nav.getByRole('link', { name: 'Team' })).toHaveAttribute('aria-current', 'page');
   });
 

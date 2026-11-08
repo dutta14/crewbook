@@ -99,7 +99,7 @@ describe('App', () => {
 
     await user.click(screen.getByRole('link', { name: 'Team' }));
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Roster' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Team' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Team' })).toHaveAttribute('aria-current', 'page');
   });
 

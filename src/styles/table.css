@@ -1,0 +1,233 @@
+.roster-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.roster-header h1 {
+  margin: 0;
+}
+
+.roster-search {
+  display: block;
+  margin-bottom: var(--space-3);
+}
+
+.roster-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.roster-sort {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg2);
+  font-size: var(--text-body);
+  font-weight: 500;
+}
+
+.roster-empty {
+  max-width: 320px;
+  margin: 0 auto;
+  padding: 48px;
+  color: var(--fg2);
+  text-align: center;
+  animation: roster-rise var(--transition-normal) var(--ease-out) both;
+}
+
+.roster-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.roster-table th {
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.roster-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.roster-row {
+  position: relative;
+  transition: background-color var(--transition-fast) var(--ease-out);
+  animation: roster-fade-in var(--transition-fast) ease-out both;
+}
+
+.roster-row:hover,
+.roster-row:focus-within {
+  background: var(--accent-subtle);
+}
+
+.roster-row:nth-child(2) {
+  animation-delay: 30ms;
+}
+.roster-row:nth-child(3) {
+  animation-delay: 60ms;
+}
+.roster-row:nth-child(4) {
+  animation-delay: 90ms;
+}
+.roster-row:nth-child(5) {
+  animation-delay: 120ms;
+}
+.roster-row:nth-child(6) {
+  animation-delay: 150ms;
+}
+.roster-row:nth-child(7) {
+  animation-delay: 180ms;
+}
+.roster-row:nth-child(8) {
+  animation-delay: 210ms;
+}
+.roster-row:nth-child(9) {
+  animation-delay: 240ms;
+}
+.roster-row:nth-child(n + 10) {
+  animation-delay: 270ms;
+}
+
+.roster-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.roster-identity__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* The link's pseudo-element covers the whole row, so the entire row is the click target. */
+.roster-link {
+  color: var(--fg);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.roster-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.roster-link:focus-visible {
+  outline: none;
+}
+
+.roster-link:focus-visible::after {
+  border-radius: var(--radius-control);
+  box-shadow:
+    inset 0 0 0 2px var(--accent),
+    var(--focus-ring);
+}
+
+.roster-role {
+  color: var(--fg2);
+  font-size: var(--text-body);
+}
+
+.roster-countdown {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+.level-tag {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-control);
+  background: var(--bg2);
+  color: var(--fg);
+  font-size: var(--text-caption);
+  font-weight: 500;
+}
+
+.roster-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.roster-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    'avatar text status'
+    'avatar level level';
+  align-items: start;
+  column-gap: var(--space-3);
+  row-gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.roster-card > .avatar {
+  grid-area: avatar;
+}
+
+.roster-card > .roster-identity__text {
+  grid-area: text;
+}
+
+.roster-card__status {
+  grid-area: status;
+}
+
+.roster-card__level {
+  grid-area: level;
+  justify-self: start;
+}
+
+@keyframes roster-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes roster-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roster-row {
+    animation: none;
+  }
+
+  .roster-empty {
+    animation: roster-fade-in var(--transition-fast) linear both;
+  }
+}

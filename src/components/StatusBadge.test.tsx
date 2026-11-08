@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { axe } from 'vitest-axe';
 import { describe, expect, it } from 'vitest';
-import { StatusBadge, type StatusBadgeStatus } from './StatusBadge';
+import type { TeamMemberStatus } from '../types/TeamMember';
+import { StatusBadge, toBadgeStatus, type StatusBadgeStatus } from './StatusBadge';
 
 describe('StatusBadge', () => {
   it.each<[StatusBadgeStatus, string]>([
@@ -31,5 +32,16 @@ describe('StatusBadge', () => {
     const { container } = render(<StatusBadge status="departing" />);
 
     expect(await axe(container)).toHaveNoViolations();
+  });
+});
+
+describe('toBadgeStatus', () => {
+  it.each<[TeamMemberStatus, StatusBadgeStatus]>([
+    ['active', 'active'],
+    ['on_leave', 'on-leave'],
+    ['departing', 'departing'],
+    ['new_hire', 'new'],
+  ])('maps the stored "%s" status to the "%s" badge', (status, badge) => {
+    expect(toBadgeStatus(status)).toBe(badge);
   });
 });
