@@ -1,17 +1,28 @@
 export type TeamMemberStatus = 'active' | 'on_leave' | 'departing' | 'new_hire';
 
-// Minimal shape for test factories; the full data model and CRUD land with the data-model issue.
 export interface TeamMember {
+  /** crypto.randomUUID() */
   id: string;
+  /** Also the accessible name for the member's avatar in downstream UI. */
   name: string;
   role: string;
   level: string;
+  /** ISO 8601 date or date-time. */
   startDate: string;
   email: string;
+  /** The id of this member's manager, or null. */
   manager: string | null;
   status: TeamMemberStatus;
   avatarUrl?: string;
   customFields: Record<string, string>;
+  /** ISO 8601 */
   createdAt: string;
+  /** ISO 8601; refreshed on every write. */
   updatedAt: string;
 }
+
+/** Everything the caller supplies when creating a member. */
+export type TeamMemberInput = Omit<TeamMember, 'id' | 'createdAt' | 'updatedAt'>;
+
+/** Only the fields that change; id and createdAt are immutable. */
+export type TeamMemberUpdate = Partial<Omit<TeamMember, 'id' | 'createdAt'>>;

@@ -48,7 +48,7 @@ function InMemoryEncryptedStorage({
         privateData.set(key, next);
         setVersion((current) => current + 1);
       },
-      flush: async () => undefined,
+      flush: async () => null,
     }),
     // `version` gives consumers a fresh context value after each write, like the real provider.
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -227,9 +227,13 @@ export class StorageManager {
     this.write(this.priv, key, value);
   }
 
-  /** Writes any pending debounced changes now. Never rejects; failures go to onWriteError. */
-  async flush(): Promise<void> {
-    await Promise.all([this.persist(this.main), this.persist(this.priv)]);
+  /**
+   * Writes any pending debounced changes now. Never rejects: a failure is also sent to onWriteError
+   * and returned here so a caller that needs to roll back can tell. Resolves null when saved.
+   */
+  async flush(): Promise<StorageWriteError | null> {
+    const results = await Promise.all([this.persist(this.main), this.persist(this.priv)]);
+    return results.find((failure) => failure !== null) ?? null;
   }
 
   /** Flushes pending writes, then drops both keys and both decrypted caches. */
@@ -286,11 +290,12 @@ export class StorageManager {
     slot.timer = setTimeout(() => void this.persist(slot), WRITE_DEBOUNCE_MS);
   }
 
-  private persist(slot: Slot): Promise<void> {
+  private persist(slot: Slot): Promise<StorageWriteError | null> {
     if (slot.timer) {
       clearTimeout(slot.timer);
       slot.timer = null;
     }
+    let outcome: StorageWriteError | null = null;
     const run = async () => {
       if (!slot.isDirty || !slot.key || !slot.cache) return;
       slot.isDirty = false;
@@ -314,9 +319,10 @@ export class StorageManager {
         }
       }
       slot.isDirty = true;
+      outcome = failure;
       if (failure) this.listeners.forEach((listener) => listener(failure));
     };
     slot.queue = slot.queue.then(run);
-    return slot.queue;
+    return slot.queue.then(() => outcome);
   }
 }

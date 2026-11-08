@@ -7,6 +7,7 @@ import {
   CorruptedDataError,
   getStorageStatus,
   WrongPassphraseError,
+  type StorageWriteError,
   type StorageStatus,
 } from '../utils/encryptedStorage';
 
@@ -29,7 +30,8 @@ export interface EncryptedStorageContextValue {
   loadPrivate: () => Promise<void>;
   getPrivate: <T>(key: string) => T | null;
   setPrivate: <T>(key: string, value: T) => void;
-  flush: () => Promise<void>;
+  /** Resolves with the failure when a write did not land, or null when everything is saved. */
+  flush: () => Promise<StorageWriteError | null>;
 }
 
 export const EncryptedStorageContext = createContext<EncryptedStorageContextValue | null>(null);

@@ -450,6 +450,18 @@ describe('write failures', () => {
     expect((await relock(manager)).getData('notes')).toBe('big');
   });
 
+  it('resolves flush with the failure, or null once everything is saved', async () => {
+    const manager = await createUnlocked();
+    failWrites(STORAGE_DATA_KEY, 1);
+
+    manager.setData('notes', 'big');
+    const failure = await manager.flush();
+
+    expect(failure).toBeInstanceOf(StorageWriteError);
+    expect(failure?.isQuotaExceeded).toBe(true);
+    expect(await manager.flush()).toBeNull();
+  });
+
   it('retries a failed private write once without reporting an error', async () => {
     const manager = await createUnlocked();
     await manager.loadPrivate();

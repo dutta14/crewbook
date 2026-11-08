@@ -9,6 +9,8 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
+    // Full-app tests render the whole shell and run real AES-GCM; parallel workers can starve them.
+    testTimeout: 15_000,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],

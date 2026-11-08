@@ -27,7 +27,9 @@ async function setUpHook() {
   const view = renderHook(() => useEncryptedStorage(), { wrapper });
   await act(() => view.result.current.setup(PASSPHRASE));
   // Pending debounced writes would otherwise land in the next test's localStorage.
-  onTestFinished(() => view.result.current.flush());
+  onTestFinished(async () => {
+    await view.result.current.flush();
+  });
   return view;
 }
 
