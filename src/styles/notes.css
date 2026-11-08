@@ -109,6 +109,13 @@
   animation: note-in var(--transition-normal) var(--ease-out);
 }
 
+/* The note a meeting history link opened. */
+.notes__item--linked {
+  border-radius: var(--radius-card);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .note-entry {
   padding: var(--space-4);
   border: 1px solid var(--border);

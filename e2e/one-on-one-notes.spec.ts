@@ -64,7 +64,7 @@ test.describe('1:1 notes', () => {
     await page.getByRole('searchbox', { name: 'Search notes' }).fill('promotion');
 
     await expect(notesList(page).getByRole('listitem')).toHaveCount(2);
-    await expect(page.getByText('Vacation plans for August')).toHaveCount(0);
+    await expect(notesList(page).getByText('Vacation plans for August')).toHaveCount(0);
     await expect(page.locator('mark').first()).toHaveText(/promotion/i);
     await expect(page.getByText('2 notes found')).toHaveAttribute('aria-live', 'polite');
     expect(page.url()).not.toContain('promotion');

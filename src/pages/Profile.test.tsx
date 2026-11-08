@@ -67,6 +67,19 @@ function renderProfile(id: string, members: TeamMember[] = team()) {
   );
 }
 
+function renderWithProfileNotes(id: string, notes: ReturnType<typeof createNote>[], search = '') {
+  return renderWithProviders(
+    <Routes>
+      <Route path="/person/:id" element={<Profile />} />
+    </Routes>,
+    {
+      route: `/person/${id}${search}`,
+      initialData: { members: team() },
+      initialPrivateData: { notes },
+    },
+  );
+}
+
 // Skips live mode's 250ms close animation, as users who prefer reduced motion do.
 const reduceMotion = () =>
   vi.stubGlobal(
@@ -249,13 +262,67 @@ describe('Profile', () => {
 
     const tablist = screen.getByRole('tablist');
     const tabs = within(tablist).getAllByRole('tab');
-    expect(tabs.map((tab) => tab.textContent)).toEqual(['Overview', 'Notes', 'Goals', 'Timeline']);
+    expect(tabs.map((tab) => tab.textContent)).toEqual([
+      'Overview',
+      'Notes',
+      'Meetings',
+      'Goals',
+      'Timeline',
+    ]);
     expect(tabs.map((tab) => tab.getAttribute('aria-selected'))).toEqual([
       'true',
       'false',
       'false',
       'false',
+      'false',
     ]);
+  });
+
+  it('Meetings tab shows stats, the 12 week chart and the meeting history', async () => {
+    const user = userEvent.setup();
+    const notes = [
+      createNote({
+        memberId: ALEX,
+        content: 'Talked through the launch plan',
+        createdAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+      }),
+      createNote({
+        memberId: ALEX,
+        createdAt: new Date(Date.now() - 9 * 86_400_000).toISOString(),
+      }),
+    ];
+    renderWithProfileNotes(ALEX, notes);
+
+    await user.click(screen.getByRole('tab', { name: 'Meetings' }));
+
+    const panel = screen.getByRole('tabpanel', { name: 'Meetings' });
+    expect(within(panel).getByText('Total meetings').nextElementSibling).toHaveTextContent('2');
+    expect(
+      within(panel).getByRole('img', { name: 'Meeting frequency: last 12 weeks' }),
+    ).toBeInTheDocument();
+    expect(
+      within(panel).getByRole('link', { name: /Talked through the launch plan/ }),
+    ).toBeVisible();
+  });
+
+  it('opens the Notes tab on the note named in the link', async () => {
+    const note = createNote({
+      memberId: ALEX,
+      content: 'Career conversation',
+      createdAt: new Date(Date.now() - 86_400_000).toISOString(),
+    });
+    renderWithProfileNotes(ALEX, [note], `?note=${note.id}`);
+
+    const panel = await screen.findByRole('tabpanel', { name: 'Notes' });
+    expect(screen.getByRole('tab', { name: 'Notes' })).toHaveAttribute('aria-selected', 'true');
+    const item = await within(panel).findByText('Career conversation');
+    await waitFor(() => expect(item.closest('li')).toHaveFocus());
+  });
+
+  it('still opens the Notes tab when the linked note no longer exists', () => {
+    renderWithProfileNotes(ALEX, [], '?note=missing');
+
+    expect(screen.getByRole('tab', { name: 'Notes' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('Left/Right arrow keys switch between tabs', async () => {

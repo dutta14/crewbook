@@ -32,15 +32,24 @@ export function daysBetween(from: Date, to: Date): number {
   return Math.max(0, days);
 }
 
+/** A gap is overdue once it is more than 1.5 times the usual cadence. */
+export function isGapOverdue(daysSinceLastMeeting: number, cadenceDays: number | null): boolean {
+  return cadenceDays !== null && daysSinceLastMeeting > cadenceDays * OVERDUE_FACTOR;
+}
+
 /**
- * The first 100 characters of a note on one line. Long notes are cut at a word boundary, so a
- * fragment cannot end halfway through a word, and end with an ellipsis that counts toward the limit.
+ * The start of a note on one line, 100 characters by default. Long notes are cut at a word
+ * boundary, so a fragment cannot end halfway through a word, and end with an ellipsis that counts
+ * toward the limit.
  */
-export function summarizeNote(content: string): string | null {
+export function summarizeNote(
+  content: string,
+  maxLength: number = SUMMARY_MAX_LENGTH,
+): string | null {
   const text = content.replace(/\s+/g, ' ').trim();
   if (text === '' || text === EMPTY_SESSION_NOTE) return null;
-  if (text.length <= SUMMARY_MAX_LENGTH) return text;
-  const limit = SUMMARY_MAX_LENGTH - ELLIPSIS.length;
+  if (text.length <= maxLength) return text;
+  const limit = maxLength - ELLIPSIS.length;
   // A space at `limit` means the cut already falls between words.
   const lastSpace = text.lastIndexOf(' ', limit);
   const cut = lastSpace > 0 ? lastSpace : limit;
@@ -89,7 +98,7 @@ export function buildPrepData({
   return {
     daysSinceLastMeeting,
     cadenceDays,
-    isOverdue: cadenceDays !== null && daysSinceLastMeeting > cadenceDays * OVERDUE_FACTOR,
+    isOverdue: isGapOverdue(daysSinceLastMeeting, cadenceDays),
     openActionItems: openActionItems.map(({ id, title }) => ({ id, title })),
     lastDiscussedSummary: summarizeNote(lastNote.content),
     recentStatusChanges: recentStatusChanges(member, lastMeetingAt, now),

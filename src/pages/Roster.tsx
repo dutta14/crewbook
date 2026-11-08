@@ -8,6 +8,7 @@ import { RosterCards } from '../components/RosterCards';
 import { RosterTable } from '../components/RosterTable';
 import { isTeamMemberStatus, listMembers } from '../data/members';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
+import { useGapAlerts } from '../hooks/useMeetingStats';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useToast } from '../hooks/useToast';
 import type { TeamMember, TeamMemberStatus } from '../types/TeamMember';
@@ -67,6 +68,11 @@ export function Roster() {
   const [isImportOpen, setIsImportOpen] = useState(false);
 
   const members = useMemo(() => listMembers(storage), [storage]);
+  const gapAlerts = useGapAlerts();
+  const gapAlertsById = useMemo(
+    () => new Map(gapAlerts.map((alert) => [alert.engineerId, alert])),
+    [gapAlerts],
+  );
   const visibleMembers = useMemo(() => {
     const query = search.trim().toLowerCase();
     return members
@@ -168,9 +174,9 @@ export function Roster() {
         {visibleMembers.length === 0 ? (
           <p className="roster-empty">No members found</p>
         ) : isMobile ? (
-          <RosterCards members={visibleMembers} />
+          <RosterCards members={visibleMembers} gapAlerts={gapAlertsById} />
         ) : (
-          <RosterTable members={visibleMembers} />
+          <RosterTable members={visibleMembers} gapAlerts={gapAlertsById} />
         )}
       </>
     );

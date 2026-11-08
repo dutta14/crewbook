@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { axe } from 'vitest-axe';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createMember } from '../test-utils/factories';
+import { createMember, createNote } from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
 import type { TeamMember } from '../types/TeamMember';
 import { Roster } from './Roster';
@@ -555,6 +555,53 @@ describe('Roster on a narrow screen', () => {
     const { container } = renderRoster(team());
 
     expect(await axe(container)).toHaveNoViolations();
+  });
+});
+
+describe('Roster gap badges', () => {
+  const weekly = {
+    cadence: 'weekly',
+    dayOfWeek: 'monday',
+    time: '10:00',
+    nextDate: '2026-11-09',
+  } as const;
+  const daysAgo = (days: number) => new Date(2026, 10, 8 - days, 9).toISOString();
+
+  const renderWithNotes = (members: TeamMember[], notes: ReturnType<typeof createNote>[]) =>
+    renderWithProviders(
+      <Routes>
+        <Route path="/roster" element={<Roster />} />
+      </Routes>,
+      { route: '/roster', initialData: { members }, initialPrivateData: { notes } },
+    );
+
+  it('flags a member whose last 1:1 is more than 1.5 cadences ago, beside their name', () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 10, 8, 12) });
+    const [alice, bob] = team();
+    renderWithNotes(
+      [
+        { ...alice, schedule: weekly },
+        { ...bob, schedule: weekly },
+      ],
+      [
+        createNote({ memberId: alice.id, createdAt: daysAgo(21) }),
+        createNote({ memberId: bob.id, createdAt: daysAgo(5) }),
+      ],
+    );
+
+    const [aliceRow, bobRow] = screen.getAllByTestId('member-row');
+    expect(
+      within(aliceRow).getByRole('img', { name: 'Overdue: last met 3 weeks ago' }),
+    ).toBeVisible();
+    expect(within(bobRow).queryByRole('img')).not.toBeInTheDocument();
+  });
+
+  it('shows no badge for members who have never been met', () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 10, 8, 12) });
+    const [alice] = team();
+    renderWithNotes([{ ...alice, schedule: weekly }], []);
+
+    expect(screen.queryByRole('img', { name: /Overdue/ })).not.toBeInTheDocument();
   });
 });
 

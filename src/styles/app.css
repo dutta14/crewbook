@@ -42,7 +42,7 @@ h1 {
 
 .app-shell {
   display: grid;
-  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -157,8 +157,9 @@ h1 {
 }
 
 @media (max-width: 767.98px) {
+  /* minmax(0, ...) lets the scrolling tab list shrink instead of widening the page. */
   .app-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .app-topbar {

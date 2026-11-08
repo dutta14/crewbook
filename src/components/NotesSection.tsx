@@ -21,6 +21,8 @@ import { NoteEntry } from './NoteEntry';
 
 interface NotesSectionProps {
   memberId: string;
+  /** Scrolls to and focuses this note. A new `requestKey` repeats the request. */
+  focus?: { noteId: string; requestKey: string } | null;
 }
 
 export const AUTOSAVE_DELAY_MS = 2000;
@@ -46,7 +48,7 @@ function describeCount(length: number): string {
 }
 
 /** Notes live in the private envelope, so nothing renders until that has been decrypted. */
-export function NotesSection({ memberId }: NotesSectionProps) {
+export function NotesSection({ memberId, focus }: NotesSectionProps) {
   const { isPrivateUnlocked, loadPrivate } = useEncryptedStorage();
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -70,10 +72,10 @@ export function NotesSection({ memberId }: NotesSectionProps) {
 
   if (!isPrivateUnlocked) return <p className="notes__empty">Opening your notes…</p>;
 
-  return <NotesPanel memberId={memberId} />;
+  return <NotesPanel memberId={memberId} focus={focus} />;
 }
 
-function NotesPanel({ memberId }: NotesSectionProps) {
+function NotesPanel({ memberId, focus }: NotesSectionProps) {
   const storage = useEncryptedStorage();
   const [text, setText] = useState(() => getDraft(memberId, storage));
   const [query, setQuery] = useState('');
@@ -89,10 +91,20 @@ function NotesPanel({ memberId }: NotesSectionProps) {
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasUnsavedDraft = useRef(false);
+  const linkedItem = useRef<HTMLLIElement | null>(null);
+  const handledFocus = useRef<string | null>(null);
   // Read by the unmount cleanup, which must not capture stale values.
   const latest = useRef({ text, storage });
   useEffect(() => {
     latest.current = { text, storage };
+  });
+
+  // Opens a note linked from the meeting history, once, when the list shows it.
+  useEffect(() => {
+    if (!focus || handledFocus.current === focus.requestKey || !linkedItem.current) return;
+    handledFocus.current = focus.requestKey;
+    linkedItem.current.scrollIntoView?.({ block: 'center' });
+    linkedItem.current.focus({ preventScroll: true });
   });
 
   // A note can cross the 24 hour mark while the page is open.
@@ -282,7 +294,9 @@ function NotesPanel({ memberId }: NotesSectionProps) {
               {visibleNotes.map((note) => (
                 <li
                   key={note.id}
-                  className={`notes__item${note.id === newestId ? ' notes__item--new' : ''}`}
+                  ref={note.id === focus?.noteId ? linkedItem : undefined}
+                  tabIndex={note.id === focus?.noteId ? -1 : undefined}
+                  className={`notes__item${note.id === newestId ? ' notes__item--new' : ''}${note.id === focus?.noteId ? ' notes__item--linked' : ''}`}
                 >
                   <NoteEntry note={note} query={query} now={now} onUpdate={handleUpdate} />
                 </li>

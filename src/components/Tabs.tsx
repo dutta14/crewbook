@@ -17,16 +17,20 @@ export interface Tab {
 export interface TabsProps {
   tabs: Tab[];
   defaultActiveId?: string;
+  /** Makes the active tab controlled, so the page can open a tab such as a linked note's. */
+  activeId?: string;
+  onActiveChange?: (id: string) => void;
   ariaLabel?: string;
 }
 
-export function Tabs({ tabs, defaultActiveId, ariaLabel }: TabsProps) {
+export function Tabs({ tabs, defaultActiveId, activeId, onActiveChange, ariaLabel }: TabsProps) {
   const prefix = useId();
-  const [activeId, setActiveId] = useState(defaultActiveId ?? tabs[0]?.id);
+  const [internalId, setInternalId] = useState(defaultActiveId ?? tabs[0]?.id);
+  const currentId = activeId ?? internalId;
   const tabRefs = useRef(new Map<string, HTMLButtonElement>());
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
 
-  const active = tabs.some((tab) => tab.id === activeId) ? activeId : tabs[0]?.id;
+  const active = tabs.some((tab) => tab.id === currentId) ? currentId : tabs[0]?.id;
 
   useLayoutEffect(() => {
     const element = active ? tabRefs.current.get(active) : undefined;
@@ -34,7 +38,8 @@ export function Tabs({ tabs, defaultActiveId, ariaLabel }: TabsProps) {
   }, [active, tabs]);
 
   const select = (id: string, focus: boolean) => {
-    setActiveId(id);
+    setInternalId(id);
+    onActiveChange?.(id);
     if (focus) tabRefs.current.get(id)?.focus();
   };
 

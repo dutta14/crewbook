@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AddMemberModal } from '../components/AddMemberModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EmptyState } from '../components/EmptyState';
 import { TeamIcon } from '../components/icons';
 import { LiveMode } from '../components/LiveMode';
+import { MeetingsPanel } from '../components/MeetingsPanel';
 import { MoodPrompt } from '../components/MoodPrompt';
 import { MoodTrendSection } from '../components/MoodTrendSection';
 import { ProfileHeader } from '../components/ProfileHeader';
@@ -30,6 +31,8 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 export function Profile() {
   const { id = '' } = useParams();
+  const [searchParams] = useSearchParams();
+  const { key: locationKey } = useLocation();
   const storage = useEncryptedStorage();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -39,6 +42,7 @@ export function Profile() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLive, setIsLive] = useState(false);
   const [rateNoteId, setRateNoteId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('overview');
 
   const members = useMemo(() => listMembers(storage), [storage]);
   // Anything that is not a UUID is rejected before it reaches the store.
@@ -49,11 +53,24 @@ export function Profile() {
   const manager = member?.manager ? (members.find((m) => m.id === member.manager) ?? null) : null;
   const timeline = useMemo(() => (member ? buildTimeline(member) : []), [member]);
   const isFound = member !== null;
+  // A meeting history link names the note to open. The key changes on every visit, so choosing the
+  // same note again still switches back to it.
+  const linkedNoteId = searchParams.get('note');
+  const noteFocus = useMemo(
+    () => (linkedNoteId ? { noteId: linkedNoteId, requestKey: locationKey } : null),
+    [linkedNoteId, locationKey],
+  );
+  const [handledFocus, setHandledFocus] = useState<typeof noteFocus>(null);
+  if (noteFocus !== handledFocus) {
+    setHandledFocus(noteFocus);
+    if (noteFocus) setActiveTab('notes');
+  }
 
   // Orients screen reader users after navigating to a profile, including from one to another.
+  // A linked note takes focus instead.
   useEffect(() => {
-    headingRef.current?.focus();
-  }, [id, isFound]);
+    if (!linkedNoteId) headingRef.current?.focus();
+  }, [id, isFound, linkedNoteId]);
 
   const handleStartLive = async () => {
     try {
@@ -150,6 +167,8 @@ export function Profile() {
       ) : null}
       <Tabs
         ariaLabel="Profile sections"
+        activeId={activeTab}
+        onActiveChange={setActiveTab}
         tabs={[
           {
             id: 'overview',
@@ -159,7 +178,18 @@ export function Profile() {
           {
             id: 'notes',
             label: 'Notes',
-            content: <NotesSection key={member.id} memberId={member.id} />,
+            content: (
+              <NotesSection
+                key={member.id}
+                memberId={member.id}
+                focus={activeTab === 'notes' ? noteFocus : null}
+              />
+            ),
+          },
+          {
+            id: 'meetings',
+            label: 'Meetings',
+            content: <MeetingsPanel key={member.id} memberId={member.id} />,
           },
           {
             id: 'goals',

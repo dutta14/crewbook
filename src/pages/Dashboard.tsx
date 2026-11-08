@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { GapAlertCard } from '../components/GapAlert';
 import { TodaysOneOnes } from '../components/TodaysOneOnes';
 import { listMembers } from '../data/members';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
@@ -14,6 +15,7 @@ export function Dashboard() {
       <h2 className="sr-only">Today</h2>
       <div className="dashboard__grid">
         <TodaysOneOnes members={members} />
+        <GapAlertCard members={members} />
       </div>
     </>
   );

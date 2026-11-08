@@ -1,16 +1,20 @@
 import { Link } from 'react-router-dom';
+import type { GapAlertData } from '../types/meeting';
 import type { TeamMember } from '../types/TeamMember';
 import '../styles/table.css';
 import { Avatar } from './Avatar';
+import { GapAlert } from './GapAlert';
 import { NewHireCountdown } from './NewHireCountdown';
 import { NextOneOnOne } from './NextOneOnOne';
 import { StatusBadge, toBadgeStatus } from './StatusBadge';
 
 interface RosterCardsProps {
   members: TeamMember[];
+  /** Overdue 1:1s by member id. */
+  gapAlerts?: ReadonlyMap<string, GapAlertData>;
 }
 
-export function RosterCards({ members }: RosterCardsProps) {
+export function RosterCards({ members, gapAlerts }: RosterCardsProps) {
   return (
     <ul className="roster-cards" aria-label="Team members">
       {members.map((member) => (
@@ -21,9 +25,12 @@ export function RosterCards({ members }: RosterCardsProps) {
         >
           <Avatar name={member.name} avatarUrl={member.avatarUrl} aria-hidden />
           <div className="roster-identity__text">
-            <Link className="roster-link" to={`/person/${member.id}`}>
-              {member.name}
-            </Link>
+            <span className="roster-name">
+              <Link className="roster-link" to={`/person/${member.id}`}>
+                {member.name}
+              </Link>
+              <GapAlert alert={gapAlerts?.get(member.id)} />
+            </span>
             <span className="roster-role">{member.role}</span>
             {member.status === 'new_hire' ? (
               <NewHireCountdown startDate={member.startDate} />
