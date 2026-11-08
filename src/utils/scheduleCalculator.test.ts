@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Schedule } from '../types/Schedule';
+import { createMember } from '../test-utils/factories';
 import {
   applyScheduleEdit,
   calculateNextDate,
+  getNextUpcoming,
+  getTodaysOneOnes,
   isOverdue,
   parseIsoDate,
   reschedule,
@@ -185,5 +188,70 @@ describe('date parsing', () => {
     expect(parseIsoDate('2026-2-9')).toBeNull();
     expect(parseIsoDate('2026-11-09T00:00:00Z')).toBeNull();
     expect(toIsoDate(parseIsoDate('2028-02-29') as Date)).toBe('2028-02-29');
+  });
+});
+
+describe('getTodaysOneOnes', () => {
+  const scheduled = (name: string, nextDate: string, time = '10:00') =>
+    createMember({ name, schedule: schedule({ nextDate, time }) });
+
+  it('lists members whose next 1:1 is today, earliest time first, with their counts', () => {
+    const late = scheduled('Late', '2026-11-08', '15:30');
+    const early = scheduled('Early', '2026-11-08', '09:00');
+    const tomorrow = scheduled('Tomorrow', '2026-11-09');
+    const overdue = scheduled('Overdue', '2026-11-03');
+
+    const entries = getTodaysOneOnes([late, tomorrow, early, overdue], {
+      now: NOW,
+      openActionItems: new Map([[early.id, 2]]),
+      lastMetDates: new Map([[late.id, '2026-10-27T10:00:00.000Z']]),
+    });
+
+    expect(entries).toEqual([
+      { memberId: early.id, name: 'Early', time: '09:00', openActionItems: 2, lastMetDate: null },
+      {
+        memberId: late.id,
+        name: 'Late',
+        time: '15:30',
+        openActionItems: 0,
+        lastMetDate: '2026-10-27T10:00:00.000Z',
+      },
+    ]);
+  });
+
+  it('breaks time ties by name and skips members with missing or damaged schedules', () => {
+    const zed = scheduled('Zed', '2026-11-08');
+    const amy = scheduled('Amy', '2026-11-08');
+    const noSchedule = createMember({ name: 'None' });
+    const badTime = createMember({
+      name: 'Bad time',
+      schedule: schedule({ nextDate: '2026-11-08', time: '25:99' }),
+    });
+    const badDate = createMember({ name: 'Bad date', schedule: schedule({ nextDate: 'soon' }) });
+
+    const names = getTodaysOneOnes([zed, noSchedule, badTime, badDate, amy], { now: NOW }).map(
+      (entry) => entry.name,
+    );
+
+    expect(names).toEqual(['Amy', 'Zed']);
+  });
+});
+
+describe('getNextUpcoming', () => {
+  it('returns the soonest 1:1 after today, ignoring today and the past', () => {
+    const members = [
+      createMember({ name: 'Today', schedule: schedule({ nextDate: '2026-11-08' }) }),
+      createMember({ name: 'Past', schedule: schedule({ nextDate: '2026-11-02' }) }),
+      createMember({ name: 'Later', schedule: schedule({ nextDate: '2026-11-17' }) }),
+      createMember({ name: 'Soon', schedule: schedule({ nextDate: '2026-11-10', time: '11:00' }) }),
+      createMember({ name: 'Soonest', schedule: schedule({ nextDate: '2026-11-10' }) }),
+    ];
+
+    expect(getNextUpcoming(members, NOW)).toEqual({ name: 'Soonest', date: '2026-11-10' });
+  });
+
+  it('returns null when nobody has an upcoming 1:1', () => {
+    expect(getNextUpcoming([createMember()], NOW)).toBeNull();
+    expect(getNextUpcoming([], NOW)).toBeNull();
   });
 });

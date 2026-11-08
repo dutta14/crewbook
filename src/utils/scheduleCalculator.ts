@@ -1,4 +1,5 @@
 import type { Cadence, DayOfWeek, Schedule } from '../types/Schedule';
+import type { TeamMember } from '../types/TeamMember';
 
 export const CADENCES: readonly Cadence[] = ['weekly', 'biweekly', 'monthly', 'custom'];
 export const DAYS_OF_WEEK: readonly DayOfWeek[] = [
@@ -170,4 +171,74 @@ export function applyScheduleEdit(
     return { ...previous, ...base };
   }
   return { ...base, nextDate: calculateNextDate(base, now) };
+}
+
+export interface TodayEntry {
+  memberId: string;
+  name: string;
+  /** "HH:mm" from the schedule. */
+  time: string;
+  openActionItems: number;
+  /** ISO 8601 moment of the member's latest 1:1 note, or null if there is none. */
+  lastMetDate: string | null;
+}
+
+export interface DigestContext {
+  /** Open action item count per member id; members that are absent count as zero. */
+  openActionItems?: ReadonlyMap<string, number>;
+  /** Latest 1:1 note timestamp per member id. */
+  lastMetDates?: ReadonlyMap<string, string>;
+  now?: Date;
+}
+
+interface ScheduledMember {
+  member: TeamMember;
+  time: string;
+  date: string;
+}
+
+/** Stored data can be damaged, so a member whose schedule does not parse is left out. */
+function scheduledMembers(members: readonly TeamMember[]): ScheduledMember[] {
+  return members.flatMap((member): ScheduledMember[] => {
+    const schedule: Partial<Schedule> | undefined = member?.schedule;
+    if (!schedule || !isValidTime(schedule.time)) return [];
+    if (typeof schedule.nextDate !== 'string' || !parseIsoDate(schedule.nextDate)) return [];
+    if (typeof member.name !== 'string') return [];
+    return [{ member, time: schedule.time, date: schedule.nextDate }];
+  });
+}
+
+const byDateTimeName = (a: ScheduledMember, b: ScheduledMember) =>
+  a.date.localeCompare(b.date) ||
+  a.time.localeCompare(b.time) ||
+  a.member.name.localeCompare(b.member.name, undefined, { sensitivity: 'base' });
+
+/** Members whose next 1:1 falls on today's calendar day, earliest first. */
+export function getTodaysOneOnes(
+  members: readonly TeamMember[],
+  { openActionItems, lastMetDates, now = new Date() }: DigestContext = {},
+): TodayEntry[] {
+  const today = toIsoDate(now);
+  return scheduledMembers(members)
+    .filter(({ date }) => date === today)
+    .sort(byDateTimeName)
+    .map(({ member, time }) => ({
+      memberId: member.id,
+      name: member.name,
+      time,
+      openActionItems: openActionItems?.get(member.id) ?? 0,
+      lastMetDate: lastMetDates?.get(member.id) ?? null,
+    }));
+}
+
+/** The soonest 1:1 after today, or null when nobody has one coming up. */
+export function getNextUpcoming(
+  members: readonly TeamMember[],
+  now: Date = new Date(),
+): { name: string; date: string } | null {
+  const today = toIsoDate(now);
+  const [next] = scheduledMembers(members)
+    .filter(({ date }) => date > today)
+    .sort(byDateTimeName);
+  return next ? { name: next.member.name, date: next.date } : null;
 }

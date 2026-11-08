@@ -1,0 +1,165 @@
+.todays-card {
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.todays-card__heading {
+  margin: 0 0 var(--space-2);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.todays-card__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.digest-item {
+  border-bottom: 1px solid var(--border);
+}
+
+.digest-item:last-child {
+  border-bottom: 0;
+}
+
+.digest-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-control);
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--transition-fast) var(--ease-out);
+}
+
+.digest-row:hover,
+.digest-row:focus-visible {
+  background: var(--bg2);
+}
+
+.digest-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+  box-shadow: var(--focus-ring);
+}
+
+.digest-row__who,
+.digest-row__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.digest-row__name {
+  overflow: hidden;
+  color: var(--fg);
+  font-size: var(--text-body);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.digest-row__time,
+.digest-row__last-met {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+}
+
+.digest-row__who .avatar {
+  flex: none;
+}
+
+.digest-row__meta {
+  flex: none;
+  gap: var(--space-3);
+}
+
+.digest-row__pill {
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-size: var(--text-caption);
+  font-weight: 500;
+}
+
+.todays-card__empty {
+  padding: var(--space-4) 0;
+  text-align: center;
+}
+
+.todays-card__empty p,
+.todays-card__status {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-body);
+}
+
+.todays-card__empty .todays-card__empty-next {
+  margin-top: var(--space-1);
+  font-size: var(--text-caption);
+}
+
+.todays-card__status {
+  padding: var(--space-4) 0;
+}
+
+@media (max-width: 767.98px) {
+  .digest-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+  }
+
+  .digest-row__meta {
+    padding-left: calc(32px + var(--space-2));
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .todays-card {
+    animation: todays-card-in var(--transition-slow) var(--ease-out);
+  }
+
+  .digest-item {
+    opacity: 0;
+    animation: digest-row-in var(--transition-normal) var(--ease-out) forwards;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .digest-row {
+    transition: none;
+  }
+}
+
+@keyframes todays-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes digest-row-in {
+  to {
+    opacity: 1;
+  }
+}

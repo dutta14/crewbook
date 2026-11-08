@@ -3,6 +3,7 @@ import { AppShell } from './components/AppShell';
 import { EncryptedStorageProvider } from './components/EncryptedStorageProvider';
 import { LockGate } from './components/LockGate';
 import { ToastProvider } from './components/Toast';
+import { Dashboard } from './pages/Dashboard';
 import { GlobalActions } from './pages/GlobalActions';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { Profile } from './pages/Profile';
@@ -17,7 +18,7 @@ export default function App() {
           <LockGate>
             <Routes>
               <Route path="/" element={<AppShell />}>
-                <Route index element={<PlaceholderPage title="Dashboard" />} />
+                <Route index element={<Dashboard />} />
                 <Route path="roster" element={<Roster />} />
                 <Route path="person/:id" element={<Profile />} />
                 <Route path="actions" element={<GlobalActions />} />

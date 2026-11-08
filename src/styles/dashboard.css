@@ -1,0 +1,7 @@
+/* Cards fill one column on small screens and flow into columns as the viewport widens. */
+.dashboard__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
