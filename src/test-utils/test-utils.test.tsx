@@ -1,6 +1,7 @@
 import { screen } from '@testing-library/react';
 import { Link, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
+import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { createActionItem, createMember, createMoodEntry, createNote } from './factories';
 import { renderWithProviders } from './renderWithProviders';
 
@@ -21,6 +22,22 @@ describe('renderWithProviders', () => {
     renderWithProviders(<Link to="/roster">Team</Link>);
 
     expect(screen.getByRole('link', { name: 'Team' })).toHaveAttribute('href', '/roster');
+  });
+
+  it('provides an unlocked storage seeded from initialData', () => {
+    function MemberCount() {
+      const { get, isUnlocked } = useEncryptedStorage();
+      const members = get<unknown[]>('members') ?? [];
+      return (
+        <p>
+          {isUnlocked ? 'unlocked' : 'locked'} with {members.length} members
+        </p>
+      );
+    }
+
+    renderWithProviders(<MemberCount />, { initialData: { members: [createMember()] } });
+
+    expect(screen.getByText('unlocked with 1 members')).toBeInTheDocument();
   });
 
   it('provides the toast live region', () => {

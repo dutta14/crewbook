@@ -17,6 +17,25 @@ module.exports = {
     'react/prop-types': 'off',
     '@typescript-eslint/no-explicit-any': 'error',
     'no-console': ['error', { allow: ['error'] }],
+    // Everything sensitive must go through useEncryptedStorage.
+    'no-restricted-globals': [
+      'error',
+      { name: 'localStorage', message: 'Use useEncryptedStorage instead of raw localStorage.' },
+      { name: 'sessionStorage', message: 'Use useEncryptedStorage instead of raw sessionStorage.' },
+    ],
+    'no-restricted-properties': [
+      'error',
+      {
+        object: 'window',
+        property: 'localStorage',
+        message: 'Use useEncryptedStorage instead of raw localStorage.',
+      },
+      {
+        object: 'window',
+        property: 'sessionStorage',
+        message: 'Use useEncryptedStorage instead of raw sessionStorage.',
+      },
+    ],
   },
   ignorePatterns: ['dist', 'coverage', 'node_modules', 'playwright-report', 'test-results'],
   overrides: [
@@ -26,6 +45,18 @@ module.exports = {
     {
       files: ['*.test.ts', '*.test.tsx', 'vitest.setup.ts'],
       env: { node: true },
+    },
+    // The raw storage layer, and the theme preference (no personal data).
+    {
+      files: [
+        'src/utils/encryptedStorage.ts',
+        'src/hooks/useDarkMode.ts',
+        '*.test.ts',
+        '*.test.tsx',
+        'vitest.setup.ts',
+        'e2e/**/*.ts',
+      ],
+      rules: { 'no-restricted-globals': 'off', 'no-restricted-properties': 'off' },
     },
   ],
 };

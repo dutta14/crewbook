@@ -1,29 +1,43 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import { setUpPassphrase } from './test-utils/unlockApp';
+
+vi.mock('./utils/crypto', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./utils/crypto')>();
+  const { fastDeriveKey } = await import('./test-utils/fastCrypto');
+  return { ...actual, deriveKey: fastDeriveKey };
+});
+
+async function renderUnlocked() {
+  const user = userEvent.setup();
+  const view = render(<App />);
+  await setUpPassphrase(user);
+  return { user, ...view };
+}
 
 describe('App', () => {
   beforeEach(() => {
     window.location.hash = '';
   });
 
-  it('app renders without crashing', () => {
-    render(<App />);
+  it('app renders without crashing', async () => {
+    await renderUnlocked();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument();
   });
 
-  it('app shell has sidebar and main content area', () => {
-    render(<App />);
+  it('app shell has sidebar and main content area', async () => {
+    await renderUnlocked();
 
     expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
   });
 
-  it('sidebar contains navigation links', () => {
-    render(<App />);
+  it('sidebar contains navigation links', async () => {
+    await renderUnlocked();
 
     const nav = screen.getByRole('navigation', { name: 'Main navigation' });
     const links = Array.from(nav.querySelectorAll('a')).map((link) => link.textContent);
@@ -32,8 +46,7 @@ describe('App', () => {
   });
 
   it('dark mode toggle adds "dark" class to body', async () => {
-    const user = userEvent.setup();
-    render(<App />);
+    const { user } = await renderUnlocked();
 
     await user.click(screen.getByRole('button', { name: 'Toggle dark mode' }));
 
@@ -41,8 +54,7 @@ describe('App', () => {
   });
 
   it('dark mode toggle removes "dark" class on second click', async () => {
-    const user = userEvent.setup();
-    render(<App />);
+    const { user } = await renderUnlocked();
     const toggle = screen.getByRole('button', { name: 'Toggle dark mode' });
 
     await user.click(toggle);
@@ -52,20 +64,21 @@ describe('App', () => {
   });
 
   it('dark mode preference persists across renders', async () => {
-    const user = userEvent.setup();
-    const { unmount } = render(<App />);
+    const { user, unmount } = await renderUnlocked();
     await user.click(screen.getByRole('button', { name: 'Toggle dark mode' }));
     unmount();
     document.body.className = '';
 
     render(<App />);
+    await user.type(screen.getByLabelText('Passphrase', { exact: true }), 'test passphrase');
+    await user.click(screen.getByRole('button', { name: 'Unlock' }));
+    await screen.findByRole('navigation', { name: 'Main navigation' }, { timeout: 5000 });
 
     expect(document.body).toHaveClass('dark');
   });
 
   it('dark mode toggle reports its pressed state', async () => {
-    const user = userEvent.setup();
-    render(<App />);
+    const { user } = await renderUnlocked();
     const toggle = screen.getByRole('button', { name: 'Toggle dark mode' });
     expect(toggle).toHaveAttribute('aria-pressed', 'false');
 
@@ -74,16 +87,15 @@ describe('App', () => {
     expect(toggle).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('marks the current page link with aria-current', () => {
-    render(<App />);
+  it('marks the current page link with aria-current', async () => {
+    await renderUnlocked();
 
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Team' })).not.toHaveAttribute('aria-current');
   });
 
   it('navigates to the roster route when Team is clicked', async () => {
-    const user = userEvent.setup();
-    render(<App />);
+    const { user } = await renderUnlocked();
 
     await user.click(screen.getByRole('link', { name: 'Team' }));
 
@@ -91,17 +103,16 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: 'Team' })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('redirects unknown routes to the dashboard', () => {
+  it('redirects unknown routes to the dashboard', async () => {
     window.location.hash = '#/does-not-exist';
 
-    render(<App />);
+    await renderUnlocked();
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument();
   });
 
   it('makes the skip link the first focusable element', async () => {
-    const user = userEvent.setup();
-    render(<App />);
+    const { user } = await renderUnlocked();
 
     await user.tab();
 
@@ -109,9 +120,8 @@ describe('App', () => {
   });
 
   it('moves focus to main content from the skip link without changing the route', async () => {
-    const user = userEvent.setup();
     window.location.hash = '#/roster';
-    render(<App />);
+    const { user } = await renderUnlocked();
 
     await user.click(screen.getByRole('link', { name: 'Skip to main content' }));
 
@@ -120,7 +130,7 @@ describe('App', () => {
   });
 
   it('has no accessibility violations', async () => {
-    const { container } = render(<App />);
+    const { container } = await renderUnlocked();
 
     expect(await axe(container)).toHaveNoViolations();
   });

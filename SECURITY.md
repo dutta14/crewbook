@@ -9,12 +9,16 @@ Crewbook stores sensitive notes about people, so security is a design constraint
 - Scripts load from the same origin only (`script-src 'self'`). Framing, plugins and form posts to other origins are blocked.
 - Dependencies are kept small. Rendered Markdown is sanitized with DOMPurify before it reaches the DOM.
 
-## 2. Encryption (planned, issue #2)
+## 2. Encryption
 
-- Data at rest is encrypted with AES-256-GCM using the Web Crypto API.
-- Keys are derived from the user's passphrase with PBKDF2 (SHA-256, 310,000 iterations, random salt per vault).
-- A two-envelope design wraps a random data key with the passphrase-derived key, so changing the passphrase re-wraps one small envelope instead of re-encrypting all data.
-- Every encryption uses a fresh random 96-bit IV. The passphrase and keys are never persisted.
+- Data at rest is encrypted with AES-256-GCM using the Web Crypto API. All reads and writes go through `useEncryptedStorage`; application code does not touch `localStorage` directly (enforced by ESLint).
+- Keys are derived from the user's passphrase with PBKDF2 (SHA-256, 310,000 iterations) and are non-extractable.
+- There are two independent envelopes, `crewbook_data` (shared data) and `crewbook_private` (private notes and sensitive data). Each has its own random 16-byte salt and its own key, derived from the same passphrase.
+- Every write uses a fresh random 96-bit IV. Each envelope records its iteration count so the work factor can be raised later.
+- A small encrypted sentinel (`crewbook_check`) tells a wrong passphrase apart from damaged data. Both show one generic message on the lock screen.
+- The passphrase and keys live in memory only. Locking, or closing the tab, discards them.
+- There is no passphrase recovery. A forgotten passphrase means the data cannot be read; the only option is to erase it and start over.
+- Writes are debounced (500ms) and flushed when the app locks or the page is about to unload. The unload flush is best effort because encryption is asynchronous.
 
 ## 3. Shared view security (planned)
 
@@ -22,15 +26,15 @@ Exports meant for a report to read contain only items explicitly marked shared. 
 
 ## 4. Threat model
 
-| Threat                            | Mitigation                                                  |
-| --------------------------------- | ----------------------------------------------------------- |
-| Network interception              | No network calls are permitted by CSP                       |
-| Cross-site scripting              | Strict CSP, no inline scripts, DOMPurify on Markdown        |
-| Lost or stolen device (locked)    | AES-256-GCM encrypted storage (planned)                     |
-| Weak passphrase                   | Strength guidance at setup (planned)                        |
-| Malicious dependency              | Minimal dependencies, lockfile, SHA-pinned CI actions       |
-| Unlocked device, shoulder surfing | Out of scope; use OS screen lock and the app lock (planned) |
-| Compromised browser or extensions | Out of scope                                                |
+| Threat                            | Mitigation                                            |
+| --------------------------------- | ----------------------------------------------------- |
+| Network interception              | No network calls are permitted by CSP                 |
+| Cross-site scripting              | Strict CSP, no inline scripts, DOMPurify on Markdown  |
+| Lost or stolen device (locked)    | AES-256-GCM encrypted storage                         |
+| Weak passphrase                   | Strength guidance at setup (planned)                  |
+| Malicious dependency              | Minimal dependencies, lockfile, SHA-pinned CI actions |
+| Unlocked device, shoulder surfing | Out of scope; use OS screen lock and the app lock     |
+| Compromised browser or extensions | Out of scope                                          |
 
 ## 5. Data classification
 
