@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { StorageWriteError } from '../utils/encryptedStorage';
-import { isMoodTrackingEnabled, setMoodTrackingEnabled, type SettingsStorage } from './settings';
+import {
+  areLiveShortcutsEnabled,
+  dismissLiveNotice,
+  isLiveNoticeDismissed,
+  isMoodTrackingEnabled,
+  setLiveShortcutsEnabled,
+  setMoodTrackingEnabled,
+  type SettingsStorage,
+} from './settings';
 
 function createStorage(initial: unknown = null) {
   const store = new Map<string, unknown>(initial === null ? [] : [['settings', initial]]);
@@ -39,5 +47,29 @@ describe('settings', () => {
     await expect(setMoodTrackingEnabled(true, storage)).rejects.toBe(failure);
 
     expect(isMoodTrackingEnabled(storage)).toBe(false);
+  });
+});
+
+describe('live mode settings', () => {
+  it('has shortcuts on and the notice unseen by default', () => {
+    const { storage } = createStorage();
+
+    expect(areLiveShortcutsEnabled(storage)).toBe(true);
+    expect(isLiveNoticeDismissed(storage)).toBe(false);
+  });
+
+  it('persists the shortcut toggle and the dismissed notice without losing other settings', async () => {
+    const { storage, store } = createStorage({ moodTrackingEnabled: 'true' });
+
+    await setLiveShortcutsEnabled(false, storage);
+    await dismissLiveNotice(storage);
+
+    expect(areLiveShortcutsEnabled(storage)).toBe(false);
+    expect(isLiveNoticeDismissed(storage)).toBe(true);
+    expect(store.get('settings')).toEqual({
+      moodTrackingEnabled: 'true',
+      liveModeShortcuts: 'false',
+      liveModeNoticeDismissed: 'true',
+    });
   });
 });

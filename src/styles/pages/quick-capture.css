@@ -1,0 +1,77 @@
+.quick-capture {
+  flex: 0 0 auto;
+  padding: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.quick-capture__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.quick-capture__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--transition-fast) var(--ease-out);
+}
+
+.quick-capture__btn:hover {
+  background: var(--accent-subtle);
+}
+
+.quick-capture__btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.inline-capture-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+}
+
+.inline-capture-form__input {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.inline-capture-form__error {
+  flex: 1 0 100%;
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .inline-capture-form {
+    animation: inline-capture-in var(--transition-normal) var(--ease-in-out);
+  }
+}
+
+@keyframes inline-capture-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

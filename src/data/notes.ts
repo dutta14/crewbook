@@ -1,4 +1,5 @@
 import type { EncryptedStorageContextValue } from '../components/EncryptedStorageProvider';
+import type { LiveSession } from '../types/LiveSession';
 import type { Note } from '../types/Note';
 import { NotFoundError, ValidationError } from './errors';
 
@@ -118,6 +119,18 @@ export function addNote(memberId: string, content: string, storage: NoteStorage)
     );
     return { ...note };
   });
+}
+
+export const EMPTY_SESSION_NOTE = '(No notes)';
+
+/**
+ * Turns a finished live session into one ordinary note stamped with the moment it ended, and
+ * discards the member's auto-saved draft in the same write. A session with nothing written still
+ * leaves a record that the 1:1 happened.
+ */
+export function saveLiveSession(session: LiveSession, storage: NoteStorage): Promise<Note> {
+  const content = session.content.trim();
+  return addNote(session.memberId, content.length > 0 ? content : EMPTY_SESSION_NOTE, storage);
 }
 
 /** Throws NoteLockedError once the note is more than 24 hours old. */

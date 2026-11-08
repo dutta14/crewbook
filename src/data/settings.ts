@@ -3,6 +3,8 @@ import type { EncryptedStorageContextValue } from '../components/EncryptedStorag
 /** A property on the decrypted `crewbook_data` object; AppData types its values as strings. */
 const STORAGE_KEY = 'settings';
 const MOOD_TRACKING_KEY = 'moodTrackingEnabled';
+const LIVE_SHORTCUTS_KEY = 'liveModeShortcuts';
+const LIVE_NOTICE_KEY = 'liveModeNoticeDismissed';
 
 export type SettingsStorage = Pick<EncryptedStorageContextValue, 'get' | 'set' | 'flush'>;
 
@@ -18,13 +20,9 @@ export function isMoodTrackingEnabled(storage: Pick<SettingsStorage, 'get'>): bo
   return readSettings(storage)[MOOD_TRACKING_KEY] === 'true';
 }
 
-/** Turning tracking off hides mood controls and charts but keeps stored ratings. */
-export async function setMoodTrackingEnabled(
-  enabled: boolean,
-  storage: SettingsStorage,
-): Promise<void> {
+async function writeSetting(key: string, value: string, storage: SettingsStorage): Promise<void> {
   const previous = readSettings(storage);
-  storage.set(STORAGE_KEY, { ...previous, [MOOD_TRACKING_KEY]: String(enabled) });
+  storage.set(STORAGE_KEY, { ...previous, [key]: value });
   const failure = await storage.flush();
   if (!failure) return;
   try {
@@ -33,4 +31,27 @@ export async function setMoodTrackingEnabled(
     // Storage was locked meanwhile; locking already dropped the in-memory copy.
   }
   throw failure;
+}
+
+/** Turning tracking off hides mood controls and charts but keeps stored ratings. */
+export function setMoodTrackingEnabled(enabled: boolean, storage: SettingsStorage): Promise<void> {
+  return writeSetting(MOOD_TRACKING_KEY, String(enabled), storage);
+}
+
+/** On unless the manager turns them off, because live mode's shortcuts can clash with a browser's. */
+export function areLiveShortcutsEnabled(storage: Pick<SettingsStorage, 'get'>): boolean {
+  return readSettings(storage)[LIVE_SHORTCUTS_KEY] !== 'false';
+}
+
+export function setLiveShortcutsEnabled(enabled: boolean, storage: SettingsStorage): Promise<void> {
+  return writeSetting(LIVE_SHORTCUTS_KEY, String(enabled), storage);
+}
+
+/** The one-time reminder to tell the team that notes are taken during 1:1s. */
+export function isLiveNoticeDismissed(storage: Pick<SettingsStorage, 'get'>): boolean {
+  return readSettings(storage)[LIVE_NOTICE_KEY] === 'true';
+}
+
+export function dismissLiveNotice(storage: SettingsStorage): Promise<void> {
+  return writeSetting(LIVE_NOTICE_KEY, 'true', storage);
 }

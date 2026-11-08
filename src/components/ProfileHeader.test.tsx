@@ -63,6 +63,17 @@ describe('ProfileHeader', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Alex Chen' })).toBeInTheDocument();
   });
 
+  it('shows Start 1:1 only when a handler is provided and calls it', async () => {
+    const onStart = vi.fn();
+    const { rerender } = render(<ProfileHeader member={member()} onEdit={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'Start 1:1' })).not.toBeInTheDocument();
+
+    rerender(<ProfileHeader member={member()} onEdit={vi.fn()} onStartOneOnOne={onStart} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Start 1:1' }));
+
+    expect(onStart).toHaveBeenCalledOnce();
+  });
+
   it('gives the edit button the aria-label "Edit [Name]\'s profile" and calls onEdit', async () => {
     const onEdit = vi.fn();
     render(<ProfileHeader member={member()} onEdit={onEdit} />);

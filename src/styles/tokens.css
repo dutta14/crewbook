@@ -75,6 +75,7 @@
 
   /* Stacking */
   --z-sidebar: 40;
+  --z-live-mode: 50;
   --z-modal: 60;
   --z-toast: 70;
 }

@@ -4,6 +4,8 @@ import { AddMemberModal } from '../components/AddMemberModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EmptyState } from '../components/EmptyState';
 import { TeamIcon } from '../components/icons';
+import { LiveMode } from '../components/LiveMode';
+import { MoodPrompt } from '../components/MoodPrompt';
 import { MoodTrendSection } from '../components/MoodTrendSection';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { ProfileOverview } from '../components/ProfileOverview';
@@ -15,9 +17,12 @@ import { deleteActionItemsForMember } from '../data/actionItems';
 import { deleteMember, getMember, listMembers, updateMember } from '../data/members';
 import { deleteMoodEntriesForMember } from '../data/moodEntries';
 import { deleteNotesForMember } from '../data/notes';
+import { isMoodTrackingEnabled } from '../data/settings';
 import { buildTimeline } from '../data/timeline';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { useToast } from '../hooks/useToast';
+import type { LiveSession } from '../types/LiveSession';
+import type { Note } from '../types/Note';
 import '../styles/profile.css';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -31,6 +36,8 @@ export function Profile() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLive, setIsLive] = useState(false);
+  const [rateNoteId, setRateNoteId] = useState<string | null>(null);
 
   const members = useMemo(() => listMembers(storage), [storage]);
   // Anything that is not a UUID is rejected before it reaches the store.
@@ -46,6 +53,24 @@ export function Profile() {
   useEffect(() => {
     headingRef.current?.focus();
   }, [id, isFound]);
+
+  const handleStartLive = async () => {
+    try {
+      await storage.loadPrivate();
+    } catch {
+      showToast("Couldn't start the 1:1. Unlock your notes and try again.", 'error');
+      return;
+    }
+    setRateNoteId(null);
+    setIsLive(true);
+  };
+
+  // Mood is asked after the meeting, on the profile, once the note it belongs to exists.
+  const handleEndLive = (_session: LiveSession, note: Note) => {
+    setIsLive(false);
+    setRateNoteId(note.id);
+    showToast('1:1 saved', 'success');
+  };
 
   const goToRoster = () => navigate('/roster');
 
@@ -105,14 +130,20 @@ export function Profile() {
         member={member}
         headingRef={headingRef}
         onEdit={() => setIsEditOpen(true)}
+        onStartOneOnOne={() => void handleStartLive()}
         onDelete={() => setIsDeleteOpen(true)}
       />
       <ScheduleCard
-        key={member.id}
+        key={`schedule-${member.id}`}
         memberId={member.id}
         schedule={member.schedule ?? null}
         onSave={(schedule) => updateMember(member.id, { schedule }, storage)}
       />
+      {rateNoteId && isMoodTrackingEnabled(storage) ? (
+        <section className="profile-mood-prompt" aria-label="Rate this 1:1">
+          <MoodPrompt key={rateNoteId} memberId={member.id} noteId={rateNoteId} />
+        </section>
+      ) : null}
       <Tabs
         ariaLabel="Profile sections"
         tabs={[
@@ -134,7 +165,16 @@ export function Profile() {
           { id: 'timeline', label: 'Timeline', content: <Timeline entries={timeline} /> },
         ]}
       />
-      <MoodTrendSection key={member.id} memberId={member.id} />
+      {isLive ? (
+        <LiveMode
+          key={`live-${member.id}`}
+          memberId={member.id}
+          memberName={member.name}
+          avatarUrl={member.avatarUrl}
+          onEnd={handleEndLive}
+        />
+      ) : null}
+      <MoodTrendSection key={`mood-${member.id}`} memberId={member.id} />
       <AddMemberModal
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}

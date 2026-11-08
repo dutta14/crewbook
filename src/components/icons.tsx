@@ -147,3 +147,30 @@ export function ChecklistIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function CheckCircleIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="m9 12 2 2 4-4" />
+    </Icon>
+  );
+}
+
+export function GavelIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m14 5 5 5-3 3-5-5z" />
+      <path d="m11.5 10.5-8 8L6 21l8-8" />
+      <path d="M13 21h8" />
+    </Icon>
+  );
+}
+
+export function ArrowRightIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M5 12h14M12 5l7 7-7 7" />
+    </Icon>
+  );
+}

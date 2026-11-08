@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { axe } from 'vitest-axe';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { createActionItem, createMember, createMoodEntry } from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
@@ -61,6 +61,18 @@ function renderProfile(id: string, members: TeamMember[] = team()) {
     { route: `/person/${id}`, initialData: { members } },
   );
 }
+
+// Skips live mode's 250ms close animation, as users who prefer reduced motion do.
+const reduceMotion = () =>
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes('prefers-reduced-motion'),
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
+  );
 
 describe('Profile', () => {
   it('Overview tab shows all member fields', () => {
@@ -411,6 +423,52 @@ describe('Profile', () => {
     expect(within(card).getByText('Tuesdays at 10:00 AM')).toBeInTheDocument();
     expect(await within(card).findByRole('button', { name: 'Edit 1:1 schedule' })).toHaveFocus();
     expect(screen.getByRole('tabpanel', { name: 'Overview' })).toBeInTheDocument();
+  });
+
+  it('starts live mode from the header and shows it as a dialog over the profile', async () => {
+    const user = userEvent.setup();
+    renderProfile(ALEX);
+
+    await user.click(screen.getByRole('button', { name: 'Start 1:1' }));
+
+    expect(screen.getByRole('dialog', { name: '1:1 with Alex Chen' })).toBeInTheDocument();
+  });
+
+  it('after End 1:1, saves the note and offers the mood prompt when tracking is on', async () => {
+    reduceMotion();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Routes>
+        <Route path="/person/:id" element={<Profile />} />
+      </Routes>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: {
+          members: team(),
+          settings: { moodTrackingEnabled: 'true', liveModeNoticeDismissed: 'true' },
+        },
+      },
+    );
+    await user.click(screen.getByRole('button', { name: 'Start 1:1' }));
+    await user.type(screen.getByRole('textbox', { name: '1:1 notes' }), 'Great chat');
+    await user.click(screen.getByRole('button', { name: 'End 1:1 meeting and save' }));
+
+    const rating = await screen.findByRole('region', { name: 'Rate this 1:1' });
+    expect(within(rating).getByRole('radio', { name: 'Good energy' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'Notes' }));
+    expect(screen.getByText('Great chat')).toBeInTheDocument();
+  });
+
+  it('does not ask for a mood after End 1:1 when tracking is off', async () => {
+    reduceMotion();
+    const user = userEvent.setup();
+    renderProfile(ALEX);
+    await user.click(screen.getByRole('button', { name: 'Start 1:1' }));
+    await user.click(screen.getByRole('button', { name: 'End 1:1 meeting and save' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.queryByRole('region', { name: 'Rate this 1:1' })).not.toBeInTheDocument();
   });
 
   it('has no axe violations', async () => {

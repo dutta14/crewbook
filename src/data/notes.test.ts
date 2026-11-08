@@ -6,6 +6,7 @@ import { NotFoundError, ValidationError } from './errors';
 import {
   EDIT_WINDOW_MS,
   NOTE_MAX_LENGTH,
+  EMPTY_SESSION_NOTE,
   NoteLockedError,
   addNote,
   deleteNotesForMember,
@@ -13,6 +14,7 @@ import {
   isNoteEditable,
   listNotes,
   saveDraft,
+  saveLiveSession,
   searchNotes,
   updateNote,
   type NoteStorage,
@@ -231,5 +233,34 @@ describe('deleteNotesForMember', () => {
     expect(listNotes(ALEX, storage)).toEqual([]);
     expect(getDraft(ALEX, storage)).toBe('');
     expect(listNotes(PRIYA, storage)).toHaveLength(1);
+  });
+});
+
+describe('saveLiveSession', () => {
+  const session = (content: string) => ({
+    memberId: ALEX,
+    content,
+    captures: [],
+    startedAt: '2026-01-07T10:00:00.000Z',
+    endedAt: '2026-01-07T10:30:00.000Z',
+  });
+
+  it('saves the trimmed notes as a note and clears the draft', async () => {
+    const { storage } = createStorage();
+    await saveDraft(ALEX, 'half-typed', storage);
+
+    const saved = await saveLiveSession(session('  Talked about growth.\n\n'), storage);
+
+    expect(saved.content).toBe('Talked about growth.');
+    expect(listNotes(ALEX, storage)).toHaveLength(1);
+    expect(getDraft(ALEX, storage)).toBe('');
+  });
+
+  it('still records that the 1:1 happened when nothing was written', async () => {
+    const { storage } = createStorage();
+
+    const saved = await saveLiveSession(session('   '), storage);
+
+    expect(saved.content).toBe(EMPTY_SESSION_NOTE);
   });
 });

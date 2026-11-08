@@ -10,12 +10,20 @@ import { StatusBadge, toBadgeStatus } from './StatusBadge';
 interface ProfileHeaderProps {
   member: TeamMember;
   onEdit: () => void;
+  /** The Start 1:1 button is only shown when a handler is provided. */
+  onStartOneOnOne?: () => void;
   /** The delete button is only shown when a handler is provided. */
   onDelete?: () => void;
   headingRef?: Ref<HTMLHeadingElement>;
 }
 
-export function ProfileHeader({ member, onEdit, onDelete, headingRef }: ProfileHeaderProps) {
+export function ProfileHeader({
+  member,
+  onEdit,
+  onStartOneOnOne,
+  onDelete,
+  headingRef,
+}: ProfileHeaderProps) {
   const roleAndLevel = [member.role, member.level].filter(Boolean).join(' · ');
   const startDate = formatStartDate(member.startDate);
   const mailto = member.email ? toMailtoHref(member.email) : null;
@@ -49,6 +57,11 @@ export function ProfileHeader({ member, onEdit, onDelete, headingRef }: ProfileH
         ) : null}
       </div>
       <div className="profile-header__actions">
+        {onStartOneOnOne ? (
+          <button type="button" className="btn btn-primary" onClick={onStartOneOnOne}>
+            Start 1:1
+          </button>
+        ) : null}
         <button
           type="button"
           className="btn btn-secondary"
