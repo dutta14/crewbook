@@ -25,7 +25,7 @@ export function RosterTable({ members }: RosterTableProps) {
           <tr key={member.id} className="roster-row" data-testid="member-row">
             <td>
               <div className="roster-identity">
-                <Avatar name={member.name} decorative />
+                <Avatar name={member.name} avatarUrl={member.avatarUrl} aria-hidden />
                 <div className="roster-identity__text">
                   <Link className="roster-link" to={`/person/${member.id}`}>
                     {member.name}

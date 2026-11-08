@@ -1,26 +1,19 @@
+/* Width, height and font-size come from the size prop (see AVATAR_SIZES in Avatar.tsx). */
 .avatar {
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  overflow: hidden;
   border-radius: 50%;
   color: #ffffff;
-  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1;
   user-select: none;
 }
 
-.avatar--sm {
-  width: 32px;
-  height: 32px;
-  font-size: var(--text-caption);
-}
-
-.avatar--lg {
-  width: 64px;
-  height: 64px;
-  font-size: 1.25rem;
+.avatar__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }

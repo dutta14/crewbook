@@ -1,51 +1,62 @@
+import { useState } from 'react';
 import '../styles/avatar.css';
+import { getAvatarColor, getInitials } from '../utils/avatarColor';
 
 export type AvatarSize = 'sm' | 'md' | 'lg';
 
 interface AvatarProps {
   name: string;
   size?: AvatarSize;
+  /** Shown instead of the initials. Only https: and data:image/ URLs are accepted. */
+  avatarUrl?: string;
   /** Hide the avatar from assistive technology when the name is already rendered beside it. */
-  decorative?: boolean;
+  'aria-hidden'?: boolean;
 }
 
-// Design-system palette; every colour passes AA contrast against white text.
-const PALETTE = [
-  '#0f766e',
-  '#b45309',
-  '#7c3aed',
-  '#0369a1',
-  '#be123c',
-  '#6d28d9',
-  '#c2410c',
-  '#7e22ce',
-  '#0e7490',
-  '#9f1239',
-];
+export const AVATAR_SIZES: Record<AvatarSize, { box: number; font: number }> = {
+  sm: { box: 32, font: 12 },
+  md: { box: 40, font: 14 },
+  lg: { box: 64, font: 22 },
+};
 
-export function getInitials(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return '?';
-  const first = Array.from(words[0])[0];
-  if (words.length === 1) return first.toUpperCase();
-  return (first + Array.from(words[words.length - 1])[0]).toUpperCase();
+const SAFE_URL_PATTERN =
+  /^(https:\/\/\S+|data:image\/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/=]+)$/i;
+
+function safeImageUrl(url: string | undefined): string | undefined {
+  const trimmed = url?.trim();
+  return trimmed && SAFE_URL_PATTERN.test(trimmed) ? trimmed : undefined;
 }
 
-export function getAvatarColor(name: string): string {
-  let hash = 0;
-  for (const char of name) hash = (hash * 31 + (char.codePointAt(0) ?? 0)) >>> 0;
-  return PALETTE[hash % PALETTE.length];
-}
+export function Avatar({ name, size = 'md', avatarUrl, 'aria-hidden': ariaHidden }: AvatarProps) {
+  const [failedUrl, setFailedUrl] = useState<string>();
+  const imageUrl = safeImageUrl(avatarUrl);
+  const showImage = imageUrl !== undefined && imageUrl !== failedUrl;
+  const label = name.trim() || 'Unknown';
+  const { box, font } = AVATAR_SIZES[size];
+  const a11y = ariaHidden ? { 'aria-hidden': true } : { role: 'img', 'aria-label': label };
 
-export function Avatar({ name, size = 'md', decorative = false }: AvatarProps) {
-  const label = decorative ? { 'aria-hidden': true } : { role: 'img', 'aria-label': name };
   return (
     <span
       className={`avatar avatar--${size}`}
-      style={{ backgroundColor: getAvatarColor(name) }}
-      {...label}
+      style={{
+        width: box,
+        height: box,
+        fontSize: font,
+        backgroundColor: getAvatarColor(name.trim()),
+      }}
+      {...a11y}
     >
-      <span aria-hidden="true">{getInitials(name)}</span>
+      {showImage ? (
+        <img
+          className="avatar__img"
+          src={imageUrl}
+          alt={label}
+          referrerPolicy="no-referrer"
+          onError={() => setFailedUrl(imageUrl)}
+        />
+      ) : (
+        <span aria-hidden="true">{getInitials(name)}</span>
+      )}
     </span>
   );
 }

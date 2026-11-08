@@ -31,6 +31,13 @@ describe('ProfileHeader', () => {
     expect(screen.queryByRole('img', { name: 'Alex Chen' })).not.toBeInTheDocument();
   });
 
+  it('shows the member photo in the avatar when they have an avatarUrl', () => {
+    const photo = 'data:image/png;base64,iVBORw0KGgo=';
+    render(<ProfileHeader member={{ ...member(), avatarUrl: photo }} onEdit={vi.fn()} />);
+
+    expect(screen.getByAltText('Alex Chen')).toHaveAttribute('src', photo);
+  });
+
   it('shows start date and email in header, with the email as a mailto link', () => {
     render(<ProfileHeader member={member()} onEdit={vi.fn()} />);
 

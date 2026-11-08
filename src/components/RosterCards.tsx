@@ -14,7 +14,7 @@ export function RosterCards({ members }: RosterCardsProps) {
     <ul className="roster-cards" aria-label="Team members">
       {members.map((member) => (
         <li key={member.id} className="roster-card roster-row" data-testid="member-row">
-          <Avatar name={member.name} decorative />
+          <Avatar name={member.name} avatarUrl={member.avatarUrl} aria-hidden />
           <div className="roster-identity__text">
             <Link className="roster-link" to={`/person/${member.id}`}>
               {member.name}

@@ -22,7 +22,7 @@ export function ProfileHeader({ member, onEdit, onDelete, headingRef }: ProfileH
 
   return (
     <header className="profile-header">
-      <Avatar name={member.name} size="lg" decorative />
+      <Avatar name={member.name} size="lg" avatarUrl={member.avatarUrl} aria-hidden />
       <div className="profile-header__body">
         <h1 ref={headingRef} className="profile-header__name" tabIndex={-1}>
           {member.name}
