@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AddMemberModal } from '../components/AddMemberModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { DecisionsPanel } from '../components/DecisionsPanel';
 import { EmptyState } from '../components/EmptyState';
 import { TeamIcon } from '../components/icons';
 import { LiveMode } from '../components/LiveMode';
@@ -16,6 +17,7 @@ import { ScheduleCard } from '../components/ScheduleCard';
 import { Tabs } from '../components/Tabs';
 import { Timeline } from '../components/Timeline';
 import { deleteActionItemsForMember } from '../data/actionItems';
+import { deleteDecisionsForMember } from '../data/decisions';
 import { deleteMember, getMember, listMembers, updateMember } from '../data/members';
 import { deleteMoodEntriesForMember } from '../data/moodEntries';
 import { deleteNotesForMember } from '../data/notes';
@@ -29,10 +31,16 @@ import '../styles/profile.css';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Decision and follow-up links name their note in router state, so its id stays out of the URL. */
+function getStateNoteId(state: unknown): string | null {
+  if (typeof state !== 'object' || state === null || !('noteId' in state)) return null;
+  return typeof state.noteId === 'string' ? state.noteId : null;
+}
+
 export function Profile() {
   const { id = '' } = useParams();
   const [searchParams] = useSearchParams();
-  const { key: locationKey } = useLocation();
+  const { key: locationKey, state: locationState } = useLocation();
   const storage = useEncryptedStorage();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -55,7 +63,7 @@ export function Profile() {
   const isFound = member !== null;
   // A meeting history link names the note to open. The key changes on every visit, so choosing the
   // same note again still switches back to it.
-  const linkedNoteId = searchParams.get('note');
+  const linkedNoteId = searchParams.get('note') ?? getStateNoteId(locationState);
   const noteFocus = useMemo(
     () => (linkedNoteId ? { noteId: linkedNoteId, requestKey: locationKey } : null),
     [linkedNoteId, locationKey],
@@ -92,7 +100,7 @@ export function Profile() {
 
   const goToRoster = () => navigate('/roster');
 
-  // A removed person's 1:1 history, action items and mood ratings must not linger in the
+  // A removed person's 1:1 history, action items, decisions and mood ratings must not linger in the
   // encrypted store. Best effort: the person is already gone, so a failure here must not turn a
   // successful delete into an error.
   const purgePrivateData = async (memberId: string) => {
@@ -106,6 +114,7 @@ export function Profile() {
     await deleteNotesForMember(memberId, storage).catch(() => undefined);
     await deleteActionItemsForMember(memberId, storage).catch(() => undefined);
     await deleteMoodEntriesForMember(memberId, storage).catch(() => undefined);
+    await deleteDecisionsForMember(memberId, storage).catch(() => undefined);
   };
 
   const handleDelete = async () => {
@@ -190,6 +199,11 @@ export function Profile() {
             id: 'meetings',
             label: 'Meetings',
             content: <MeetingsPanel key={member.id} memberId={member.id} />,
+          },
+          {
+            id: 'decisions',
+            label: 'Decisions & Follow-ups',
+            content: <DecisionsPanel key={member.id} memberId={member.id} />,
           },
           {
             id: 'goals',

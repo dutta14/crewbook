@@ -53,6 +53,29 @@
   min-width: 0;
 }
 
+.inline-capture-form__extra {
+  display: flex;
+  flex: 1 0 100%;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-3);
+}
+
+.inline-capture-form__context {
+  flex: 1 1 100%;
+  min-width: 0;
+  resize: vertical;
+}
+
+.inline-capture-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-weight: 500;
+}
+
 .inline-capture-form__error {
   flex: 1 0 100%;
   margin: 0;

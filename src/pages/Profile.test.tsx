@@ -6,6 +6,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import {
   createActionItem,
+  createDecision,
+  createFollowUp,
   createMember,
   createMoodEntry,
   createNote,
@@ -266,11 +268,13 @@ describe('Profile', () => {
       'Overview',
       'Notes',
       'Meetings',
+      'Decisions & Follow-ups',
       'Goals',
       'Timeline',
     ]);
     expect(tabs.map((tab) => tab.getAttribute('aria-selected'))).toEqual([
       'true',
+      'false',
       'false',
       'false',
       'false',
@@ -385,6 +389,83 @@ describe('Profile', () => {
 
     expect(await screen.findByRole('heading', { name: 'Roster page' })).toBeInTheDocument();
     expect(screen.getByText('Alex Chen removed from your team')).toBeInTheDocument();
+  });
+
+  it('deleting a member also purges their decisions and follow-ups but keeps everyone else’s', async () => {
+    const user = userEvent.setup();
+    function Remaining() {
+      const { getPrivate } = useEncryptedStorage();
+      const decisions = getPrivate<Array<{ title: string }>>('decisions') ?? [];
+      const followUps = getPrivate<Array<{ title: string }>>('followUps') ?? [];
+      return (
+        <output aria-label="Remaining records">
+          {[...decisions, ...followUps].map((i) => i.title).join(',')}
+        </output>
+      );
+    }
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/roster" element={<h1>Roster page</h1>} />
+          <Route path="/person/:id" element={<Profile />} />
+        </Routes>
+        <Remaining />
+      </>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          decisions: [
+            createDecision({ engineerId: ALEX, title: 'Alex decision' }),
+            createDecision({ engineerId: PRIYA, title: 'Priya decision' }),
+          ],
+          followUps: [
+            createFollowUp({ engineerId: ALEX, title: 'Alex follow-up' }),
+            createFollowUp({ engineerId: PRIYA, title: 'Priya follow-up' }),
+          ],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Delete Alex Chen' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Remaining records' })).toHaveTextContent(
+        /^Priya decision,Priya follow-up$/,
+      ),
+    );
+  });
+
+  it('shows the member’s decisions and follow-ups on their tab', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Routes>
+        <Route path="/person/:id" element={<Profile />} />
+      </Routes>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          decisions: [
+            createDecision({ engineerId: ALEX, title: 'Alex decision' }),
+            createDecision({ engineerId: PRIYA, title: 'Priya decision' }),
+          ],
+          followUps: [createFollowUp({ engineerId: ALEX, title: 'Alex follow-up' })],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('tab', { name: 'Decisions & Follow-ups' }));
+
+    const panel = await screen.findByRole('tabpanel', { name: 'Decisions & Follow-ups' });
+    expect(
+      await within(panel).findByRole('article', { name: 'Decision: Alex decision' }),
+    ).toBeVisible();
+    expect(within(panel).getByRole('article', { name: 'Follow-up: Alex follow-up' })).toBeVisible();
+    expect(within(panel).queryByText('Priya decision')).not.toBeInTheDocument();
   });
 
   it('deleting a member also purges their action items but keeps everyone else’s', async () => {

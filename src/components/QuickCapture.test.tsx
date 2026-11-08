@@ -5,14 +5,21 @@ import { axe } from 'vitest-axe';
 import { describe, expect, it, vi } from 'vitest';
 import { ValidationError } from '../data/errors';
 import type { CaptureType } from '../types/LiveSession';
-import { QuickCapture, type CaptureRequest } from './QuickCapture';
+import {
+  QuickCapture,
+  type CaptureDetails,
+  type CaptureOwner,
+  type CaptureRequest,
+} from './QuickCapture';
 
 function Harness({
   onSubmit,
+  owners,
   editorRef,
   initial = null,
 }: {
-  onSubmit: (type: CaptureType, title: string) => Promise<void>;
+  onSubmit: (type: CaptureType, title: string, details: CaptureDetails) => Promise<void>;
+  owners?: CaptureOwner[];
   editorRef?: React.RefObject<HTMLTextAreaElement | null>;
   initial?: CaptureRequest | null;
 }) {
@@ -23,6 +30,7 @@ function Harness({
       onOpen={(type) => setActive((current) => ({ type, nonce: (current?.nonce ?? 0) + 1 }))}
       onClose={() => setActive(null)}
       onSubmit={onSubmit}
+      owners={owners}
       editorRef={editorRef}
     />
   );
@@ -68,7 +76,10 @@ describe('QuickCapture', () => {
       'Check in Friday{Enter}',
     );
 
-    expect(onSubmit).toHaveBeenCalledExactlyOnceWith('followup', 'Check in Friday');
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith('followup', 'Check in Friday', {
+      ownerId: 'manager',
+      dueDate: '',
+    });
     expect(screen.queryByRole('form')).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Editor' })).toHaveFocus();
   });

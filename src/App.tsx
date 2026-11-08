@@ -4,6 +4,7 @@ import { EncryptedStorageProvider } from './components/EncryptedStorageProvider'
 import { LockGate } from './components/LockGate';
 import { ToastProvider } from './components/Toast';
 import { Dashboard } from './pages/Dashboard';
+import { DecisionsGlobalView } from './pages/DecisionsGlobalView';
 import { GlobalActions } from './pages/GlobalActions';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { Profile } from './pages/Profile';
@@ -22,6 +23,7 @@ export default function App() {
                 <Route path="roster" element={<Roster />} />
                 <Route path="person/:id" element={<Profile />} />
                 <Route path="actions" element={<GlobalActions />} />
+                <Route path="decisions" element={<DecisionsGlobalView />} />
                 <Route path="calendar" element={<PlaceholderPage title="Calendar" />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

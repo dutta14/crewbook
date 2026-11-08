@@ -12,6 +12,7 @@ import { AUTOSAVE_DELAY_MS } from '../hooks/useAutoSave';
 import { LiveMode } from './LiveMode';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { listByMember } from '../data/actionItems';
+import { getDecisions, getFollowUps } from '../data/decisions';
 
 const ALEX = createMember({ id: '11111111-1111-4111-8111-111111111111', name: 'Alex Chen' });
 const SETTINGS_SEEN = { settings: { liveModeNoticeDismissed: 'true' } };
@@ -22,6 +23,24 @@ function StoredItems({ memberId }: { memberId: string }) {
     <ul aria-label="Stored action items">
       {listByMember(memberId, storage).map((item) => (
         <li key={item.id}>{`${item.title} (${item.status})`}</li>
+      ))}
+    </ul>
+  );
+}
+
+function StoredRecords({ memberId }: { memberId: string }) {
+  const storage = useEncryptedStorage();
+  return (
+    <ul aria-label="Stored decisions and follow-ups">
+      {getDecisions(storage, memberId).map((item) => (
+        <li
+          key={item.id}
+        >{`Decision ${item.title} | ${item.context} | note ${item.linkedMeetingId}`}</li>
+      ))}
+      {getFollowUps(storage, memberId).map((item) => (
+        <li key={item.id}>
+          {`Follow-up ${item.title} | ${item.ownerName} | ${item.dueDate ?? 'no date'} | note ${item.linkedMeetingId}`}
+        </li>
       ))}
     </ul>
   );
@@ -45,6 +64,7 @@ function Host({ onEnd = vi.fn() }: { onEnd?: (session: LiveSession, note: Note) 
         />
       ) : null}
       <StoredItems memberId={ALEX.id} />
+      <StoredRecords memberId={ALEX.id} />
     </>
   );
 }
@@ -192,16 +212,54 @@ describe('LiveMode', () => {
     expect(screen.getByText('Send the doc (open)')).toBeInTheDocument();
   });
 
-  it('adds a decision to the notes only', async () => {
+  it('adds a decision with its context as a record and as a line in the notes', async () => {
     const user = await openLive();
 
     await user.click(screen.getByRole('button', { name: 'Add decision' }));
-    await user.type(screen.getByRole('textbox', { name: 'Decision title' }), 'Ship Friday{Enter}');
+    await user.type(screen.getByRole('textbox', { name: 'Decision title' }), 'Ship Friday');
+    await user.type(
+      screen.getByRole('textbox', { name: 'Decision context' }),
+      'QA signed off{Control>}{Enter}{/Control}',
+    );
 
     expect(screen.getByRole('textbox', { name: '1:1 notes' })).toHaveValue(
       '- **Decision:** Ship Friday',
     );
+    expect(
+      await screen.findByText('Decision Ship Friday | QA signed off | note'),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/Ship Friday \(/)).not.toBeInTheDocument();
+  });
+
+  it('adds a follow-up with an owner and due date as a record', async () => {
+    const user = await openLive();
+
+    await user.click(screen.getByRole('button', { name: 'Add follow-up' }));
+    await user.type(screen.getByRole('textbox', { name: 'Follow-up title' }), 'Send the doc');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Owner' }), 'Alex Chen');
+    await user.type(screen.getByLabelText('Due date'), '2030-01-15');
+    await user.click(screen.getByRole('button', { name: 'Add' }));
+
+    expect(
+      await screen.findByText('Follow-up Send the doc | Alex Chen | 2030-01-15 | note'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: '1:1 notes' })).toHaveValue(
+      '- **Follow-up:** Send the doc',
+    );
+    expect(screen.queryByText(/Send the doc \(/)).not.toBeInTheDocument();
+  });
+
+  it('links what was captured to the note when the 1:1 ends', async () => {
+    const onEnd = vi.fn();
+    const user = await openLive({ onEnd });
+
+    await user.click(screen.getByRole('button', { name: 'Add decision' }));
+    await user.type(screen.getByRole('textbox', { name: 'Decision title' }), 'Ship Friday{Enter}');
+    await user.click(screen.getByRole('button', { name: 'End 1:1 meeting and save' }));
+
+    await waitFor(() => expect(onEnd).toHaveBeenCalledOnce());
+    const note = (onEnd.mock.calls[0] as [LiveSession, Note])[1];
+    expect(screen.getByText(`Decision Ship Friday | | note ${note.id}`)).toBeInTheDocument();
   });
 
   it('refuses a capture that no longer fits in the note and creates no action item', async () => {

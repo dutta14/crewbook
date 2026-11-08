@@ -1,4 +1,4 @@
-import type { ActionItem, MoodEntry, Note, TeamMember } from '../types';
+import type { ActionItem, Decision, FollowUp, MoodEntry, Note, TeamMember } from '../types';
 
 const now = () => new Date().toISOString();
 
@@ -54,6 +54,36 @@ export function createMoodEntry(overrides: Partial<MoodEntry> = {}): MoodEntry {
     noteId: crypto.randomUUID(),
     score: 4,
     recordedAt: now(),
+    ...overrides,
+  };
+}
+
+export function createDecision(overrides: Partial<Decision> = {}): Decision {
+  return {
+    id: crypto.randomUUID(),
+    engineerId: crypto.randomUUID(),
+    title: 'Adopt new CI pipeline',
+    context: 'Builds take 40 minutes today and the new pipeline cuts that in half.',
+    date: '2025-01-15',
+    linkedMeetingId: crypto.randomUUID(),
+    linkedMeetingDate: '2025-01-15',
+    createdAt: now(),
+    ...overrides,
+  };
+}
+
+export function createFollowUp(overrides: Partial<FollowUp> = {}): FollowUp {
+  return {
+    id: crypto.randomUUID(),
+    engineerId: crypto.randomUUID(),
+    title: 'Share the migration plan',
+    ownerId: 'manager',
+    ownerName: 'Me',
+    dueDate: '2099-01-31',
+    status: 'pending',
+    linkedMeetingId: crypto.randomUUID(),
+    linkedMeetingDate: '2025-01-15',
+    createdAt: now(),
     ...overrides,
   };
 }

@@ -166,6 +166,75 @@ export async function seedActionItems(
   await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
 }
 
+export interface SeedDecision {
+  memberIndex: number;
+  title: string;
+  context?: string;
+}
+
+export interface SeedFollowUp {
+  memberIndex: number;
+  title: string;
+  /** Days from today; negative is in the past. */
+  dueInDays?: number;
+  status?: 'pending' | 'done';
+}
+
+/** Records are created in order, so later entries are newer and listed first. */
+export async function seedDecisions(
+  page: Page,
+  records: { decisions?: SeedDecision[]; followUps?: SeedFollowUp[] },
+  passphrase = TEST_PASSPHRASE,
+) {
+  const base = Date.now() - 60_000;
+  let tick = 0;
+  const stamp = () => new Date(base + tick++ * 1000).toISOString();
+  const decisions = (records.decisions ?? []).map(({ memberIndex, title, context }, index) => ({
+    id: `00000000-0000-4000-b000-${String(index).padStart(12, '0')}`,
+    engineerId: seedId(memberIndex),
+    title,
+    context: context ?? '',
+    date: isoDateInDays(0),
+    linkedMeetingId: '',
+    linkedMeetingDate: '',
+    createdAt: stamp(),
+  }));
+  const followUps = (records.followUps ?? []).map(
+    ({ memberIndex, title, dueInDays, status }, index) => ({
+      id: `00000000-0000-4000-c000-${String(index).padStart(12, '0')}`,
+      engineerId: seedId(memberIndex),
+      title,
+      ownerId: 'manager',
+      ownerName: 'Me',
+      ...(dueInDays === undefined ? {} : { dueDate: isoDateInDays(dueInDays) }),
+      status: status ?? 'pending',
+      linkedMeetingId: '',
+      linkedMeetingDate: '',
+      createdAt: stamp(),
+    }),
+  );
+  await page.evaluate(
+    async ({ decisionData, followUpData, secret }) => {
+      const modulePath = '/src/data/StorageManager.ts';
+      const { StorageManager } = (await import(
+        /* @vite-ignore */ modulePath
+      )) as typeof import('../../src/data/StorageManager');
+      const manager = new StorageManager();
+      await manager.unlock(secret);
+      await manager.loadPrivate();
+      manager.setPrivateData('decisions', decisionData);
+      manager.setPrivateData('followUps', followUpData);
+      const failure = await manager.flush();
+      if (failure) throw failure;
+      await manager.lock();
+    },
+    { decisionData: decisions, followUpData: followUps, secret: passphrase },
+  );
+  await page.reload();
+  await unlock(page, passphrase);
+  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+}
+
 export interface SeedMood {
   /** Index into the seeded list of members. */
   memberIndex: number;

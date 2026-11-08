@@ -1,7 +1,9 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { MANAGER_OWNER_ID, createActionItem } from '../data/actionItems';
+import { MANAGER_OWNER_ID, MANAGER_OWNER_NAME, createActionItem } from '../data/actionItems';
+import { createDecision, createFollowUp, linkToMeeting } from '../data/decisions';
 import { ValidationError } from '../data/errors';
+import { listMembers } from '../data/members';
 import { NOTE_MAX_LENGTH, getDraft, saveDraft, saveLiveSession } from '../data/notes';
 import {
   areLiveShortcutsEnabled,
@@ -30,7 +32,12 @@ import { Avatar } from './Avatar';
 import { ContextSidebar } from './ContextSidebar';
 import { MenuIcon } from './icons';
 import { LiveModeNotice } from './LiveModeNotice';
-import { QuickCapture, type CaptureRequest } from './QuickCapture';
+import {
+  QuickCapture,
+  type CaptureDetails,
+  type CaptureOwner,
+  type CaptureRequest,
+} from './QuickCapture';
 import { ShortcutSettings } from './ShortcutSettings';
 
 interface LiveModeProps {
@@ -138,7 +145,7 @@ export function LiveMode({ memberId, memberName, avatarUrl, onEnd }: LiveModePro
   useKeyboardShortcut('mod+shift+a', () => openCapture('action'), shortcutsEnabled);
   useKeyboardShortcut('mod+shift+d', () => openCapture('decision'), shortcutsEnabled);
 
-  const handleCapture = async (type: CaptureType, rawTitle: string) => {
+  const handleCapture = async (type: CaptureType, rawTitle: string, details: CaptureDetails) => {
     const title = cleanCaptureTitle(rawTitle);
     if (title.length === 0) throw new ValidationError('Title is required');
     if (title.length > CAPTURE_TITLE_MAX_LENGTH) {
@@ -150,6 +157,18 @@ export function LiveMode({ memberId, memberName, avatarUrl, onEnd }: LiveModePro
     }
     if (type === 'action') {
       await createActionItem({ memberId, title, ownerId: MANAGER_OWNER_ID }, storage);
+    } else if (type === 'decision') {
+      await createDecision({ engineerId: memberId, title, context: details.context }, storage);
+    } else {
+      await createFollowUp(
+        {
+          engineerId: memberId,
+          title,
+          ownerId: details.ownerId ?? MANAGER_OWNER_ID,
+          dueDate: details.dueDate,
+        },
+        storage,
+      );
     }
     setContent(next);
     setCaptures((current) => [
@@ -180,6 +199,9 @@ export function LiveMode({ memberId, memberName, avatarUrl, onEnd }: LiveModePro
       setEndError(error instanceof ValidationError ? error.message : END_FAILED);
       return;
     }
+    // The note exists now, so what was captured can point at it. Anything that misses out here is
+    // linked by the next 1:1 with this person.
+    await linkToMeeting(memberId, note, storage).catch(() => undefined);
     stopTimer();
     if (window.matchMedia(REDUCED_MOTION_QUERY).matches) {
       onEnd(session, note);
@@ -226,6 +248,13 @@ export function LiveMode({ memberId, memberName, avatarUrl, onEnd }: LiveModePro
   };
 
   const statusLabel = STATUS_LABELS[status];
+  const owners = useMemo<CaptureOwner[]>(
+    () => [
+      { id: MANAGER_OWNER_ID, name: MANAGER_OWNER_NAME },
+      ...listMembers(storage).map(({ id, name }) => ({ id, name })),
+    ],
+    [storage],
+  );
 
   return createPortal(
     // The dialog role makes this element interactive; the rule cannot tell from a literal role.
@@ -307,6 +336,7 @@ export function LiveMode({ memberId, memberName, avatarUrl, onEnd }: LiveModePro
             onOpen={openCapture}
             onClose={() => setCapture(null)}
             onSubmit={handleCapture}
+            owners={owners}
             editorRef={editorRef}
           />
         </section>

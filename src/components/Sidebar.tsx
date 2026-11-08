@@ -6,6 +6,7 @@ import {
   ChecklistIcon,
   CloseIcon,
   DashboardIcon,
+  GavelIcon,
   MoonIcon,
   SettingsIcon,
   SunIcon,
@@ -23,6 +24,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: <DashboardIcon />, end: true },
   { to: '/roster', label: 'Team', icon: <TeamIcon /> },
   { to: '/actions', label: 'Action Items', icon: <ChecklistIcon /> },
+  { to: '/decisions', label: 'Decisions & Follow-ups', icon: <GavelIcon /> },
   { to: '/calendar', label: 'Calendar', icon: <CalendarIcon /> },
   { to: '/settings', label: 'Settings', icon: <SettingsIcon /> },
 ];

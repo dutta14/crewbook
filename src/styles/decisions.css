@@ -1,0 +1,250 @@
+.decisions-page__title {
+  margin-top: 0;
+  font-size: var(--text-title);
+  font-weight: 700;
+}
+
+.decisions-page__title:focus {
+  outline: none;
+}
+
+.decisions-page__person {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg2);
+  font-size: var(--text-body);
+  font-weight: 500;
+}
+
+.decision-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.decision-list__loading {
+  margin: 0;
+  padding: var(--space-4) 0;
+  color: var(--fg2);
+  font-size: var(--text-body);
+}
+
+.decision-list__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+}
+
+.decision-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.decision-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.decision-card--entering {
+  animation: decision-card-in var(--transition-normal) var(--ease-out);
+}
+
+.decision-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.decision-card__type {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  color: var(--accent);
+  font-size: var(--text-caption);
+  font-weight: 500;
+}
+
+.decision-card__person {
+  color: var(--fg);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.decision-card__person:hover {
+  text-decoration: underline;
+}
+
+.decision-card__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.decision-card__title {
+  flex: 1 1 200px;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--fg);
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+/* The clamp hides the overflow; the full text stays in the DOM only because it is the content. */
+.decision-card__context {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  color: var(--fg2);
+  font-size: var(--text-body);
+  line-height: 1.6;
+  white-space: pre-line;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.decision-card__owner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg);
+  font-size: var(--text-body);
+}
+
+.decision-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-4);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+.decision-card--follow-up .decision-card__toggle {
+  margin-left: auto;
+}
+
+.decision-card__due--overdue {
+  color: var(--danger);
+  font-weight: 500;
+}
+
+.decision-card__meeting {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.decision-card__meeting:focus-visible,
+.decision-card__person:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+  border-radius: var(--radius-control);
+}
+
+.decision-card__unavailable {
+  color: var(--fg2);
+}
+
+/* The button is the 44px touch target; the pill inside it is what people see. */
+.decision-card__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.decision-card__toggle[aria-disabled='true'] {
+  cursor: progress;
+}
+
+.decision-card__toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+.decision-card__status {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-caption);
+  font-weight: 500;
+  line-height: 1.4;
+  transition:
+    background-color var(--transition-fast) var(--ease-out),
+    color var(--transition-fast) var(--ease-out);
+}
+
+.decision-card__status--pending {
+  background: var(--status-on-leave-bg);
+  color: var(--status-on-leave-fg);
+}
+
+.decision-card__status--done {
+  background: var(--status-active-bg);
+  color: var(--status-active-fg);
+}
+
+@keyframes decision-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .decisions-page__person {
+    flex: 1 0 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .decision-card__owner-avatar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .decision-card--entering {
+    animation: none;
+  }
+
+  .decision-card__status {
+    transition: none;
+  }
+}

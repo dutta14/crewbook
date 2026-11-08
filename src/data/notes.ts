@@ -170,6 +170,11 @@ export function searchNotes(memberId: string, query: string, storage: NoteStorag
   return needle ? notes.filter((note) => note.content.toLowerCase().includes(needle)) : notes;
 }
 
+/** The ids of every note, for checking that a link to one still has somewhere to go. */
+export function listNoteIds(storage: NoteStorage): Set<string> {
+  return new Set(readNotes(storage).map((note) => note.id));
+}
+
 export function getDraft(memberId: string, storage: NoteStorage): string {
   const draft = readDrafts(storage)[memberId];
   return typeof draft === 'string' ? draft : '';

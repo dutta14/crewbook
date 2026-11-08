@@ -70,7 +70,7 @@ test.describe('1:1 live mode', () => {
     );
   });
 
-  test('a decision and a follow-up land in the notes but create no action items', async ({
+  test('a decision and a follow-up land in the notes and as records, but create no action items', async ({
     unlockedApp: page,
   }) => {
     await openProfile(page);
@@ -95,6 +95,12 @@ test.describe('1:1 live mode', () => {
       'Ship on Friday',
     );
     await expect(page.getByRole('list', { name: 'Open action items' })).toHaveCount(0);
+    const panel = page.getByRole('tabpanel', { name: 'Decisions & Follow-ups' });
+    await page.getByRole('tab', { name: 'Decisions & Follow-ups' }).click();
+    await expect(panel.getByRole('article', { name: 'Decision: Ship on Friday' })).toBeVisible();
+    await expect(
+      panel.getByRole('article', { name: 'Follow-up: Check in next week' }),
+    ).toBeVisible();
   });
 
   test('notes auto-save and come back after a reload without ending the 1:1', async ({
