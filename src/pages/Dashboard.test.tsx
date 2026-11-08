@@ -1,6 +1,7 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { createMember, createNote } from '../test-utils/factories';
+import { createMember, createNote, createReminder } from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
 import { toIsoDate } from '../utils/scheduleCalculator';
 import { Dashboard } from './Dashboard';
@@ -52,5 +53,51 @@ describe('Dashboard', () => {
       'href',
       `/person/${member.id}`,
     );
+  });
+
+  describe('reminders', () => {
+    const today = toIsoDate(new Date());
+    const alex = createMember({ id: 'alex', name: 'Alex Chen' });
+    const renderWith = (...reminders: ReturnType<typeof createReminder>[]) =>
+      renderWithProviders(<Dashboard />, {
+        initialData: { members: [alex] },
+        initialPrivateData: { reminders },
+      });
+    const dated = (overrides = {}) =>
+      createReminder({
+        linkedPersonId: 'alex',
+        triggerType: 'specific_date',
+        triggerDate: today,
+        ...overrides,
+      });
+
+    it('shows a card for a reminder whose date is today, announced as a status', async () => {
+      renderWith(dated({ text: 'Congratulate on the launch' }));
+
+      const card = await screen.findByRole('region', { name: 'Reminders' });
+      expect(within(card).getByRole('status')).toHaveTextContent('Congratulate on the launch');
+      expect(within(card).getByRole('img', { name: 'Alex Chen' })).toBeInTheDocument();
+    });
+
+    it('shows nothing for reminders that are not due, dismissed or waiting for a 1:1', () => {
+      renderWith(
+        dated({ triggerDate: '2099-01-01' }),
+        dated({ status: 'dismissed' }),
+        createReminder({ linkedPersonId: 'alex' }),
+      );
+
+      expect(screen.queryByRole('region', { name: 'Reminders' })).not.toBeInTheDocument();
+    });
+
+    it('removes the card when its last reminder is dismissed', async () => {
+      const user = userEvent.setup();
+      renderWith(dated());
+
+      await user.click(await screen.findByRole('button', { name: /^Dismiss reminder/ }));
+
+      await waitFor(() =>
+        expect(screen.queryByRole('region', { name: 'Reminders' })).not.toBeInTheDocument(),
+      );
+    });
   });
 });

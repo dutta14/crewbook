@@ -4,6 +4,13 @@ export type { MoodEntry, MoodScore } from './MoodEntry';
 export type { Decision, DecisionFollowUpFilter, FollowUp, FollowUpStatus } from './decisions';
 export type { GapAlertData, MeetingStats, MeetingTimelineEntry, WeeklyFrequency } from './meeting';
 export type { Note } from './Note';
+export type {
+  Reminder,
+  ReminderContext,
+  ReminderStatus,
+  SnoozeOption,
+  TriggerType,
+} from './reminder';
 export type { Priority, Todo, TodoFilters, TodoSortField, TodoStatus } from './todo';
 export type { Cadence, DayOfWeek, Schedule } from './Schedule';
 export type { TeamMember, TeamMemberInput, TeamMemberStatus, TeamMemberUpdate } from './TeamMember';

@@ -2,12 +2,14 @@ import { useId, useState, type ReactNode } from 'react';
 import { listByMember, updateStatus } from '../data/actionItems';
 import { listNotes } from '../data/notes';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
+import { useReminders } from '../hooks/useReminders';
 import { useToast } from '../hooks/useToast';
 import type { ActionItem } from '../types/ActionItem';
 import type { Note } from '../types/Note';
 import { formatNoteDate } from '../utils/noteFormat';
 import '../styles/pages/live-mode.css';
 import { PrepPrompts } from './PrepPrompts';
+import { ReminderStack } from './ReminderStack';
 
 export const LAST_NOTES_PREVIEW_LENGTH = 200;
 
@@ -46,6 +48,10 @@ function truncate(text: string): string {
 export function ContextSidebar({ id, memberId, isOpen, isInert, footer }: ContextSidebarProps) {
   const storage = useEncryptedStorage();
   const { showToast } = useToast();
+  const { due, dismissReminder, snoozeReminder } = useReminders({
+    personId: memberId,
+    context: '1on1_prep',
+  });
   const ids = useId();
   const [openItems] = useState<ActionItem[]>(() => listByMember(memberId, storage, 'open'));
   const [lastNote] = useState<Note | null>(() => listNotes(memberId, storage)[0] ?? null);
@@ -80,7 +86,17 @@ export function ContextSidebar({ id, memberId, isOpen, isInert, footer }: Contex
       aria-label="1:1 context"
       inert={isInert}
     >
-      <PrepPrompts memberId={memberId} />
+      <PrepPrompts memberId={memberId} showReminders={false} />
+      <section className="context-sidebar__section" aria-labelledby={`${ids}-reminders`}>
+        <h3 id={`${ids}-reminders`} className="context-sidebar__title">
+          Reminders
+        </h3>
+        {due.length === 0 ? (
+          <p className="context-sidebar__empty">Nothing set for this 1:1.</p>
+        ) : (
+          <ReminderStack reminders={due} onDismiss={dismissReminder} onSnooze={snoozeReminder} />
+        )}
+      </section>
       <section className="context-sidebar__section" aria-labelledby={`${ids}-items`}>
         <h3 id={`${ids}-items`} className="context-sidebar__title">
           Open action items

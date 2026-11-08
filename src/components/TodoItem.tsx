@@ -23,10 +23,20 @@ interface TodoItemProps {
   onToggle: (id: string) => Promise<void>;
   onEdit: (todo: Todo) => void;
   onDelete: (todo: Todo) => void;
+  /** Offered only for a task that is linked to a person. */
+  onSetReminder?: (todo: Todo) => void;
   now?: Date;
 }
 
-export function TodoItem({ todo, person, onToggle, onEdit, onDelete, now }: TodoItemProps) {
+export function TodoItem({
+  todo,
+  person,
+  onToggle,
+  onEdit,
+  onDelete,
+  onSetReminder,
+  now,
+}: TodoItemProps) {
   const checkboxId = useId();
   const [announcement, setAnnouncement] = useState('');
   const { title, status, dueDate } = todo;
@@ -79,6 +89,9 @@ export function TodoItem({ todo, person, onToggle, onEdit, onDelete, now }: Todo
         label="Task actions"
         items={[
           { label: 'Edit', onSelect: () => onEdit(todo) },
+          ...(onSetReminder && todo.linkedPersonId
+            ? [{ label: 'Set reminder', onSelect: () => onSetReminder(todo) }]
+            : []),
           { label: 'Delete', onSelect: () => onDelete(todo) },
         ]}
       />

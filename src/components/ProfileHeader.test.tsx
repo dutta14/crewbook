@@ -111,4 +111,19 @@ describe('ProfileHeader', () => {
 
     expect(await axe(container)).toHaveNoViolations();
   });
+
+  it('offers an Add reminder button named for the person when it can be used', async () => {
+    const onAddReminder = vi.fn();
+    render(<ProfileHeader member={member()} onEdit={vi.fn()} onAddReminder={onAddReminder} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add reminder for Alex Chen' }));
+
+    expect(onAddReminder).toHaveBeenCalledOnce();
+  });
+
+  it('has no Add reminder button without a handler', () => {
+    render(<ProfileHeader member={member()} onEdit={vi.fn()} />);
+
+    expect(screen.queryByRole('button', { name: /Add reminder/ })).not.toBeInTheDocument();
+  });
 });

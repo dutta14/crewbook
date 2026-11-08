@@ -3,13 +3,20 @@ import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { isPrepDismissed } from '../data/prepDismissal';
-import { createActionItem, createMember, createNote } from '../test-utils/factories';
+import {
+  createActionItem,
+  createMember,
+  createNote,
+  createReminder,
+} from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
+import type { Reminder } from '../types/reminder';
 import type { MemberChange } from '../types/Timeline';
 import type { TeamMember } from '../types/TeamMember';
 import { PrepPrompts } from './PrepPrompts';
 
 const ALEX = '11111111-1111-4111-8111-111111111111';
+const PRIYA = '22222222-2222-4222-8222-222222222222';
 const DAY_MS = 24 * 60 * 60 * 1000;
 const daysAgo = (days: number) => new Date(Date.now() - days * DAY_MS).toISOString();
 
@@ -26,6 +33,8 @@ interface Options {
   items?: string[];
   history?: MemberChange[];
   member?: Partial<TeamMember>;
+  reminders?: Reminder[];
+  showReminders?: boolean;
 }
 
 function renderPrep({
@@ -34,11 +43,13 @@ function renderPrep({
   items = [],
   history,
   member = {},
+  reminders = [],
+  showReminders,
 }: Options = {}) {
   const alex = createMember({ id: ALEX, schedule: WEEKLY, history, ...member });
   return renderWithProviders(
     <>
-      <PrepPrompts memberId={ALEX} />
+      <PrepPrompts memberId={ALEX} showReminders={showReminders} />
       <button type="button">Next control</button>
     </>,
     {
@@ -55,6 +66,7 @@ function renderPrep({
                 }),
               ],
         actionItems: items.map((title) => createActionItem({ memberId: ALEX, title })),
+        reminders,
       },
     },
   );
@@ -225,6 +237,57 @@ describe('PrepPrompts', () => {
     renderPrep();
 
     expect(screen.getByText('No reminders')).toBeInTheDocument();
+  });
+
+  it('lists the reminders set for the next 1:1 in place of the placeholder', () => {
+    renderPrep({
+      reminders: [
+        createReminder({ linkedPersonId: ALEX, text: 'Ask about the offsite' }),
+        createReminder({ linkedPersonId: ALEX, text: 'Already handled', status: 'dismissed' }),
+        createReminder({
+          linkedPersonId: ALEX,
+          text: 'Snoozed away',
+          status: 'snoozed',
+          snoozedUntil: '2099-01-01',
+        }),
+        createReminder({ linkedPersonId: PRIYA, text: 'About someone else' }),
+        createReminder({
+          linkedPersonId: ALEX,
+          text: 'Dated',
+          triggerType: 'specific_date',
+          triggerDate: '2020-01-01',
+        }),
+      ],
+    });
+
+    const prep = prepRegion();
+    expect(within(prep).getByText('Ask about the offsite')).toBeInTheDocument();
+    expect(within(prep).queryByText('No reminders')).not.toBeInTheDocument();
+    for (const text of ['Already handled', 'Snoozed away', 'About someone else', 'Dated']) {
+      expect(within(prep).queryByText(text)).not.toBeInTheDocument();
+    }
+  });
+
+  it('leaves reminders out when the caller lists them itself', () => {
+    renderPrep({
+      showReminders: false,
+      reminders: [createReminder({ linkedPersonId: ALEX, text: 'Ask about the offsite' })],
+    });
+
+    expect(screen.queryByText('Ask about the offsite')).not.toBeInTheDocument();
+    expect(screen.queryByText('No reminders')).not.toBeInTheDocument();
+  });
+
+  it('dismisses a reminder from the card', async () => {
+    reduceMotion();
+    const user = userEvent.setup();
+    renderPrep({
+      reminders: [createReminder({ linkedPersonId: ALEX, text: 'Ask about the offsite' })],
+    });
+
+    await user.click(screen.getByRole('button', { name: /^Dismiss reminder/ }));
+
+    await waitFor(() => expect(screen.getByText('No reminders')).toBeInTheDocument());
   });
 
   it('starts expanded, with the toggle controlling the content', () => {

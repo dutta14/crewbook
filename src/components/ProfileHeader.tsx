@@ -5,6 +5,7 @@ import { formatStartDate, toDateAttribute } from '../utils/startDate';
 import '../styles/button.css';
 import '../styles/profile.css';
 import { Avatar } from './Avatar';
+import { BellIcon } from './icons';
 import { StatusBadge, toBadgeStatus } from './StatusBadge';
 
 interface ProfileHeaderProps {
@@ -12,6 +13,8 @@ interface ProfileHeaderProps {
   onEdit: () => void;
   /** The Start 1:1 button is only shown when a handler is provided. */
   onStartOneOnOne?: () => void;
+  /** The Add reminder button is only shown when a handler is provided. */
+  onAddReminder?: () => void;
   /** The delete button is only shown when a handler is provided. */
   onDelete?: () => void;
   headingRef?: Ref<HTMLHeadingElement>;
@@ -21,6 +24,7 @@ export function ProfileHeader({
   member,
   onEdit,
   onStartOneOnOne,
+  onAddReminder,
   onDelete,
   headingRef,
 }: ProfileHeaderProps) {
@@ -60,6 +64,17 @@ export function ProfileHeader({
         {onStartOneOnOne ? (
           <button type="button" className="btn btn-primary" onClick={onStartOneOnOne}>
             Start 1:1
+          </button>
+        ) : null}
+        {onAddReminder ? (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            aria-label={`Add reminder for ${member.name}`}
+            onClick={onAddReminder}
+          >
+            <BellIcon size={16} />
+            Add reminder
           </button>
         ) : null}
         <button

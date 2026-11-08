@@ -13,6 +13,8 @@ import { ProfileHeader } from '../components/ProfileHeader';
 import { ProfileOverview } from '../components/ProfileOverview';
 import { NotesSection } from '../components/NotesSection';
 import { PrepPrompts } from '../components/PrepPrompts';
+import { ReminderForm } from '../components/ReminderForm';
+import { ReminderList } from '../components/ReminderList';
 import { ScheduleCard } from '../components/ScheduleCard';
 import { Tabs } from '../components/Tabs';
 import { Timeline } from '../components/Timeline';
@@ -21,10 +23,12 @@ import { deleteDecisionsForMember } from '../data/decisions';
 import { deleteMember, getMember, listMembers, updateMember } from '../data/members';
 import { deleteMoodEntriesForMember } from '../data/moodEntries';
 import { deleteNotesForMember } from '../data/notes';
+import { deleteRemindersForMember } from '../data/reminders';
 import { deleteTodosForMember } from '../data/todos';
 import { isMoodTrackingEnabled } from '../data/settings';
 import { buildTimeline } from '../data/timeline';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
+import { useReminders } from '../hooks/useReminders';
 import { useToast } from '../hooks/useToast';
 import type { LiveSession } from '../types/LiveSession';
 import type { Note } from '../types/Note';
@@ -50,9 +54,11 @@ export function Profile() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLive, setIsLive] = useState(false);
+  const [isReminderOpen, setIsReminderOpen] = useState(false);
   const [rateNoteId, setRateNoteId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
+  const { createReminder } = useReminders({ personId: id });
   const members = useMemo(() => listMembers(storage), [storage]);
   // Anything that is not a UUID is rejected before it reaches the store.
   const member = useMemo(
@@ -101,7 +107,7 @@ export function Profile() {
 
   const goToRoster = () => navigate('/roster');
 
-  // A removed person's 1:1 history, action items, decisions, tasks and mood ratings must not linger in the
+  // A removed person's 1:1 history, action items, decisions, tasks, reminders and mood ratings must not linger in the
   // encrypted store. Best effort: the person is already gone, so a failure here must not turn a
   // successful delete into an error.
   const purgePrivateData = async (memberId: string) => {
@@ -117,6 +123,7 @@ export function Profile() {
     await deleteMoodEntriesForMember(memberId, storage).catch(() => undefined);
     await deleteDecisionsForMember(memberId, storage).catch(() => undefined);
     await deleteTodosForMember(memberId, storage).catch(() => undefined);
+    await deleteRemindersForMember(memberId, storage).catch(() => undefined);
   };
 
   const handleDelete = async () => {
@@ -160,6 +167,7 @@ export function Profile() {
         headingRef={headingRef}
         onEdit={() => setIsEditOpen(true)}
         onStartOneOnOne={() => void handleStartLive()}
+        onAddReminder={() => setIsReminderOpen(true)}
         onDelete={() => setIsDeleteOpen(true)}
       />
       <ScheduleCard
@@ -171,6 +179,7 @@ export function Profile() {
       {isLive ? null : (
         <PrepPrompts key={`prep-${member.id}`} memberId={member.id} className="prep-card--page" />
       )}
+      {isLive ? null : <ReminderList key={`reminders-${member.id}`} person={member} />}
       {rateNoteId && isMoodTrackingEnabled(storage) ? (
         <section className="profile-mood-prompt" aria-label="Rate this 1:1">
           <MoodPrompt key={rateNoteId} memberId={member.id} noteId={rateNoteId} />
@@ -231,6 +240,16 @@ export function Profile() {
         onSuccess={(updated) => showToast(`${updated.name} updated`, 'success')}
         members={members}
         editMember={member}
+      />
+      <ReminderForm
+        isOpen={isReminderOpen}
+        onClose={() => setIsReminderOpen(false)}
+        onSubmit={async (input) => {
+          await createReminder(input);
+          showToast('Reminder saved', 'success');
+        }}
+        members={members}
+        person={member}
       />
       <ConfirmDialog
         isOpen={isDeleteOpen}

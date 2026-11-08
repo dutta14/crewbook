@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { DashboardReminders } from '../components/DashboardReminders';
 import { GapAlertCard } from '../components/GapAlert';
 import { TodaysOneOnes } from '../components/TodaysOneOnes';
 import { listMembers } from '../data/members';
@@ -16,6 +17,7 @@ export function Dashboard() {
       <div className="dashboard__grid">
         <TodaysOneOnes members={members} />
         <GapAlertCard members={members} />
+        <DashboardReminders />
       </div>
     </>
   );

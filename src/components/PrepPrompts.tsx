@@ -1,17 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { dismissPrep, isPrepDismissed } from '../data/prepDismissal';
 import { usePrepData } from '../hooks/usePrepData';
+import { useReminders, type UseReminders } from '../hooks/useReminders';
 import type { PrepData } from '../types/prep';
+import { moveFocusOutside } from '../utils/focus';
 import '../styles/button.css';
 import '../styles/prep-prompts.css';
 import '../styles/utilities.css';
 import { ErrorBoundary } from './ErrorBoundary';
 import { ChevronDownIcon, CloseIcon } from './icons';
+import { ReminderStack } from './ReminderStack';
 import { StatusBadge, toBadgeStatus } from './StatusBadge';
 
 interface PrepPromptsProps {
   memberId: string;
   className?: string;
+  /** Live mode lists reminders in a section of its own, so it turns them off here. */
+  showReminders?: boolean;
 }
 
 export const MAX_VISIBLE_ACTION_ITEMS = 5;
@@ -21,40 +26,26 @@ const CONTENT_ID = 'prep-content';
 // Matches the fade in prep-prompts.css.
 const DISMISS_DURATION_MS = 250;
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-const HIDDEN_SELECTOR = '[inert], [hidden], [aria-hidden="true"]';
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
-/** Moves focus to the next control in page order that is not inside the card, else the previous. */
-function moveFocusOutside(card: HTMLElement, from: HTMLElement) {
-  const scope = card.closest('[role="dialog"]') ?? document;
-  const controls = Array.from(scope.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    (control) => !card.contains(control) && !control.closest(HIDDEN_SELECTOR),
-  );
-  const next = controls.find(
-    (control) => from.compareDocumentPosition(control) & Node.DOCUMENT_POSITION_FOLLOWING,
-  );
-  (next ?? controls[controls.length - 1])?.focus();
-}
-
 /**
  * Context to read before a 1:1: how long it has been, what is still open, what was discussed last
- * and any status changes. It can be collapsed, and dismissed for the rest of the session. Renders
+ * and any status changes, plus the reminders set for the next 1:1. It can be collapsed, and dismissed for the rest of the session. Renders
  * nothing when there is no earlier 1:1 to prepare from.
  */
-export function PrepPrompts({ memberId, className }: PrepPromptsProps) {
+export function PrepPrompts({ memberId, className, showReminders = true }: PrepPromptsProps) {
   return (
     // A failure here must not take the page down, and its report must not carry note content.
     <ErrorBoundary silent fallback={null}>
-      <PrepCard memberId={memberId} className={className} />
+      <PrepCard memberId={memberId} className={className} showReminders={showReminders} />
     </ErrorBoundary>
   );
 }
 
-function PrepCard({ memberId, className }: PrepPromptsProps) {
+function PrepCard({ memberId, className, showReminders }: PrepPromptsProps) {
   const data = usePrepData(memberId);
+  const reminders = useReminders({ personId: memberId, context: '1on1_prep' });
   const cardRef = useRef<HTMLElement>(null);
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -125,14 +116,14 @@ function PrepCard({ memberId, className }: PrepPromptsProps) {
         inert={isCollapsed}
       >
         <div className="prep-card__inner">
-          <PrepBody data={data} />
+          <PrepBody data={data} reminders={showReminders ? reminders : null} />
         </div>
       </div>
     </section>
   );
 }
 
-function PrepBody({ data }: { data: PrepData }) {
+function PrepBody({ data, reminders }: { data: PrepData; reminders: UseReminders | null }) {
   const [showAll, setShowAll] = useState(false);
   const { daysSinceLastMeeting: days, openActionItems: items } = data;
   const visible = showAll ? items : items.slice(0, MAX_VISIBLE_ACTION_ITEMS);
@@ -197,7 +188,20 @@ function PrepBody({ data }: { data: PrepData }) {
           ))}
         </ul>
       ) : null}
-      <p className="prep-card__muted">No reminders</p>
+      {reminders ? (
+        reminders.due.length === 0 ? (
+          <p className="prep-card__muted">No reminders</p>
+        ) : (
+          <div className="prep-card__block">
+            <p className="prep-card__label">Reminders</p>
+            <ReminderStack
+              reminders={reminders.due}
+              onDismiss={reminders.dismissReminder}
+              onSnooze={reminders.snoozeReminder}
+            />
+          </div>
+        )
+      ) : null}
     </>
   );
 }

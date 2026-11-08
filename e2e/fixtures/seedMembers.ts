@@ -347,3 +347,70 @@ export async function seedTodos(page: Page, todos: SeedTodo[], passphrase = TEST
   await unlock(page, passphrase);
   await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
 }
+
+export interface SeedReminder {
+  text: string;
+  /** Index into the seeded list of members. */
+  memberIndex: number;
+  triggerType?: 'next_1on1' | 'specific_date';
+  /** Days from today, for a specific-date reminder. */
+  triggerInDays?: number;
+  status?: 'active' | 'snoozed' | 'dismissed';
+  /** Days from today; set while snoozed. */
+  snoozedInDays?: number;
+}
+
+/** Writes reminders into the private envelope. Seed members first, since each is about one. */
+export async function seedReminders(
+  page: Page,
+  reminders: SeedReminder[],
+  members: SeedMember[],
+  passphrase = TEST_PASSPHRASE,
+) {
+  const at = new Date().toISOString();
+  const stored = reminders.map(
+    (
+      {
+        text,
+        memberIndex,
+        triggerType = 'next_1on1',
+        triggerInDays,
+        status = 'active',
+        snoozedInDays,
+      },
+      index,
+    ) => ({
+      id: `00000000-0000-4000-d000-${String(index).padStart(12, '0')}`,
+      text,
+      linkedPersonId: seedId(memberIndex),
+      linkedPersonName: members[memberIndex].name,
+      triggerType,
+      ...(triggerType === 'specific_date'
+        ? { triggerDate: isoDateInDays(triggerInDays ?? 0) }
+        : {}),
+      status,
+      ...(snoozedInDays === undefined ? {} : { snoozedUntil: isoDateInDays(snoozedInDays) }),
+      createdAt: at,
+      ...(status === 'dismissed' ? { dismissedAt: at } : {}),
+    }),
+  );
+  await page.evaluate(
+    async ({ data, secret }) => {
+      const modulePath = '/src/data/StorageManager.ts';
+      const { StorageManager } = (await import(
+        /* @vite-ignore */ modulePath
+      )) as typeof import('../../src/data/StorageManager');
+      const manager = new StorageManager();
+      await manager.unlock(secret);
+      await manager.loadPrivate();
+      manager.setPrivateData('reminders', data);
+      const failure = await manager.flush();
+      if (failure) throw failure;
+      await manager.lock();
+    },
+    { data: stored, secret: passphrase },
+  );
+  await page.reload();
+  await unlock(page, passphrase);
+  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+}

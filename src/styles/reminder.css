@@ -1,0 +1,305 @@
+.reminder-card {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--card-bg);
+  color: var(--fg);
+  /* A ceiling, so the dismiss collapse has a height to animate from. */
+  max-height: 480px;
+}
+
+.reminder-card__body {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.reminder-card__bell {
+  display: inline-flex;
+  flex: none;
+  padding-top: 2px;
+  color: var(--accent);
+}
+
+.reminder-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.reminder-card__text,
+.reminder-card__timing {
+  margin: 0;
+}
+
+.reminder-card__text {
+  color: var(--fg);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.reminder-card__timing {
+  margin-top: var(--space-1);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+.reminder-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* Meets the 44px touch target; the ghost button is 36px by default. */
+.reminder-card__action {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.reminder-card__action:focus-visible,
+.snooze-menu__item:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.reminder-card--past {
+  opacity: 0.6;
+}
+
+.reminder-card--past .reminder-card__text {
+  color: var(--fg2);
+}
+
+.reminder-card--past .reminder-card__bell {
+  color: var(--fg2);
+}
+
+.reminder-card--dismissing {
+  max-height: 0;
+  margin: 0;
+  padding: 0;
+  border-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    opacity var(--transition-fast) var(--ease-out),
+    max-height var(--transition-normal) var(--ease-out),
+    margin var(--transition-normal) var(--ease-out),
+    padding var(--transition-normal) var(--ease-out);
+}
+
+@keyframes reminder-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reminder-card {
+    animation: reminder-card-in var(--transition-normal) var(--ease-out);
+  }
+}
+
+.snooze-menu-root {
+  position: relative;
+}
+
+.snooze-menu {
+  position: absolute;
+  z-index: 2;
+  top: 100%;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  margin-top: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-dropdown);
+  animation: snooze-menu-in var(--transition-fast) var(--ease-out);
+}
+
+.snooze-menu__item {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.snooze-menu__item:hover,
+.snooze-menu__item:focus {
+  background: var(--accent-subtle);
+  outline: none;
+}
+
+@keyframes snooze-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Below 768px the menu is a bottom sheet. */
+@media (max-width: 767.98px) {
+  .snooze-menu {
+    position: fixed;
+    z-index: var(--z-modal);
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    margin: 0;
+    padding: var(--space-3) var(--space-4) var(--space-6);
+    border-width: 1px 0 0;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+  }
+}
+
+/* Form */
+.reminder-form__text {
+  resize: vertical;
+  padding: var(--space-2) var(--space-3);
+}
+
+.reminder-form__person {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.reminder-form__person .form-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.reminder-form__triggers {
+  display: flex;
+  flex-direction: column;
+}
+
+.reminder-form__radio {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  color: var(--fg);
+  font-size: var(--text-body);
+  cursor: pointer;
+}
+
+.reminder-form__radio input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.reminder-form__radio input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.reminder-form__hint {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+@keyframes reminder-date-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reminder-form__date {
+    animation: reminder-date-in var(--transition-normal) var(--ease-out);
+  }
+}
+
+/* Reminders on the dashboard and in prep */
+.reminders-card {
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.reminders-card__heading,
+.reminder-list__heading {
+  margin: 0 0 var(--space-3);
+  color: var(--fg2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.reminders-card__heading:focus {
+  outline: none;
+}
+
+.reminder-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reminder-list {
+  margin-bottom: var(--space-6);
+}
+
+.reminder-list__empty {
+  margin: 0;
+  color: var(--fg2);
+  font-size: 14px;
+}
+
+.reminder-list__divider {
+  margin: var(--space-4) 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.reminder-list__error {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reminder-card,
+  .reminder-card--dismissing,
+  .snooze-menu,
+  .reminder-form__date {
+    transition: none;
+    animation: none;
+  }
+}

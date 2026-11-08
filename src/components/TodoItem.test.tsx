@@ -221,4 +221,19 @@ describe('TodoItem', () => {
 
     expect(await axe(container)).toHaveNoViolations();
   });
+
+  it('offers Set reminder only for a task linked to a person', async () => {
+    const onSetReminder = vi.fn();
+    const todo = createTodo({ linkedPersonId: ALEX.id });
+    const { unmount } = renderItem(todo, { person: ALEX, onSetReminder });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Task actions' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Set reminder' }));
+    expect(onSetReminder).toHaveBeenCalledWith(todo);
+    unmount();
+
+    renderItem(createTodo(), { onSetReminder });
+    await userEvent.click(screen.getByRole('button', { name: 'Task actions' }));
+    expect(screen.queryByRole('menuitem', { name: 'Set reminder' })).not.toBeInTheDocument();
+  });
 });

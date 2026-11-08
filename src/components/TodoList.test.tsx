@@ -143,6 +143,32 @@ describe('TodoList', () => {
     expect(screen.queryByLabelText('Old title')).not.toBeInTheDocument();
   });
 
+  it('sets a reminder from a linked task, pre-filled with its person and title', async () => {
+    const user = userEvent.setup();
+    renderList([createTodo({ title: 'Calibration notes', linkedPersonId: ALEX.id })]);
+
+    await user.click(screen.getByRole('button', { name: 'Task actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Set reminder' }));
+    const dialog = screen.getByRole('dialog', { name: 'New Reminder' });
+    expect(within(dialog).getByLabelText('Linked person')).toHaveValue(ALEX.id);
+    expect(within(dialog).getByRole('textbox', { name: /Reminder/ })).toHaveValue(
+      'Calibration notes',
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Save reminder' }));
+
+    expect(await screen.findByText('Reminder saved')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('does not offer a reminder for a task with no linked person', async () => {
+    const user = userEvent.setup();
+    renderList([createTodo({ title: 'Unlinked' })]);
+
+    await user.click(screen.getByRole('button', { name: 'Task actions' }));
+
+    expect(screen.queryByRole('menuitem', { name: 'Set reminder' })).not.toBeInTheDocument();
+  });
+
   it('completes a task from its checkbox', async () => {
     const user = userEvent.setup();
     renderList([createTodo({ title: 'Do it' })]);

@@ -11,6 +11,7 @@ import {
   createMember,
   createMoodEntry,
   createNote,
+  createReminder,
   createTodo,
 } from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
@@ -546,6 +547,62 @@ describe('Profile', () => {
         /^About Priya,Unlinked$/,
       ),
     );
+  });
+
+  it('deleting a member also purges reminders about them but keeps the rest', async () => {
+    const user = userEvent.setup();
+    function RemainingReminders() {
+      const { getPrivate } = useEncryptedStorage();
+      const reminders = getPrivate<Array<{ text: string }>>('reminders') ?? [];
+      return (
+        <output aria-label="Remaining reminders">{reminders.map((r) => r.text).join(',')}</output>
+      );
+    }
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/roster" element={<h1>Roster page</h1>} />
+          <Route path="/person/:id" element={<Profile />} />
+        </Routes>
+        <RemainingReminders />
+      </>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          reminders: [
+            createReminder({ text: 'About Alex', linkedPersonId: ALEX }),
+            createReminder({ text: 'About Priya', linkedPersonId: PRIYA }),
+          ],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Delete Alex Chen' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Remaining reminders' })).toHaveTextContent(
+        /^About Priya$/,
+      ),
+    );
+  });
+
+  it('adds a reminder from the profile and lists it under Reminders', async () => {
+    const user = userEvent.setup();
+    renderProfile(ALEX);
+
+    await user.click(screen.getByRole('button', { name: 'Add reminder for Alex Chen' }));
+    const dialog = screen.getByRole('dialog', { name: 'New Reminder' });
+    expect(within(dialog).getByLabelText('Linked person')).toHaveValue('Alex Chen');
+    await user.type(within(dialog).getByRole('textbox', { name: /Reminder/ }), 'Ask about on-call');
+    await user.click(within(dialog).getByRole('button', { name: 'Save reminder' }));
+
+    expect(await screen.findByText('Reminder saved')).toBeInTheDocument();
+    const list = screen.getByRole('region', { name: 'Reminders' });
+    expect(await within(list).findByText('Ask about on-call')).toBeInTheDocument();
   });
 
   it('deleting a member also purges their mood ratings but keeps everyone else’s', async () => {

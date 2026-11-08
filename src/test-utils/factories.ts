@@ -1,4 +1,13 @@
-import type { ActionItem, Decision, FollowUp, MoodEntry, Note, TeamMember, Todo } from '../types';
+import type {
+  ActionItem,
+  Decision,
+  FollowUp,
+  MoodEntry,
+  Note,
+  Reminder,
+  TeamMember,
+  Todo,
+} from '../types';
 
 const now = () => new Date().toISOString();
 
@@ -94,6 +103,19 @@ export function createTodo(overrides: Partial<Todo> = {}): Todo {
     title: 'Write the promo packet',
     priority: 'medium',
     status: 'todo',
+    createdAt: now(),
+    ...overrides,
+  };
+}
+
+export function createReminder(overrides: Partial<Reminder> = {}): Reminder {
+  return {
+    id: crypto.randomUUID(),
+    text: 'Ask about the on-call rotation',
+    linkedPersonId: crypto.randomUUID(),
+    linkedPersonName: 'Alex Chen',
+    triggerType: 'next_1on1',
+    status: 'active',
     createdAt: now(),
     ...overrides,
   };

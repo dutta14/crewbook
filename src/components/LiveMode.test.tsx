@@ -4,7 +4,12 @@ import { useState } from 'react';
 import { axe } from 'vitest-axe';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NOTE_MAX_LENGTH } from '../data/notes';
-import { createActionItem, createMember, createNote } from '../test-utils/factories';
+import {
+  createActionItem,
+  createMember,
+  createNote,
+  createReminder,
+} from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
 import type { LiveSession } from '../types/LiveSession';
 import type { Note } from '../types/Note';
@@ -172,6 +177,28 @@ describe('LiveMode', () => {
     expect(screen.getByText('Nothing open from earlier 1:1s.')).toBeInTheDocument();
     expect(screen.getByText('No earlier notes yet.')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Prep prompts' })).toBeInTheDocument();
+  });
+
+  it('lists the reminders waiting for this 1:1 in the sidebar, even with no earlier notes', async () => {
+    await openLive({
+      privateData: {
+        reminders: [
+          createReminder({ linkedPersonId: ALEX.id, text: 'Ask about the offsite' }),
+          createReminder({ linkedPersonId: ALEX.id, text: 'Done with this', status: 'dismissed' }),
+        ],
+      },
+    });
+
+    const sidebar = screen.getByRole('complementary', { name: '1:1 context' });
+    const reminders = within(sidebar).getByRole('region', { name: 'Reminders' });
+    expect(within(reminders).getByText('Ask about the offsite')).toBeInTheDocument();
+    expect(within(reminders).queryByText('Done with this')).not.toBeInTheDocument();
+  });
+
+  it('says so when no reminder is waiting for this 1:1', async () => {
+    await openLive();
+
+    expect(screen.getByText('Nothing set for this 1:1.')).toBeInTheDocument();
   });
 
   it('marks an action item done from the sidebar', async () => {

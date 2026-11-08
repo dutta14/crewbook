@@ -3,6 +3,7 @@ import { isPriority, isTodoSortField, isTodoStatus } from '../data/todos';
 import { listMembers } from '../data/members';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useReminders } from '../hooks/useReminders';
 import { useTodos } from '../hooks/useTodos';
 import { useToast } from '../hooks/useToast';
 import type { TeamMember } from '../types/TeamMember';
@@ -14,6 +15,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { EmptyState } from './EmptyState';
 import { ClipboardIcon, FilterIcon } from './icons';
 import { Modal } from './Modal';
+import { ReminderForm } from './ReminderForm';
 import { PRIORITY_OPTIONS, STATUS_OPTIONS, TodoForm } from './TodoForm';
 import { TodoItem } from './TodoItem';
 
@@ -45,6 +47,7 @@ export function TodoList({ now }: TodoListProps) {
     deleteTodo,
     toggleStatus,
   } = useTodos();
+  const { createReminder } = useReminders();
   const members = useMemo(() => listMembers(storage), [storage]);
   const peopleById = useMemo(
     () => new Map(members.map((member) => [member.id, member])),
@@ -54,6 +57,9 @@ export function TodoList({ now }: TodoListProps) {
   // The task being edited is kept while the form animates out, so the title does not flip.
   const [form, setForm] = useState<{ isOpen: boolean; todo?: Todo }>({ isOpen: false });
   const [deleting, setDeleting] = useState<Todo | null>(null);
+  const [reminderFor, setReminderFor] = useState<{ isOpen: boolean; todo?: Todo }>({
+    isOpen: false,
+  });
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const addButtonRef = useRef<HTMLButtonElement>(null);
   const sortId = useId();
@@ -86,6 +92,7 @@ export function TodoList({ now }: TodoListProps) {
 
   const handleToggle = (id: string) => toggleStatus(id);
   const handleEdit = (todo: Todo) => setForm({ isOpen: true, todo });
+  const handleSetReminder = (todo: Todo) => setReminderFor({ isOpen: true, todo });
   const handleAdd = () => setForm({ isOpen: true });
   const closeForm = () => setForm((current) => ({ ...current, isOpen: false }));
 
@@ -163,6 +170,7 @@ export function TodoList({ now }: TodoListProps) {
                   onToggle={handleToggle}
                   onEdit={handleEdit}
                   onDelete={setDeleting}
+                  onSetReminder={handleSetReminder}
                   now={now}
                 />
               ))}
@@ -177,6 +185,17 @@ export function TodoList({ now }: TodoListProps) {
         onSubmit={handleSubmit}
         members={members}
         todo={form.todo}
+      />
+      <ReminderForm
+        isOpen={reminderFor.isOpen}
+        onClose={() => setReminderFor((current) => ({ ...current, isOpen: false }))}
+        onSubmit={async (input) => {
+          await createReminder(input);
+          showToast('Reminder saved', 'success');
+        }}
+        members={members}
+        initialPersonId={reminderFor.todo?.linkedPersonId}
+        initialText={reminderFor.todo?.title}
       />
       <ConfirmDialog
         isOpen={deleting !== null}
