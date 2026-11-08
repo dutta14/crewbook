@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures/auth';
-import { SEED_TEAM, seedMembers } from './fixtures/seedMembers';
+import { SEED_TEAM, seedId, seedMembers } from './fixtures/seedMembers';
 
 const rows = (page: import('@playwright/test').Page) => page.getByTestId('member-row');
 
@@ -58,7 +58,7 @@ test.describe('roster with members', () => {
   test('clicking a row opens that member\u2019s profile route', async ({ page }) => {
     await rows(page).filter({ hasText: 'Carmen Diaz' }).click();
 
-    await expect(page).toHaveURL(/#\/person\/seed-2$/);
+    await expect(page).toHaveURL(new RegExp(`#/person/${seedId(2)}$`));
   });
 
   test('search filters rows case-insensitively, announces the count and restores on clear', async ({
@@ -177,7 +177,7 @@ test.describe('roster with members', () => {
     expect(ring).not.toBe('none');
 
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/#\/person\/seed-0$/);
+    await expect(page).toHaveURL(new RegExp(`#/person/${seedId(0)}$`));
   });
 
   for (const mode of ['light', 'dark'] as const) {
@@ -217,7 +217,7 @@ test.describe('roster on a narrow screen', () => {
     await expect(rows(page)).toHaveCount(4);
 
     await rows(page).filter({ hasText: 'Bob Singh' }).click();
-    await expect(page).toHaveURL(/#\/person\/seed-1$/);
+    await expect(page).toHaveURL(new RegExp(`#/person/${seedId(1)}$`));
   });
 });
 

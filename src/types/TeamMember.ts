@@ -1,3 +1,5 @@
+import type { MemberChange } from './Timeline';
+
 export type TeamMemberStatus = 'active' | 'on_leave' | 'departing' | 'new_hire';
 
 export interface TeamMember {
@@ -19,10 +21,12 @@ export interface TeamMember {
   createdAt: string;
   /** ISO 8601; refreshed on every write. */
   updatedAt: string;
+  /** Edits recorded by updateMember, oldest first. Absent until the first edit. */
+  history?: MemberChange[];
 }
 
 /** Everything the caller supplies when creating a member. */
-export type TeamMemberInput = Omit<TeamMember, 'id' | 'createdAt' | 'updatedAt'>;
+export type TeamMemberInput = Omit<TeamMember, 'id' | 'createdAt' | 'updatedAt' | 'history'>;
 
 /** Only the fields that change; id and createdAt are immutable. */
-export type TeamMemberUpdate = Partial<Omit<TeamMember, 'id' | 'createdAt'>>;
+export type TeamMemberUpdate = Partial<Omit<TeamMember, 'id' | 'createdAt' | 'history'>>;

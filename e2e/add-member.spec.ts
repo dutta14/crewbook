@@ -137,9 +137,8 @@ test.describe('add member', () => {
 
     await ravi.click();
 
-    // The profile page is still a placeholder; its content arrives with a later issue.
     await expect(page).toHaveURL(/#\/person\/[0-9a-f-]{36}$/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Profile' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Ravi Kumar' })).toBeVisible();
   });
 
   for (const mode of ['light', 'dark'] as const) {

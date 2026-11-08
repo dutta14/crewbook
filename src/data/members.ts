@@ -6,6 +6,7 @@ import type {
   TeamMemberUpdate,
 } from '../types/TeamMember';
 import { NotFoundError, ValidationError } from './errors';
+import { MAX_HISTORY_ENTRIES, diffMember } from './timeline';
 
 /** A property on the decrypted `crewbook_data` object, not a separate localStorage key. */
 const STORAGE_KEY = 'members';
@@ -226,12 +227,17 @@ export function updateMember(
     const previous = readMembers(storage);
     const existing = previous.find((member) => member.id === id);
     if (!existing) throw new NotFoundError(id);
-    const member: TeamMember = {
+    const now = new Date().toISOString();
+    const updated: TeamMember = {
       ...validate({ ...existing, ...update }, previous, id),
       id: existing.id,
       createdAt: existing.createdAt,
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
     };
+    const history = [...(existing.history ?? []), ...diffMember(existing, updated, now)];
+    const member: TeamMember = history.length
+      ? { ...updated, history: history.slice(-MAX_HISTORY_ENTRIES) }
+      : updated;
     await commit(
       storage,
       previous,

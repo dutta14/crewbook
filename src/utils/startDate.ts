@@ -23,3 +23,10 @@ export function toDateAttribute(startDate: string): string {
   const date = String(day.getDate()).padStart(2, '0');
   return `${day.getFullYear()}-${month}-${date}`;
 }
+
+/** e.g. "Mar 13, 2023", or null when the stored value is not a date. */
+export function formatStartDate(startDate: string): string | null {
+  const day = startOfStartDay(startDate);
+  if (Number.isNaN(day.getTime())) return null;
+  return day.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}

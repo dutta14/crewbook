@@ -276,6 +276,62 @@ describe('updateMember', () => {
     expect(getMember(added.id, storage)).toEqual(updated);
   });
 
+  it('records changed fields in the history and leaves it absent when nothing changes', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2025-01-01T00:00:00.000Z'));
+    const { storage } = await createStorage();
+    const added = await addMember(input({ status: 'active', role: 'Designer' }), storage);
+    expect(added.history).toBeUndefined();
+
+    vi.setSystemTime(new Date('2025-02-01T00:00:00.000Z'));
+    const unchanged = await updateMember(added.id, { role: 'Designer' }, storage);
+    expect(unchanged.history).toBeUndefined();
+
+    const updated = await updateMember(
+      added.id,
+      { role: 'Lead Designer', status: 'departing' },
+      storage,
+    );
+
+    expect(updated.history).toEqual([
+      expect.objectContaining({
+        field: 'status',
+        from: 'active',
+        to: 'departing',
+        date: '2025-02-01T00:00:00.000Z',
+      }),
+      expect.objectContaining({ field: 'role', to: 'Lead Designer' }),
+    ]);
+  });
+
+  it('ignores a history supplied by the caller and keeps the stored one', async () => {
+    const { storage } = await createStorage();
+    const added = await addMember(input({ role: 'A' }), storage);
+    await updateMember(added.id, { role: 'B' }, storage);
+
+    const updated = await updateMember(
+      added.id,
+      { name: 'Renamed', history: [] } as never,
+      storage,
+    );
+
+    expect(updated.history?.map((change) => change.field)).toEqual(['role', 'name']);
+  });
+
+  it('keeps only the most recent 100 history entries', async () => {
+    const { storage } = await createStorage();
+    const added = await addMember(input({ role: 'r0' }), storage);
+
+    for (let index = 1; index <= 102; index += 1) {
+      await updateMember(added.id, { role: `r${index}` }, storage);
+    }
+
+    const history = getMember(added.id, storage)?.history ?? [];
+    expect(history).toHaveLength(100);
+    expect(history[99]).toMatchObject({ field: 'role', to: 'r102' });
+    expect(history[0]).toMatchObject({ to: 'r3' });
+  });
+
   it('refreshes updatedAt even when nothing changes', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2025-01-01T00:00:00.000Z'));

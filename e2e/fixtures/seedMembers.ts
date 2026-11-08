@@ -7,19 +7,27 @@ export interface SeedMember {
   level: string;
   status: 'active' | 'on_leave' | 'departing' | 'new_hire';
   startDate: string;
+  email?: string;
+  /** Index into the seeded list of this member's manager. */
+  managerIndex?: number;
+  customFields?: Record<string, string>;
 }
+
+/** Profile routes only accept UUIDs, so seeded ids are well-formed ones. */
+export const seedId = (index: number) =>
+  `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`;
 
 /**
  * Writes members into the encrypted store through the same StorageManager the app uses, then
  * reloads and unlocks so the running app reads them. Needs a page that is already set up.
  */
 export async function seedMembers(page: Page, members: SeedMember[], passphrase = TEST_PASSPHRASE) {
-  const stored = members.map((member, index) => ({
+  const stored = members.map(({ managerIndex, email, customFields, ...member }, index) => ({
     ...member,
-    id: `seed-${index}`,
-    email: `seed-${index}@example.com`,
-    manager: null,
-    customFields: {},
+    id: seedId(index),
+    email: email ?? `seed-${index}@example.com`,
+    manager: managerIndex === undefined ? null : seedId(managerIndex),
+    customFields: customFields ?? {},
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
   }));
