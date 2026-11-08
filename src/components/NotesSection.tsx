@@ -16,6 +16,7 @@ import '../styles/notes.css';
 import { ActionItemList } from './ActionItemList';
 import { AddActionItem } from './ActionItemInline';
 import { SearchIcon } from './icons';
+import { MoodPrompt } from './MoodPrompt';
 import { NoteEntry } from './NoteEntry';
 
 interface NotesSectionProps {
@@ -80,6 +81,9 @@ function NotesPanel({ memberId }: NotesSectionProps) {
   const [saveError, setSaveError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [newestId, setNewestId] = useState<string | null>(null);
+  // Set only by saving a note and cleared when the next one is started, so a rating can never be
+  // attached to an older note.
+  const [moodNoteId, setMoodNoteId] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -138,6 +142,7 @@ function NotesPanel({ memberId }: NotesSectionProps) {
   const handleChange = (value: string) => {
     setText(value);
     setSaveError('');
+    setMoodNoteId(null);
     hasUnsavedDraft.current = true;
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     if (value.length > NOTE_MAX_LENGTH) return;
@@ -158,6 +163,7 @@ function NotesPanel({ memberId }: NotesSectionProps) {
       setText('');
       setQuery('');
       setNewestId(note.id);
+      setMoodNoteId(note.id);
       showStatus('Note saved', true);
       textareaRef.current?.focus();
     } catch {
@@ -241,6 +247,9 @@ function NotesPanel({ memberId }: NotesSectionProps) {
             </button>
           </div>
         </form>
+        {moodNoteId ? (
+          <MoodPrompt key={moodNoteId} memberId={memberId} noteId={moodNoteId} />
+        ) : null}
         <AddActionItem memberId={memberId} />
       </div>
 

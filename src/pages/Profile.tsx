@@ -4,6 +4,7 @@ import { AddMemberModal } from '../components/AddMemberModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EmptyState } from '../components/EmptyState';
 import { TeamIcon } from '../components/icons';
+import { MoodTrendSection } from '../components/MoodTrendSection';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { ProfileOverview } from '../components/ProfileOverview';
 import { NotesSection } from '../components/NotesSection';
@@ -12,6 +13,7 @@ import { Tabs } from '../components/Tabs';
 import { Timeline } from '../components/Timeline';
 import { deleteActionItemsForMember } from '../data/actionItems';
 import { deleteMember, getMember, listMembers, updateMember } from '../data/members';
+import { deleteMoodEntriesForMember } from '../data/moodEntries';
 import { deleteNotesForMember } from '../data/notes';
 import { buildTimeline } from '../data/timeline';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
@@ -47,9 +49,9 @@ export function Profile() {
 
   const goToRoster = () => navigate('/roster');
 
-  // A removed person's 1:1 history and action items must not linger in the encrypted store. Best
-  // effort: the person is already gone, so a failure here must not turn a successful delete into
-  // an error.
+  // A removed person's 1:1 history, action items and mood ratings must not linger in the
+  // encrypted store. Best effort: the person is already gone, so a failure here must not turn a
+  // successful delete into an error.
   const purgePrivateData = async (memberId: string) => {
     try {
       await storage.loadPrivate();
@@ -60,6 +62,7 @@ export function Profile() {
     // member. Each purge runs on its own so one failure does not strand the other's data.
     await deleteNotesForMember(memberId, storage).catch(() => undefined);
     await deleteActionItemsForMember(memberId, storage).catch(() => undefined);
+    await deleteMoodEntriesForMember(memberId, storage).catch(() => undefined);
   };
 
   const handleDelete = async () => {
@@ -131,6 +134,7 @@ export function Profile() {
           { id: 'timeline', label: 'Timeline', content: <Timeline entries={timeline} /> },
         ]}
       />
+      <MoodTrendSection key={member.id} memberId={member.id} />
       <AddMemberModal
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}

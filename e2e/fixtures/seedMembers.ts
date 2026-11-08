@@ -158,6 +158,45 @@ export async function seedActionItems(
   await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
 }
 
+export interface SeedMood {
+  /** Index into the seeded list of members. */
+  memberIndex: number;
+  score: 1 | 2 | 3 | 4 | 5;
+  /** How many days before today the 1:1 happened. */
+  daysAgo: number;
+}
+
+/** Writes mood ratings into the private encrypted envelope. Seed members first. */
+export async function seedMoods(page: Page, moods: SeedMood[], passphrase = TEST_PASSPHRASE) {
+  const now = Date.now();
+  const stored = moods.map(({ memberIndex, score, daysAgo }, index) => ({
+    id: `00000000-0000-4000-b000-${String(index).padStart(12, '0')}`,
+    memberId: seedId(memberIndex),
+    noteId: `00000000-0000-4000-9000-${String(index).padStart(12, '0')}`,
+    score,
+    recordedAt: new Date(now - daysAgo * 24 * 60 * 60 * 1000).toISOString(),
+  }));
+  await page.evaluate(
+    async ({ data, secret }) => {
+      const modulePath = '/src/data/StorageManager.ts';
+      const { StorageManager } = (await import(
+        /* @vite-ignore */ modulePath
+      )) as typeof import('../../src/data/StorageManager');
+      const manager = new StorageManager();
+      await manager.unlock(secret);
+      await manager.loadPrivate();
+      manager.setPrivateData('moods', data);
+      const failure = await manager.flush();
+      if (failure) throw failure;
+      await manager.lock();
+    },
+    { data: stored, secret: passphrase },
+  );
+  await page.reload();
+  await unlock(page, passphrase);
+  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+}
+
 export const SEED_TEAM: SeedMember[] = [
   {
     name: 'Alice Park',

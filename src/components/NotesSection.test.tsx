@@ -386,3 +386,110 @@ describe('NotesSection', () => {
     });
   });
 });
+
+describe('NotesSection mood rating', () => {
+  function StoredMoods() {
+    const { getPrivate } = useEncryptedStorage();
+    const moods = getPrivate<Array<{ noteId: string; score: number }>>('moods') ?? [];
+    return <output aria-label="Stored moods">{moods.map((m) => m.score).join(',')}</output>;
+  }
+
+  const renderWithMood = (enabled: boolean, privateData: Record<string, unknown> = {}) =>
+    renderWithProviders(
+      <>
+        <NotesSection memberId={MEMBER} />
+        <StoredMoods />
+      </>,
+      {
+        initialData: { settings: { moodTrackingEnabled: String(enabled) } },
+        initialPrivateData: { notes: [], ...privateData },
+      },
+    );
+
+  const saveNote = async (user: ReturnType<typeof userEvent.setup>, text = 'A new 1:1 note') => {
+    await user.type(await textarea(), text);
+    await user.click(saveButton());
+  };
+
+  const stored = () => screen.getByRole('status', { name: 'Stored moods' });
+
+  it('offers no mood selector before a note is saved', async () => {
+    renderWithMood(true);
+    await textarea();
+
+    expect(screen.queryByRole('radiogroup', { name: 'Energy level' })).not.toBeInTheDocument();
+  });
+
+  it('offers an empty selector right after saving a note and stores the choice', async () => {
+    const user = userEvent.setup();
+    renderWithMood(true);
+
+    await saveNote(user);
+
+    const group = await screen.findByRole('radiogroup', { name: 'Energy level' });
+    within(group)
+      .getAllByRole('radio')
+      .forEach((radio) => expect(radio).toHaveAttribute('aria-checked', 'false'));
+    await user.click(within(group).getByRole('radio', { name: 'Great energy' }));
+    await waitFor(() => expect(stored()).toHaveTextContent('5'));
+  });
+
+  it('removes the stored rating when it is deselected', async () => {
+    const user = userEvent.setup();
+    renderWithMood(true);
+    await saveNote(user);
+
+    await user.click(await screen.findByRole('radio', { name: 'Neutral' }));
+    await waitFor(() => expect(stored()).toHaveTextContent('3'));
+    await user.click(screen.getByRole('radio', { name: 'Neutral' }));
+
+    await waitFor(() => expect(stored()).toBeEmptyDOMElement());
+    expect(screen.getByRole('radio', { name: 'Neutral' })).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('records nothing when the selector is left alone', async () => {
+    const user = userEvent.setup();
+    renderWithMood(true);
+
+    await saveNote(user);
+    await screen.findByRole('radiogroup', { name: 'Energy level' });
+
+    expect(stored()).toBeEmptyDOMElement();
+  });
+
+  it('closes the selector once the next note is started, so old notes cannot be rated later', async () => {
+    const user = userEvent.setup();
+    renderWithMood(true);
+    await saveNote(user);
+    await screen.findByRole('radiogroup', { name: 'Energy level' });
+
+    await user.type(await textarea(), 'n');
+
+    expect(screen.queryByRole('radiogroup', { name: 'Energy level' })).not.toBeInTheDocument();
+  });
+
+  it('starts empty after the next note instead of showing the previous rating', async () => {
+    const user = userEvent.setup();
+    renderWithMood(true);
+    await saveNote(user, 'First');
+    await user.click(await screen.findByRole('radio', { name: 'Low energy' }));
+
+    await saveNote(user, 'Second');
+
+    expect(await screen.findByRole('radio', { name: 'Low energy' })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
+  });
+
+  it('never shows the selector when mood tracking is off', async () => {
+    const user = userEvent.setup();
+    renderWithMood(false);
+
+    await saveNote(user);
+
+    await screen.findByText('Note saved');
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+    expect(screen.queryByText('Private')).not.toBeInTheDocument();
+  });
+});

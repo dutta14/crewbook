@@ -1,0 +1,225 @@
+.mood-selector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-2) 0 var(--space-2) var(--space-3);
+  border: 0;
+  border-left: 2px dashed var(--border);
+}
+
+.mood-selector__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.mood-selector__prompt {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-weight: 500;
+}
+
+/* The design asks for 0.7 opacity, which drops var(--fg2) below the 4.5:1 text contrast minimum. */
+.mood-selector__private {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+.mood-selector__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.mood-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    transform var(--transition-fast) var(--ease-out),
+    border-color var(--transition-fast) var(--ease-out),
+    background-color var(--transition-fast) var(--ease-out);
+}
+
+/* Visually 32px, but the tap area reaches the 44px minimum. */
+.mood-btn::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+
+.mood-btn:hover,
+.mood-btn:focus-visible {
+  background: var(--bg2);
+}
+
+.mood-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.mood-btn[aria-checked='true'] {
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+  transform: scale(1.15);
+}
+
+.mood-section {
+  margin-top: var(--space-6);
+  padding: var(--space-5);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.mood-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.mood-section__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.mood-section__body:not(:empty) {
+  margin-top: var(--space-4);
+}
+
+.mood-chart__empty {
+  margin: 0;
+  padding: var(--space-10) var(--space-4);
+  color: var(--fg2);
+  font-size: var(--text-body);
+  text-align: center;
+}
+
+.mood-chart__plot {
+  position: relative;
+}
+
+.mood-chart__svg {
+  display: block;
+  width: 100%;
+  height: 100px;
+  overflow: visible;
+}
+
+.mood-chart__grid {
+  stroke: var(--border);
+  stroke-width: 1;
+  opacity: 0.3;
+}
+
+.mood-chart__line-layer {
+  overflow: visible;
+}
+
+.mood-chart__line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.mood-chart__dot {
+  fill: var(--accent);
+}
+
+.mood-chart__hit {
+  fill: transparent;
+  cursor: default;
+}
+
+.mood-chart__label {
+  fill: var(--fg2);
+  font-size: 10px;
+  text-anchor: middle;
+}
+
+.mood-chart__tooltip {
+  position: absolute;
+  z-index: 1;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-dropdown);
+  color: var(--fg);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 10px));
+}
+
+@media (min-width: 768px) {
+  .mood-chart__svg {
+    height: 120px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mood-chart__line-layer {
+    animation: mood-line-draw 600ms var(--ease-in-out) both;
+  }
+
+  .mood-chart__tooltip {
+    animation: mood-tooltip-in var(--transition-fast) var(--ease-out) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mood-btn,
+  .mood-btn[aria-checked='true'] {
+    transition: none;
+    transform: none;
+  }
+}
+
+@keyframes mood-line-draw {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes mood-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 6px));
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 10px));
+  }
+}

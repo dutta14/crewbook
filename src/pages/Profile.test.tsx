@@ -4,7 +4,7 @@ import { Route, Routes, useLocation } from 'react-router-dom';
 import { axe } from 'vitest-axe';
 import { describe, expect, it } from 'vitest';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
-import { createActionItem, createMember } from '../test-utils/factories';
+import { createActionItem, createMember, createMoodEntry } from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
 import type { TeamMember } from '../types/TeamMember';
 import { Profile } from './Profile';
@@ -340,6 +340,60 @@ describe('Profile', () => {
         /^Priya item$/,
       ),
     );
+  });
+
+  it('deleting a member also purges their mood ratings but keeps everyone else’s', async () => {
+    const user = userEvent.setup();
+    function RemainingMoods() {
+      const { getPrivate } = useEncryptedStorage();
+      const moods = getPrivate<Array<{ memberId: string }>>('moods') ?? [];
+      return <output aria-label="Remaining moods">{moods.map((m) => m.memberId).join(',')}</output>;
+    }
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/roster" element={<h1>Roster page</h1>} />
+          <Route path="/person/:id" element={<Profile />} />
+        </Routes>
+        <RemainingMoods />
+      </>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          moods: [createMoodEntry({ memberId: ALEX }), createMoodEntry({ memberId: PRIYA })],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Delete Alex Chen' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Remaining moods' })).toHaveTextContent(
+        new RegExp(`^${PRIYA}$`),
+      ),
+    );
+  });
+
+  it('shows the private energy trend only after the manager opts in', () => {
+    const { unmount } = renderProfile(ALEX);
+    expect(screen.queryByRole('heading', { name: /Energy trend/ })).not.toBeInTheDocument();
+    unmount();
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/person/:id" element={<Profile />} />
+      </Routes>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team(), settings: { moodTrackingEnabled: 'true' } },
+      },
+    );
+
+    expect(screen.getByRole('heading', { name: 'Energy trend (private)' })).toBeInTheDocument();
   });
 
   it('shows the 1:1 schedule card below the header and saves a new schedule through storage', async () => {

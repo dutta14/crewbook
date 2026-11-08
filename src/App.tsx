@@ -7,6 +7,7 @@ import { GlobalActions } from './pages/GlobalActions';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { Profile } from './pages/Profile';
 import { Roster } from './pages/Roster';
+import { Settings } from './pages/Settings';
 
 export default function App() {
   return (
@@ -21,7 +22,7 @@ export default function App() {
                 <Route path="person/:id" element={<Profile />} />
                 <Route path="actions" element={<GlobalActions />} />
                 <Route path="calendar" element={<PlaceholderPage title="Calendar" />} />
-                <Route path="settings" element={<PlaceholderPage title="Settings" />} />
+                <Route path="settings" element={<Settings />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

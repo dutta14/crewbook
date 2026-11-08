@@ -51,6 +51,7 @@ export function createMoodEntry(overrides: Partial<MoodEntry> = {}): MoodEntry {
   return {
     id: crypto.randomUUID(),
     memberId: crypto.randomUUID(),
+    noteId: crypto.randomUUID(),
     score: 4,
     recordedAt: now(),
     ...overrides,
