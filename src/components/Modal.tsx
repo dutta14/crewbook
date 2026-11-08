@@ -30,6 +30,8 @@ export interface ModalProps {
   describedBy?: string;
   footer?: ReactNode;
   initialFocusRef?: RefObject<HTMLElement | null>;
+  /** Below 768px the dialog becomes a full-screen sheet that slides up from the bottom. */
+  mobileSheet?: boolean;
 }
 
 export function Modal({
@@ -43,6 +45,7 @@ export function Modal({
   describedBy,
   footer,
   initialFocusRef,
+  mobileSheet = false,
 }: ModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -117,7 +120,7 @@ export function Modal({
     >
       <div
         ref={dialogRef}
-        className={`modal modal--${size}`}
+        className={`modal modal--${size}${mobileSheet ? ' modal--sheet' : ''}`}
         role={role}
         aria-modal="true"
         aria-labelledby={titleId}

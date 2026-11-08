@@ -98,6 +98,38 @@
   }
 }
 
+@keyframes modal-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes modal-sheet-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .modal-backdrop:has(.modal--sheet) {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal--sheet {
+    max-width: none;
+    height: 100%;
+    max-height: 100%;
+    border-width: 0;
+    border-radius: 0;
+    animation: modal-sheet-in var(--transition-slow) var(--ease-out);
+  }
+
+  .modal-backdrop[data-state='closing'] .modal--sheet {
+    animation: modal-sheet-out var(--transition-fast) var(--ease-in) forwards;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .modal-backdrop,
   .modal {
@@ -106,5 +138,13 @@
 
   .modal {
     animation-name: modal-backdrop-in;
+  }
+
+  .modal--sheet {
+    animation-name: modal-backdrop-in;
+  }
+
+  .modal-backdrop[data-state='closing'] .modal--sheet {
+    animation: none;
   }
 }

@@ -352,22 +352,46 @@ describe('Roster', () => {
     expect(screen.getByRole('button', { name: 'Add your first team member' })).toBeEnabled();
   });
 
-  it('the add actions explain that member creation is not available yet', async () => {
+  it('the empty state CTA opens the add member dialog', async () => {
     const user = userEvent.setup();
     renderRoster([]);
 
     await user.click(screen.getByRole('button', { name: 'Add your first team member' }));
 
-    expect(await screen.findByText('Adding team members is coming soon.')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Add Team Member' })).toBeInTheDocument();
+    expect(screen.queryByText('Adding team members is coming soon.')).not.toBeInTheDocument();
   });
 
-  it('the header Add member button explains the same when members exist', async () => {
+  it('the header Add member button opens the add member dialog', async () => {
     const user = userEvent.setup();
     renderRoster(team());
 
     await user.click(screen.getByRole('button', { name: 'Add member' }));
 
-    expect(await screen.findByText('Adding team members is coming soon.')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Add Team Member' })).toBeInTheDocument();
+  });
+
+  it('adding a member from the empty state shows the roster, a toast, and the new row', async () => {
+    const user = userEvent.setup();
+    renderRoster([]);
+
+    await user.click(screen.getByRole('button', { name: 'Add your first team member' }));
+    await user.type(screen.getByLabelText(/^Name/), 'Priya Sharma');
+    await user.click(screen.getByRole('button', { name: 'Add Member' }));
+
+    expect(await screen.findByText('Priya Sharma added to your team')).toBeInTheDocument();
+    expect(rowNames()).toEqual(['Priya Sharma']);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('lists existing members in the new member manager dropdown', async () => {
+    const user = userEvent.setup();
+    renderRoster(team());
+
+    await user.click(screen.getByRole('button', { name: 'Add member' }));
+
+    const manager = screen.getByRole('combobox', { name: 'Manager' });
+    expect(within(manager).getAllByRole('option')).toHaveLength(5);
   });
 
   it('keyboard: Tab moves through search, filters, sort, and table rows', async () => {

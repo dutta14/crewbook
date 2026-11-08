@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { AddMemberModal } from '../components/AddMemberModal';
 import { EmptyState } from '../components/EmptyState';
 import { FilterChips } from '../components/FilterChips';
 import { SearchIcon, TeamIcon } from '../components/icons';
@@ -61,6 +62,7 @@ export function Roster() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortBy, setSortBy] = useState<SortField>('name');
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   const members = useMemo(() => listMembers(storage), [storage]);
   const visibleMembers = useMemo(() => {
@@ -76,8 +78,15 @@ export function Roster() {
       .sort(COMPARATORS[sortBy]);
   }, [members, search, statusFilter, sortBy]);
 
-  // Member creation arrives with the add-member modal; until then the action only explains itself.
-  const handleAddMember = () => showToast('Adding team members is coming soon.', 'info');
+  const handleAddMember = () => setIsAddOpen(true);
+  const addMemberModal = (
+    <AddMemberModal
+      isOpen={isAddOpen}
+      onClose={() => setIsAddOpen(false)}
+      onSuccess={(member) => showToast(`${member.name} added to your team`, 'success')}
+      members={members}
+    />
+  );
 
   if (members.length === 0) {
     return (
@@ -88,6 +97,7 @@ export function Roster() {
           title="No team members yet"
           action={{ label: 'Add your first team member', onClick: handleAddMember }}
         />
+        {addMemberModal}
       </>
     );
   }
@@ -152,6 +162,7 @@ export function Roster() {
       ) : (
         <RosterTable members={visibleMembers} />
       )}
+      {addMemberModal}
     </>
   );
 }

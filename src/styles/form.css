@@ -37,3 +37,48 @@
 .search-field__input::placeholder {
   color: var(--fg2);
 }
+
+.member-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.form-label {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-weight: 500;
+}
+
+.form-input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.form-error {
+  color: var(--danger);
+  font-size: var(--text-caption);
+  animation: form-error-in var(--transition-fast) var(--ease-out);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-4);
+}
+
+.form-actions [aria-disabled='true'] {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+@keyframes form-error-in {
+  from {
+    opacity: 0;
+  }
+}

@@ -50,6 +50,17 @@ describe('ToastProvider', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Member saved');
   });
 
+  it('renders HTML in a message as text rather than markup', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const message = '<img src=x onerror=alert(1)> added to your team';
+    renderProvider(<Trigger message={message} />);
+
+    await user.click(screen.getByRole('button'));
+
+    expect(screen.getByRole('status')).toHaveTextContent(message);
+    expect(screen.getByRole('status').querySelector('img')).toBeNull();
+  });
+
   it('applies the type variant', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderProvider(<Trigger message="Failed" type="error" />);
