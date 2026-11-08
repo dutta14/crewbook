@@ -6,10 +6,12 @@ import { EmptyState } from '../components/EmptyState';
 import { TeamIcon } from '../components/icons';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { ProfileOverview } from '../components/ProfileOverview';
+import { NotesSection } from '../components/NotesSection';
 import { ScheduleCard } from '../components/ScheduleCard';
 import { Tabs } from '../components/Tabs';
 import { Timeline } from '../components/Timeline';
 import { deleteMember, getMember, listMembers, updateMember } from '../data/members';
+import { deleteNotesForMember } from '../data/notes';
 import { buildTimeline } from '../data/timeline';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { useToast } from '../hooks/useToast';
@@ -44,6 +46,17 @@ export function Profile() {
 
   const goToRoster = () => navigate('/roster');
 
+  // A removed person's 1:1 history must not linger in the encrypted store. Best effort: the person
+  // is already gone, so a failure here must not turn a successful delete into an error.
+  const purgeNotes = async (memberId: string) => {
+    try {
+      await storage.loadPrivate();
+      await deleteNotesForMember(memberId, storage);
+    } catch {
+      // Left in the private envelope; the next successful write does not resurrect the member.
+    }
+  };
+
   const handleDelete = async () => {
     if (!member) return;
     const { name } = member;
@@ -51,6 +64,7 @@ export function Profile() {
     setIsDeleting(true);
     try {
       await deleteMember(member.id, storage);
+      await purgeNotes(member.id);
       showToast(`${name} removed from your team`, 'success');
       goToRoster();
     } catch {
@@ -102,7 +116,7 @@ export function Profile() {
           {
             id: 'notes',
             label: 'Notes',
-            content: <p className="profile-placeholder">Notes are coming in a future update.</p>,
+            content: <NotesSection key={member.id} memberId={member.id} />,
           },
           {
             id: 'goals',

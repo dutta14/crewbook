@@ -61,6 +61,48 @@ export async function seedMembers(page: Page, members: SeedMember[], passphrase 
   await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
 }
 
+export interface SeedNote {
+  /** Index into the seeded list of members. */
+  memberIndex: number;
+  content: string;
+  /** How long before now the note was written. */
+  hoursAgo: number;
+}
+
+/** Writes 1:1 notes into the private encrypted envelope. Seed members first, then call this. */
+export async function seedNotes(page: Page, notes: SeedNote[], passphrase = TEST_PASSPHRASE) {
+  const now = Date.now();
+  const stored = notes.map(({ memberIndex, content, hoursAgo }, index) => {
+    const at = new Date(now - hoursAgo * 60 * 60 * 1000).toISOString();
+    return {
+      id: `00000000-0000-4000-9000-${String(index).padStart(12, '0')}`,
+      memberId: seedId(memberIndex),
+      content,
+      createdAt: at,
+      updatedAt: at,
+    };
+  });
+  await page.evaluate(
+    async ({ data, secret }) => {
+      const modulePath = '/src/data/StorageManager.ts';
+      const { StorageManager } = (await import(
+        /* @vite-ignore */ modulePath
+      )) as typeof import('../../src/data/StorageManager');
+      const manager = new StorageManager();
+      await manager.unlock(secret);
+      await manager.loadPrivate();
+      manager.setPrivateData('notes', data);
+      const failure = await manager.flush();
+      if (failure) throw failure;
+      await manager.lock();
+    },
+    { data: stored, secret: passphrase },
+  );
+  await page.reload();
+  await unlock(page, passphrase);
+  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+}
+
 export const SEED_TEAM: SeedMember[] = [
   {
     name: 'Alice Park',

@@ -67,9 +67,10 @@ describe('factories', () => {
     });
   });
 
-  it('createNote defaults to a shared note and accepts overrides', () => {
-    expect(createNote().visibility).toBe('shared');
-    expect(createNote({ visibility: 'private' }).visibility).toBe('private');
+  it('createNote defaults to matching created and updated times and accepts overrides', () => {
+    const note = createNote();
+    expect(note.updatedAt).toBe(note.createdAt);
+    expect(createNote({ content: 'Career goals' }).content).toBe('Career goals');
   });
 
   it('createActionItem defaults to an open item and accepts overrides', () => {

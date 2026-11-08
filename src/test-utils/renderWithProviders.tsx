@@ -12,18 +12,24 @@ export interface RenderWithProvidersOptions {
   route?: string;
   // Seeds the unlocked in-memory storage double. Settings arrive with issue #3.
   initialData?: Partial<AppData>;
+  // Seeds the private envelope double, which holds notes and drafts.
+  initialPrivateData?: Record<string, unknown>;
 }
 
 // An always-unlocked, in-memory stand-in for EncryptedStorageProvider: no lock screen, no crypto.
 function InMemoryEncryptedStorage({
   initialData,
+  initialPrivateData,
   children,
 }: {
   initialData: Partial<AppData>;
+  initialPrivateData: Record<string, unknown>;
   children: ReactNode;
 }) {
   const [data] = useState(() => new Map<string, unknown>(Object.entries(initialData)));
-  const [privateData] = useState(() => new Map<string, unknown>());
+  const [privateData] = useState(
+    () => new Map<string, unknown>(Object.entries(initialPrivateData)),
+  );
   const [version, setVersion] = useState(0);
 
   const value = useMemo<EncryptedStorageContextValue>(
@@ -62,12 +68,14 @@ function InMemoryEncryptedStorage({
 
 export function renderWithProviders(
   ui: ReactElement,
-  { route = '/', initialData = {} }: RenderWithProvidersOptions = {},
+  { route = '/', initialData = {}, initialPrivateData = {} }: RenderWithProvidersOptions = {},
 ): RenderResult {
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <MemoryRouter initialEntries={[route]}>
       <ToastProvider>
-        <InMemoryEncryptedStorage initialData={initialData}>{children}</InMemoryEncryptedStorage>
+        <InMemoryEncryptedStorage initialData={initialData} initialPrivateData={initialPrivateData}>
+          {children}
+        </InMemoryEncryptedStorage>
       </ToastProvider>
     </MemoryRouter>
   );

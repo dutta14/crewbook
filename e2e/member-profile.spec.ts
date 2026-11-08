@@ -104,7 +104,7 @@ test.describe('member profile', () => {
     await expect(page.getByRole('tabpanel', { name: 'Overview' })).toContainText('Payments');
 
     await page.getByRole('tab', { name: 'Notes' }).click();
-    await expect(page.getByRole('tabpanel', { name: 'Notes' })).toContainText('Notes are coming');
+    await expect(page.getByRole('tabpanel', { name: 'Notes' })).toContainText('No notes yet');
 
     await page.getByRole('tab', { name: 'Timeline' }).click();
     await expect(page.getByRole('tabpanel', { name: 'Timeline' })).toContainText('Added to team');

@@ -216,7 +216,11 @@ describe('Profile', () => {
     renderProfile(ALEX);
 
     await user.click(screen.getByRole('tab', { name: 'Notes' }));
-    expect(screen.getByRole('tabpanel', { name: 'Notes' })).toHaveTextContent('Notes are coming');
+    expect(
+      await within(screen.getByRole('tabpanel', { name: 'Notes' })).findByRole('button', {
+        name: 'Save Note',
+      }),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: 'Goals' }));
     expect(screen.getByRole('tabpanel', { name: 'Goals' })).toHaveTextContent('Goals are coming');

@@ -21,12 +21,13 @@ export function createMember(overrides: Partial<TeamMember> = {}): TeamMember {
 }
 
 export function createNote(overrides: Partial<Note> = {}): Note {
+  const timestamp = now();
   return {
     id: crypto.randomUUID(),
     memberId: crypto.randomUUID(),
     content: 'Discussed the Q3 roadmap and growth goals.',
-    visibility: 'shared',
-    createdAt: now(),
+    createdAt: timestamp,
+    updatedAt: timestamp,
     ...overrides,
   };
 }
