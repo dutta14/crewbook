@@ -1,0 +1,55 @@
+import type { ActionItem, MoodEntry, Note, TeamMember } from '../types';
+
+const now = () => new Date().toISOString();
+
+export function createMember(overrides: Partial<TeamMember> = {}): TeamMember {
+  const timestamp = now();
+  return {
+    id: crypto.randomUUID(),
+    name: 'Alex Chen',
+    role: 'Software Engineer',
+    level: 'L4',
+    startDate: '2023-03-13T00:00:00.000Z',
+    email: 'alex.chen@example.com',
+    manager: null,
+    status: 'active',
+    customFields: {},
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    ...overrides,
+  };
+}
+
+export function createNote(overrides: Partial<Note> = {}): Note {
+  return {
+    id: crypto.randomUUID(),
+    memberId: crypto.randomUUID(),
+    content: 'Discussed the Q3 roadmap and growth goals.',
+    visibility: 'shared',
+    createdAt: now(),
+    ...overrides,
+  };
+}
+
+export function createActionItem(overrides: Partial<ActionItem> = {}): ActionItem {
+  return {
+    id: crypto.randomUUID(),
+    memberId: crypto.randomUUID(),
+    title: 'Share the design doc draft',
+    owner: 'report',
+    dueDate: null,
+    status: 'open',
+    createdAt: now(),
+    ...overrides,
+  };
+}
+
+export function createMoodEntry(overrides: Partial<MoodEntry> = {}): MoodEntry {
+  return {
+    id: crypto.randomUUID(),
+    memberId: crypto.randomUUID(),
+    score: 4,
+    recordedAt: now(),
+    ...overrides,
+  };
+}

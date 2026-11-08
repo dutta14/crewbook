@@ -1,0 +1,23 @@
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { AppShell } from './components/AppShell';
+import { ToastProvider } from './components/Toast';
+import { PlaceholderPage } from './pages/PlaceholderPage';
+
+export default function App() {
+  return (
+    <HashRouter>
+      <ToastProvider>
+        <Routes>
+          <Route path="/" element={<AppShell />}>
+            <Route index element={<PlaceholderPage title="Dashboard" />} />
+            <Route path="roster" element={<PlaceholderPage title="Roster" />} />
+            <Route path="person/:id" element={<PlaceholderPage title="Profile" />} />
+            <Route path="calendar" element={<PlaceholderPage title="Calendar" />} />
+            <Route path="settings" element={<PlaceholderPage title="Settings" />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </ToastProvider>
+    </HashRouter>
+  );
+}

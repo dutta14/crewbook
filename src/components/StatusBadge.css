@@ -1,0 +1,33 @@
+.status-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.status-badge--sm {
+  padding: 1px 8px;
+}
+
+.status-badge--active {
+  background: var(--status-active-bg);
+  color: var(--status-active-fg);
+}
+
+.status-badge--on-leave {
+  background: var(--status-on-leave-bg);
+  color: var(--status-on-leave-fg);
+}
+
+.status-badge--departing {
+  background: var(--status-departing-bg);
+  color: var(--status-departing-fg);
+}
+
+.status-badge--new {
+  background: var(--status-new-bg);
+  color: var(--status-new-fg);
+}

@@ -1,0 +1,22 @@
+.error-boundary {
+  max-width: 420px;
+  margin: var(--space-10) auto;
+  padding: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  text-align: center;
+}
+
+.error-boundary__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-section);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.error-boundary__message {
+  margin: 0 0 var(--space-4);
+  color: var(--fg2);
+}

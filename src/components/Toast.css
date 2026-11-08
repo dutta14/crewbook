@@ -1,0 +1,84 @@
+.toast-container {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: min(360px, calc(100vw - var(--space-8)));
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--card-bg);
+  color: var(--fg);
+  box-shadow: var(--shadow-dropdown);
+  pointer-events: auto;
+  animation: toast-in var(--transition-normal) var(--ease-out);
+}
+
+.toast--success {
+  border-color: transparent;
+  background: var(--success-bg);
+  color: var(--success-fg);
+}
+
+.toast--error {
+  border-color: transparent;
+  background: var(--danger-bg);
+  color: var(--status-departing-fg);
+}
+
+.toast__message {
+  flex: 1;
+  margin: 0;
+  padding-top: var(--space-2);
+  overflow-wrap: anywhere;
+}
+
+.toast__dismiss {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.toast[data-state='leaving'] {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity var(--transition-fast) var(--ease-in),
+    transform var(--transition-fast) var(--ease-in);
+  animation: none;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation-name: toast-fade-in;
+    animation-duration: var(--transition-fast);
+  }
+
+  .toast[data-state='leaving'] {
+    transform: none;
+  }
+}
+
+@keyframes toast-fade-in {
+  from {
+    opacity: 0;
+  }
+}
