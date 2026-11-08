@@ -11,6 +11,15 @@ export interface SeedMember {
   /** Index into the seeded list of this member's manager. */
   managerIndex?: number;
   customFields?: Record<string, string>;
+  schedule?: {
+    cadence: 'weekly' | 'biweekly' | 'monthly' | 'custom';
+    dayOfWeek: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday';
+    time: string;
+    customIntervalDays?: number;
+    /** YYYY-MM-DD */
+    nextDate: string;
+    overrideDate?: string;
+  };
 }
 
 /** Profile routes only accept UUIDs, so seeded ids are well-formed ones. */

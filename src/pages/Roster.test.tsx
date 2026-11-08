@@ -100,6 +100,28 @@ describe('Roster', () => {
     expect(within(row).getByText('Active')).toHaveClass('status-badge--active');
   });
 
+  it('shows the next 1:1 date for each member, a placeholder when none is set, and flags overdue ones', () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 10, 8, 12) });
+    const members = team().slice(0, 3);
+    members[0] = {
+      ...members[0],
+      schedule: { cadence: 'weekly', dayOfWeek: 'tuesday', time: '10:00', nextDate: '2026-11-10' },
+    };
+    members[1] = {
+      ...members[1],
+      schedule: { cadence: 'weekly', dayOfWeek: 'tuesday', time: '10:00', nextDate: '2026-11-03' },
+    };
+    renderRoster(members);
+
+    expect(screen.getByRole('columnheader', { name: 'Next 1:1' })).toBeInTheDocument();
+    const [alice, bob, carmen] = screen.getAllByTestId('member-row');
+    expect(within(alice).getByText('Tue, Nov 10, 2026')).toHaveAttribute('datetime', '2026-11-10');
+    expect(within(alice).queryByText('Overdue')).not.toBeInTheDocument();
+    expect(within(bob).getByText('Tue, Nov 3, 2026')).toBeInTheDocument();
+    expect(within(bob).getByText('Overdue')).toBeInTheDocument();
+    expect(within(carmen).getByText('No 1:1 scheduled')).toBeInTheDocument();
+  });
+
   it('does not render member emails', () => {
     renderRoster(team());
 
@@ -493,6 +515,29 @@ describe('Roster on a narrow screen', () => {
     expect(within(card).getByText('L3')).toBeInTheDocument();
     expect(within(card).getByText('New hire')).toHaveClass('status-badge--new');
     expect(within(card).getByText('Starts in 5 days')).toBeInTheDocument();
+  });
+
+  it('shows the next 1:1 on cards that have a schedule', () => {
+    useNarrowScreen();
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 10, 8, 12) });
+    const [alice, ...others] = team();
+    renderRoster([
+      {
+        ...alice,
+        schedule: {
+          cadence: 'weekly',
+          dayOfWeek: 'tuesday',
+          time: '10:00',
+          nextDate: '2026-11-03',
+        },
+      },
+      ...others,
+    ]);
+
+    const [first, second] = screen.getAllByTestId('member-row');
+    expect(within(first).getByText('Tue, Nov 3, 2026')).toBeInTheDocument();
+    expect(within(first).getByText('Overdue')).toBeInTheDocument();
+    expect(within(second).queryByText(/Next 1:1/)).not.toBeInTheDocument();
   });
 
   it('navigates to the profile when a card link is clicked', async () => {

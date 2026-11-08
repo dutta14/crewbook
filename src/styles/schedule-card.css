@@ -1,0 +1,156 @@
+.schedule-card {
+  margin-bottom: var(--space-6);
+  padding: var(--space-5) var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.schedule-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.schedule-card__title {
+  margin: 0;
+  font-size: var(--text-section);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.schedule-card__action {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.schedule-card__body,
+.schedule-card__empty,
+.schedule-card__form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  animation: schedule-card-in var(--transition-normal) var(--ease-out) both;
+}
+
+.schedule-card__form {
+  align-items: stretch;
+}
+
+.schedule-card__details {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3) var(--space-8);
+  margin: 0;
+}
+
+.schedule-card__details dt {
+  margin: 0 0 var(--space-1);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-weight: 500;
+}
+
+.schedule-card__details dd {
+  margin: 0;
+  font-size: var(--text-body);
+}
+
+.schedule-card__buttons,
+.schedule-card__form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.schedule-card__form-actions {
+  justify-content: flex-end;
+}
+
+.schedule-card__empty-text {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-body);
+}
+
+.schedule-card .form-error {
+  margin: 0;
+}
+
+.next-one-on-one {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  transition: color var(--transition-slow) var(--ease-in-out);
+}
+
+.next-one-on-one__date {
+  animation: schedule-date-in var(--transition-fast) var(--ease-out) both;
+}
+
+.next-one-on-one--overdue {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.next-one-on-one--overdue svg {
+  flex: none;
+  animation: schedule-date-in var(--transition-slow) var(--ease-in-out) both;
+}
+
+.next-one-on-one__badge {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@keyframes schedule-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes schedule-date-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (min-width: 768px) {
+  .schedule-card__details {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767.98px) {
+  .schedule-card {
+    padding: var(--space-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .schedule-card__body,
+  .schedule-card__empty,
+  .schedule-card__form,
+  .next-one-on-one__date,
+  .next-one-on-one--overdue svg {
+    animation: none;
+  }
+
+  .next-one-on-one {
+    transition: none;
+  }
+}

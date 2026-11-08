@@ -418,6 +418,84 @@ describe('updateMember', () => {
   });
 });
 
+describe('schedule', () => {
+  const schedule = {
+    cadence: 'biweekly',
+    dayOfWeek: 'tuesday',
+    time: '10:00',
+    nextDate: '2026-11-10',
+  } as const;
+
+  it('stores the schedule inside the member record and keeps it across other edits', async () => {
+    const { storage } = await createStorage();
+    const added = await addMember(input(), storage);
+
+    const withSchedule = await updateMember(added.id, { schedule }, storage);
+    const renamed = await updateMember(added.id, { name: 'Renamed' }, storage);
+
+    expect(withSchedule.schedule).toEqual(schedule);
+    expect(getMember(added.id, storage)?.schedule).toEqual(schedule);
+    expect(renamed.schedule).toEqual(schedule);
+  });
+
+  it('keeps schedule changes out of the edit history', async () => {
+    const { storage } = await createStorage();
+    const added = await addMember(input(), storage);
+
+    const updated = await updateMember(added.id, { schedule }, storage);
+
+    expect(updated.history).toBeUndefined();
+  });
+
+  it('copies only known schedule fields and drops the interval unless custom', async () => {
+    const { storage } = await createStorage();
+    const added = await addMember(input(), storage);
+
+    const updated = await updateMember(
+      added.id,
+      { schedule: { ...schedule, customIntervalDays: 5, extra: 'x' } as never },
+      storage,
+    );
+
+    expect(updated.schedule).toEqual(schedule);
+  });
+
+  it('rejects invalid schedules without repeating their values', async () => {
+    const { storage } = await createStorage();
+    const added = await addMember(input(), storage);
+    const attempt = (change: object) =>
+      updateMember(added.id, { schedule: { ...schedule, ...change } as never }, storage);
+
+    await expect(attempt({ cadence: 'daily' })).rejects.toThrow('Schedule cadence is not valid');
+    await expect(attempt({ dayOfWeek: 'saturday' })).rejects.toThrow('Schedule day is not valid');
+    await expect(attempt({ time: '25:00' })).rejects.toThrow('Schedule time is not valid');
+    await expect(attempt({ nextDate: '2026-02-30' })).rejects.toThrow('next date is not valid');
+    await expect(attempt({ overrideDate: 'soon' })).rejects.toThrow('override date is not valid');
+    await expect(attempt({ cadence: 'custom', customIntervalDays: 0 })).rejects.toThrow(
+      'whole number of days',
+    );
+    await expect(attempt({ cadence: 'custom', customIntervalDays: 366 })).rejects.toThrow(
+      'whole number of days',
+    );
+    await expect(attempt({ cadence: 'custom', customIntervalDays: 1.5 })).rejects.toThrow(
+      'whole number of days',
+    );
+    await expect(updateMember(added.id, { schedule: [] as never }, storage)).rejects.toThrow(
+      'Schedule must be an object',
+    );
+    expect(getMember(added.id, storage)?.schedule).toBeUndefined();
+  });
+
+  it('removes the schedule when it is set to undefined', async () => {
+    const { storage } = await createStorage();
+    const added = await addMember(input({ schedule }), storage);
+
+    const updated = await updateMember(added.id, { schedule: undefined }, storage);
+
+    expect(updated).not.toHaveProperty('schedule');
+  });
+});
+
 describe('deleteMember', () => {
   it('removes member by id', async () => {
     const { storage } = await createStorage();

@@ -1,3 +1,4 @@
+import type { Schedule } from './Schedule';
 import type { MemberChange } from './Timeline';
 
 export type TeamMemberStatus = 'active' | 'on_leave' | 'departing' | 'new_hire';
@@ -17,6 +18,8 @@ export interface TeamMember {
   status: TeamMemberStatus;
   avatarUrl?: string;
   customFields: Record<string, string>;
+  /** Recurring 1:1 schedule. Stays inside the encrypted member record. */
+  schedule?: Schedule;
   /** ISO 8601 */
   createdAt: string;
   /** ISO 8601; refreshed on every write. */

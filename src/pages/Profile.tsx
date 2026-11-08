@@ -6,9 +6,10 @@ import { EmptyState } from '../components/EmptyState';
 import { TeamIcon } from '../components/icons';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { ProfileOverview } from '../components/ProfileOverview';
+import { ScheduleCard } from '../components/ScheduleCard';
 import { Tabs } from '../components/Tabs';
 import { Timeline } from '../components/Timeline';
-import { deleteMember, getMember, listMembers } from '../data/members';
+import { deleteMember, getMember, listMembers, updateMember } from '../data/members';
 import { buildTimeline } from '../data/timeline';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { useToast } from '../hooks/useToast';
@@ -83,6 +84,12 @@ export function Profile() {
         headingRef={headingRef}
         onEdit={() => setIsEditOpen(true)}
         onDelete={() => setIsDeleteOpen(true)}
+      />
+      <ScheduleCard
+        key={member.id}
+        memberId={member.id}
+        schedule={member.schedule ?? null}
+        onSave={(schedule) => updateMember(member.id, { schedule }, storage)}
       />
       <Tabs
         ariaLabel="Profile sections"

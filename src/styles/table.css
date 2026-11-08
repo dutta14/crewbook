@@ -185,6 +185,13 @@
   box-shadow: var(--card-shadow);
 }
 
+.roster-card--scheduled {
+  grid-template-areas:
+    'avatar text status'
+    'avatar level level'
+    'next next next';
+}
+
 .roster-card > .avatar {
   grid-area: avatar;
 }
@@ -200,6 +207,14 @@
 .roster-card__level {
   grid-area: level;
   justify-self: start;
+}
+
+.roster-card__next {
+  grid-area: next;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
 }
 
 @keyframes roster-fade-in {

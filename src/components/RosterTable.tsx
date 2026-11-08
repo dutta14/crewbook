@@ -3,6 +3,7 @@ import type { TeamMember } from '../types/TeamMember';
 import '../styles/table.css';
 import { Avatar } from './Avatar';
 import { NewHireCountdown } from './NewHireCountdown';
+import { NextOneOnOne } from './NextOneOnOne';
 import { StatusBadge, toBadgeStatus } from './StatusBadge';
 
 interface RosterTableProps {
@@ -18,6 +19,7 @@ export function RosterTable({ members }: RosterTableProps) {
           <th scope="col">Name</th>
           <th scope="col">Level</th>
           <th scope="col">Status</th>
+          <th scope="col">Next 1:1</th>
         </tr>
       </thead>
       <tbody>
@@ -42,6 +44,16 @@ export function RosterTable({ members }: RosterTableProps) {
             </td>
             <td>
               <StatusBadge status={toBadgeStatus(member.status)} />
+            </td>
+            <td>
+              {member.schedule ? (
+                <NextOneOnOne nextDate={member.schedule.nextDate} />
+              ) : (
+                <span className="roster-role">
+                  <span aria-hidden="true">—</span>
+                  <span className="sr-only">No 1:1 scheduled</span>
+                </span>
+              )}
             </td>
           </tr>
         ))}

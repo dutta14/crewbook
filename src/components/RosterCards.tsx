@@ -3,6 +3,7 @@ import type { TeamMember } from '../types/TeamMember';
 import '../styles/table.css';
 import { Avatar } from './Avatar';
 import { NewHireCountdown } from './NewHireCountdown';
+import { NextOneOnOne } from './NextOneOnOne';
 import { StatusBadge, toBadgeStatus } from './StatusBadge';
 
 interface RosterCardsProps {
@@ -13,7 +14,11 @@ export function RosterCards({ members }: RosterCardsProps) {
   return (
     <ul className="roster-cards" aria-label="Team members">
       {members.map((member) => (
-        <li key={member.id} className="roster-card roster-row" data-testid="member-row">
+        <li
+          key={member.id}
+          className={`roster-card roster-row${member.schedule ? ' roster-card--scheduled' : ''}`}
+          data-testid="member-row"
+        >
           <Avatar name={member.name} avatarUrl={member.avatarUrl} aria-hidden />
           <div className="roster-identity__text">
             <Link className="roster-link" to={`/person/${member.id}`}>
@@ -28,6 +33,12 @@ export function RosterCards({ members }: RosterCardsProps) {
             <StatusBadge status={toBadgeStatus(member.status)} />
           </span>
           <span className="level-tag roster-card__level">{member.level}</span>
+          {member.schedule ? (
+            <span className="roster-card__next">
+              <span className="roster-role">Next 1:1: </span>
+              <NextOneOnOne nextDate={member.schedule.nextDate} />
+            </span>
+          ) : null}
         </li>
       ))}
     </ul>

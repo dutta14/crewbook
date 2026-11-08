@@ -5,6 +5,14 @@ import type {
   TeamMemberStatus,
   TeamMemberUpdate,
 } from '../types/TeamMember';
+import type { Schedule } from '../types/Schedule';
+import {
+  isCadence,
+  isDayOfWeek,
+  isValidInterval,
+  isValidTime,
+  parseIsoDate,
+} from '../utils/scheduleCalculator';
 import { NotFoundError, ValidationError } from './errors';
 import { MAX_HISTORY_ENTRIES, diffMember } from './timeline';
 
@@ -122,6 +130,39 @@ function cleanCustomFields(value: unknown): Record<string, string> {
   return cleaned;
 }
 
+/** Copies only known fields. Error messages never repeat the stored values. */
+function cleanSchedule(value: unknown): Schedule | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new ValidationError('Schedule must be an object');
+  }
+  const schedule = value as Record<string, unknown>;
+  if (!isCadence(schedule.cadence)) throw new ValidationError('Schedule cadence is not valid');
+  if (!isDayOfWeek(schedule.dayOfWeek)) throw new ValidationError('Schedule day is not valid');
+  if (!isValidTime(schedule.time)) throw new ValidationError('Schedule time is not valid');
+  if (typeof schedule.nextDate !== 'string' || !parseIsoDate(schedule.nextDate)) {
+    throw new ValidationError('Schedule next date is not valid');
+  }
+  const { overrideDate, customIntervalDays } = schedule;
+  if (
+    overrideDate !== undefined &&
+    (typeof overrideDate !== 'string' || !parseIsoDate(overrideDate))
+  ) {
+    throw new ValidationError('Schedule override date is not valid');
+  }
+  if (schedule.cadence === 'custom' && !isValidInterval(customIntervalDays)) {
+    throw new ValidationError('Schedule interval must be a whole number of days from 1 to 365');
+  }
+  return {
+    cadence: schedule.cadence,
+    dayOfWeek: schedule.dayOfWeek,
+    time: schedule.time,
+    ...(schedule.cadence === 'custom' ? { customIntervalDays: customIntervalDays as number } : {}),
+    nextDate: schedule.nextDate,
+    ...(overrideDate === undefined ? {} : { overrideDate }),
+  };
+}
+
 /** A manager must exist and must not create a loop through the reporting chain. */
 function checkManager(
   manager: unknown,
@@ -152,6 +193,7 @@ function validate(
 ): TeamMemberInput {
   if (!isTeamMemberStatus(input.status)) throw new ValidationError('Status is not valid');
   const avatarUrl = cleanAvatarUrl(input.avatarUrl);
+  const schedule = cleanSchedule(input.schedule);
   return {
     name: cleanName(input.name),
     role: cleanText(input.role ?? '', 'Role', MEMBER_LIMITS.textLength),
@@ -162,6 +204,7 @@ function validate(
     status: input.status,
     ...(avatarUrl === undefined ? {} : { avatarUrl }),
     customFields: cleanCustomFields(input.customFields),
+    ...(schedule === undefined ? {} : { schedule }),
   };
 }
 

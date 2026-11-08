@@ -298,6 +298,23 @@ describe('Profile', () => {
     expect(screen.getByText('Alex Chen removed from your team')).toBeInTheDocument();
   });
 
+  it('shows the 1:1 schedule card below the header and saves a new schedule through storage', async () => {
+    const user = userEvent.setup();
+    renderProfile(ALEX);
+
+    expect(screen.getByText('No 1:1 schedule set')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Set up schedule' }));
+    await user.selectOptions(screen.getByLabelText('Cadence'), 'Biweekly');
+    await user.selectOptions(screen.getByLabelText('Day of week'), 'Tuesday');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    const card = await screen.findByRole('region', { name: '1:1 Schedule' });
+    expect(within(card).getByText('Every 2 weeks')).toBeInTheDocument();
+    expect(within(card).getByText('Tuesdays at 10:00 AM')).toBeInTheDocument();
+    expect(await within(card).findByRole('button', { name: 'Edit 1:1 schedule' })).toHaveFocus();
+    expect(screen.getByRole('tabpanel', { name: 'Overview' })).toBeInTheDocument();
+  });
+
   it('has no axe violations', async () => {
     const { container } = renderProfile(ALEX);
 
