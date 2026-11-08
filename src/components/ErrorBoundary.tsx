@@ -4,6 +4,8 @@ import './ErrorBoundary.css';
 
 interface ErrorBoundaryProps {
   fallback?: ReactNode;
+  /** Skips the console report, for subtrees whose errors could carry private content. */
+  silent?: boolean;
   children: ReactNode;
 }
 
@@ -19,6 +21,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
+    if (this.props.silent) return;
     console.error('ErrorBoundary caught a render error', error, info.componentStack);
   }
 

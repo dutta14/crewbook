@@ -10,6 +10,7 @@ import { MoodTrendSection } from '../components/MoodTrendSection';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { ProfileOverview } from '../components/ProfileOverview';
 import { NotesSection } from '../components/NotesSection';
+import { PrepPrompts } from '../components/PrepPrompts';
 import { ScheduleCard } from '../components/ScheduleCard';
 import { Tabs } from '../components/Tabs';
 import { Timeline } from '../components/Timeline';
@@ -139,6 +140,9 @@ export function Profile() {
         schedule={member.schedule ?? null}
         onSave={(schedule) => updateMember(member.id, { schedule }, storage)}
       />
+      {isLive ? null : (
+        <PrepPrompts key={`prep-${member.id}`} memberId={member.id} className="prep-card--page" />
+      )}
       {rateNoteId && isMoodTrackingEnabled(storage) ? (
         <section className="profile-mood-prompt" aria-label="Rate this 1:1">
           <MoodPrompt key={rateNoteId} memberId={member.id} noteId={rateNoteId} />

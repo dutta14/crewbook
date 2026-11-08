@@ -5,3 +5,4 @@ export type { Note } from './Note';
 export type { Cadence, DayOfWeek, Schedule } from './Schedule';
 export type { TeamMember, TeamMemberInput, TeamMemberStatus, TeamMemberUpdate } from './TeamMember';
 export type { ChangedField, MemberChange, TimelineEntry } from './Timeline';
+export type { PrepData, PrepStatusChange } from './prep';

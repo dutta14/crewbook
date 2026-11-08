@@ -4,7 +4,12 @@ import { Route, Routes, useLocation } from 'react-router-dom';
 import { axe } from 'vitest-axe';
 import { describe, expect, it, vi } from 'vitest';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
-import { createActionItem, createMember, createMoodEntry } from '../test-utils/factories';
+import {
+  createActionItem,
+  createMember,
+  createMoodEntry,
+  createNote,
+} from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
 import type { TeamMember } from '../types/TeamMember';
 import { Profile } from './Profile';
@@ -457,7 +462,39 @@ describe('Profile', () => {
     expect(within(rating).getByRole('radio', { name: 'Good energy' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     await user.click(screen.getByRole('tab', { name: 'Notes' }));
-    expect(screen.getByText('Great chat')).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('tabpanel', { name: 'Notes' })).getByText('Great chat'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the prep card above the tabs once there is an earlier 1:1, and not while live', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Routes>
+        <Route path="/person/:id" element={<Profile />} />
+      </Routes>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team(), settings: { liveModeNoticeDismissed: 'true' } },
+        initialPrivateData: {
+          notes: [
+            createNote({
+              memberId: ALEX,
+              content: 'Talked about the launch',
+              createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+            }),
+          ],
+        },
+      },
+    );
+
+    const prep = await screen.findByRole('region', { name: 'PREP' });
+    expect(within(prep).getByText('Talked about the launch')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Start 1:1' }));
+    const dialog = screen.getByRole('dialog', { name: '1:1 with Alex Chen' });
+    expect(screen.getAllByRole('region', { name: 'PREP' })).toHaveLength(1);
+    expect(within(dialog).getByRole('region', { name: 'PREP' })).toBeInTheDocument();
   });
 
   it('does not ask for a mood after End 1:1 when tracking is off', async () => {

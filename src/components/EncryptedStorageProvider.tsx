@@ -1,4 +1,5 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { clearPrepDismissal } from '../data/prepDismissal';
 import { StorageManager } from '../data/StorageManager';
 import { useToast } from '../hooks/useToast';
 import { isCryptoAvailable } from '../utils/crypto';
@@ -63,6 +64,9 @@ export function EncryptedStorageProvider({ children }: { children: ReactNode }) 
     [manager, showToast],
   );
 
+  // Locking, or reloading the page, starts a new session, so the prep card comes back.
+  useEffect(() => clearPrepDismissal(), []);
+
   useEffect(() => {
     // Best effort: encryption is async, so a write started here may not finish before unload.
     const flushOnUnload = () => void manager.flush();
@@ -99,6 +103,7 @@ export function EncryptedStorageProvider({ children }: { children: ReactNode }) 
   const lock = useCallback(() => {
     setIsUnlocked(false);
     setIsPrivateUnlocked(false);
+    clearPrepDismissal();
     void manager.lock();
   }, [manager]);
 

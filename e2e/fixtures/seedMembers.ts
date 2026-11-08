@@ -20,6 +20,14 @@ export interface SeedMember {
     nextDate: string;
     overrideDate?: string;
   };
+  /** Recorded edits, oldest first; seeds the status changes the prep card reports. */
+  history?: Array<{
+    id: string;
+    date: string;
+    field: 'status';
+    from: SeedMember['status'];
+    to: SeedMember['status'];
+  }>;
 }
 
 /** Profile routes only accept UUIDs, so seeded ids are well-formed ones. */

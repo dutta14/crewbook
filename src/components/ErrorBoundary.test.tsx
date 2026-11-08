@@ -63,6 +63,20 @@ describe('ErrorBoundary', () => {
     );
   });
 
+  it('does not log the error or component stack itself when silent', () => {
+    render(
+      <ErrorBoundary silent fallback={null}>
+        <Boom />
+      </ErrorBoundary>,
+    );
+
+    expect(consoleError).not.toHaveBeenCalledWith(
+      'ErrorBoundary caught a render error',
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
   it('renders a custom fallback instead of the default UI when provided', () => {
     render(
       <ErrorBoundary fallback={<p>Custom fallback</p>}>

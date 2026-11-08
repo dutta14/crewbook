@@ -96,6 +96,14 @@ export function CloseIcon(props: IconProps) {
   );
 }
 
+export function ChevronDownIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m6 9 6 6 6-6" />
+    </Icon>
+  );
+}
+
 export function LockIcon(props: IconProps) {
   return (
     <Icon {...props}>
