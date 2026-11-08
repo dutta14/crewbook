@@ -13,7 +13,9 @@ test.describe('first launch', () => {
     await page.getByLabel('Confirm passphrase').fill(TEST_PASSPHRASE);
     await page.getByRole('button', { name: 'Get Started' }).click();
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+    ).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
   });
 
@@ -49,7 +51,9 @@ test.describe('first launch', () => {
 
     await expect(page.getByRole('alert')).toHaveText("Passphrases don't match.");
     await expect(page.getByLabel('Confirm passphrase')).toBeFocused();
-    await expect(page.getByRole('heading', { name: 'Dashboard' })).toHaveCount(0);
+    await expect(
+      page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+    ).toHaveCount(0);
   });
 
   test('submits with the Enter key', async ({ page }) => {
@@ -59,7 +63,9 @@ test.describe('first launch', () => {
     await page.getByLabel('Confirm passphrase').fill(TEST_PASSPHRASE);
     await page.keyboard.press('Enter');
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+    ).toBeVisible();
   });
 
   test('has no WCAG A/AA violations', async ({ page }) => {
@@ -81,13 +87,17 @@ test.describe('returning user', () => {
   test('is asked to unlock after a reload', async ({ page }) => {
     await expect(page.getByRole('heading', { level: 1, name: 'Crewbook' })).toBeVisible();
     await expect(page.getByLabel('Confirm passphrase')).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: 'Dashboard' })).toHaveCount(0);
+    await expect(
+      page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+    ).toHaveCount(0);
   });
 
   test('unlocks with the right passphrase', async ({ page }) => {
     await unlock(page);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+    ).toBeVisible();
   });
 
   test('shows an alert and stays locked after a wrong passphrase', async ({ page }) => {
@@ -96,7 +106,9 @@ test.describe('returning user', () => {
     await expect(page.getByRole('alert')).toHaveText('Wrong passphrase. Try again.');
     await expect(page.getByLabel('Passphrase', { exact: true })).toBeFocused();
     await expect(page.getByLabel('Passphrase', { exact: true })).toHaveValue('');
-    await expect(page.getByRole('heading', { name: 'Dashboard' })).toHaveCount(0);
+    await expect(
+      page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+    ).toHaveCount(0);
   });
 
   test('accepts the right passphrase after a wrong attempt', async ({ page }) => {
@@ -105,7 +117,9 @@ test.describe('returning user', () => {
 
     await unlock(page);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+    ).toBeVisible();
   });
 
   test('has no WCAG A/AA violations in the error state', async ({ page }) => {

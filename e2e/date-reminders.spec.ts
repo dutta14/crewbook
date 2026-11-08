@@ -16,12 +16,12 @@ const expectNoViolations = async (page: Page) => {
   expect(violations).toEqual([]);
 };
 
-const go = async (page: Page, hash: string, heading: string) => {
+const go = async (page: Page, hash: string, heading: string | RegExp) => {
   await page.evaluate((target) => window.location.assign(target), hash);
   await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
 };
 
-const openDashboard = (page: Page) => go(page, '#/', 'Dashboard');
+const openDashboard = (page: Page) => go(page, '#/', /^Good (morning|afternoon|evening)$/);
 const openSettings = (page: Page) => go(page, '#/settings', 'Settings');
 
 const openProfile = async (page: Page, memberIndex = 0) => {
@@ -71,13 +71,11 @@ test.describe('date-triggered reminders', () => {
 
     await openDashboard(page);
 
-    const card = page
-      .getByRole('region', { name: 'Reminders' })
-      .locator('.date-reminder-card[data-event-type="anniversary"]');
-    await expect(card).toContainText('Alice Park · 2-year work anniversary');
-    await expect(card).toContainText('Today');
-    await expect(card.locator('[data-icon="anniversary"] svg')).toBeVisible();
-    const starter = card.locator('.date-reminder__starter');
+    const section = page.getByRole('region', { name: 'Birthdays & Anniversaries' });
+    const row = section.getByRole('listitem').filter({ hasText: 'Alice Park' });
+    await expect(row).toContainText('2-year anniversary');
+    await expect(row).toContainText('Today');
+    const starter = row.locator('.date-reminder__starter');
     await expect(starter).toContainText("Alice's 2-year anniversary is today");
     await expect(starter).toHaveCSS('font-style', 'italic');
     await expectNoViolations(page);
@@ -150,9 +148,10 @@ test.describe('date-triggered reminders', () => {
     ]);
 
     await openDashboard(page);
-    const card = page.locator('.date-reminder-card[data-event-type="birthday"]');
-    await expect(card).toContainText('Birthday: Alice Park');
-    await expect(card.locator('[data-icon="birthday"] svg')).toBeVisible();
+    const row = page
+      .getByRole('region', { name: 'Birthdays & Anniversaries' })
+      .getByRole('link', { name: 'Alice Park: Birthday, Today' });
+    await expect(row).toBeVisible();
 
     await openProfile(page);
     const keyDates = page.getByRole('region', { name: 'Key Dates' });

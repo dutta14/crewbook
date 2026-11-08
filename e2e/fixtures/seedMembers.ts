@@ -66,7 +66,9 @@ export async function seedMembers(page: Page, members: SeedMember[], passphrase 
   );
   await page.reload();
   await unlock(page, passphrase);
-  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
 }
 
 export interface SeedNote {
@@ -108,7 +110,9 @@ export async function seedNotes(page: Page, notes: SeedNote[], passphrase = TEST
   );
   await page.reload();
   await unlock(page, passphrase);
-  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
 }
 
 export interface SeedActionItem {
@@ -167,7 +171,9 @@ export async function seedActionItems(
   );
   await page.reload();
   await unlock(page, passphrase);
-  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
 }
 
 export interface SeedDecision {
@@ -236,7 +242,9 @@ export async function seedDecisions(
   );
   await page.reload();
   await unlock(page, passphrase);
-  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
 }
 
 export interface SeedMood {
@@ -275,7 +283,9 @@ export async function seedMoods(page: Page, moods: SeedMood[], passphrase = TEST
   );
   await page.reload();
   await unlock(page, passphrase);
-  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
 }
 
 export const SEED_TEAM: SeedMember[] = [
@@ -349,7 +359,9 @@ export async function seedTodos(page: Page, todos: SeedTodo[], passphrase = TEST
   );
   await page.reload();
   await unlock(page, passphrase);
-  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
 }
 
 export interface SeedDateEvent {
@@ -389,7 +401,9 @@ export async function seedDateEvents(
   );
   await page.reload();
   await unlock(page, passphrase);
-  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
 }
 
 export interface SeedReminder {
@@ -456,5 +470,7 @@ export async function seedReminders(
   );
   await page.reload();
   await unlock(page, passphrase);
-  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
 }

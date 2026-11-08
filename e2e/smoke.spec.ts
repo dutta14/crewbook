@@ -9,7 +9,9 @@ const scan = async (page: import('@playwright/test').Page) => {
 test.describe('app shell', () => {
   test('loads with the Crewbook title and the Dashboard heading', async ({ unlockedApp: page }) => {
     await expect(page).toHaveTitle('Crewbook');
-    await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+    ).toBeVisible();
   });
 
   test('shows the main navigation and navigates between pages', async ({ unlockedApp: page }) => {
@@ -26,7 +28,9 @@ test.describe('app shell', () => {
   test('redirects unknown routes to the dashboard', async ({ unlockedApp: page }) => {
     await page.goto('/#/does-not-exist');
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+    ).toBeVisible();
   });
 
   test('skip link moves focus to the main content', async ({ unlockedApp: page }) => {

@@ -1,60 +1,68 @@
-import { useMemo } from 'react';
-import { listMembers } from '../data/members';
-import { useDateReminders } from '../hooks/useDateEvents';
-import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
-import { useReminders } from '../hooks/useReminders';
+import type { DateReminderData } from '../types/dateEvent';
+import type { Reminder, SnoozeOption } from '../types/reminder';
+import type { TeamMember } from '../types/TeamMember';
 import '../styles/reminder.css';
+import { BriefingSection } from './BriefingSection';
 import { DateReminder } from './DateReminder';
 import { ReminderStack } from './ReminderStack';
 
 interface DashboardRemindersProps {
+  /** Reminders whose date has arrived. */
+  reminders: Reminder[];
+  /** Visa and probation dates worked out from a profile. */
+  importantDates: DateReminderData[];
+  members: TeamMember[];
+  onDismiss: (id: string) => Promise<void>;
+  onSnooze: (id: string, option: SnoozeOption) => Promise<void>;
+  index?: number;
   /** Fixed clock for tests; defaults to the current time. */
   now?: Date;
 }
 
-const HEADING_ID = 'dashboard-reminders-heading';
-
-/**
- * Reminders set for a date that has arrived, and those worked out from dates on a profile (visa,
- * probation, anniversary, birthday). Renders nothing when there are none.
- */
-export function DashboardReminders({ now }: DashboardRemindersProps) {
-  const { due, dismissReminder, snoozeReminder } = useReminders({ context: 'dashboard', now });
-  const dateReminders = useDateReminders(now);
-  const storage = useEncryptedStorage();
-  const members = useMemo(() => listMembers(storage), [storage]);
-
-  if (due.length === 0 && dateReminders.length === 0) return null;
+/** Reminders set for a date that has arrived, and those worked out from dates on a profile. */
+export function DashboardReminders({
+  reminders,
+  importantDates,
+  members,
+  onDismiss,
+  onSnooze,
+  index,
+  now,
+}: DashboardRemindersProps) {
+  const count = reminders.length + importantDates.length;
 
   return (
-    <section className="reminders-card" aria-labelledby={HEADING_ID}>
-      <h3 id={HEADING_ID} className="reminders-card__heading">
-        Reminders
-      </h3>
-      <div className="reminders-card__lists">
-        {dateReminders.length > 0 ? (
-          <ul className="reminder-stack">
-            {dateReminders.map((reminder, index) => (
-              <li key={`${reminder.engineerId}:${reminder.type}`}>
-                <DateReminder
-                  reminder={reminder}
-                  person={members.find((member) => member.id === reminder.engineerId)}
-                  index={index}
-                />
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {due.length > 0 ? (
-          <ReminderStack
-            reminders={due}
-            onDismiss={dismissReminder}
-            onSnooze={snoozeReminder}
-            announce
-            now={now}
-          />
-        ) : null}
-      </div>
-    </section>
+    <BriefingSection id="reminders" title="Reminders" count={count} index={index}>
+      {count === 0 ? (
+        <div className="todays-card__empty">
+          <p>No reminders today</p>
+        </div>
+      ) : (
+        <div className="reminders-card__lists">
+          {importantDates.length > 0 ? (
+            <ul className="reminder-stack">
+              {importantDates.map((reminder, position) => (
+                <li key={`${reminder.engineerId}:${reminder.type}`}>
+                  <DateReminder
+                    reminder={reminder}
+                    person={members.find((member) => member.id === reminder.engineerId)}
+                    index={position}
+                  />
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {reminders.length > 0 ? (
+            <ReminderStack
+              reminders={reminders}
+              onDismiss={onDismiss}
+              onSnooze={onSnooze}
+              announce
+              now={now}
+            />
+          ) : null}
+        </div>
+      )}
+    </BriefingSection>
   );
 }

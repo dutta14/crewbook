@@ -18,7 +18,9 @@ const openProfile = async (page: Page, memberIndex = 0) => {
 
 const openDashboard = async (page: Page) => {
   await page.evaluate(() => window.location.assign('#/'));
-  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
 };
 
 test.describe('contextual reminders', () => {
@@ -103,12 +105,16 @@ test.describe('contextual reminders', () => {
 
     await page.getByRole('button', { name: /^Dismiss reminder: Congratulate/ }).click();
 
-    await expect(page.getByRole('region', { name: 'Reminders' })).toHaveCount(0);
     await expect(page.getByText('Congratulate on the launch')).toHaveCount(0);
+    await expect(
+      page.getByRole('region', { name: 'Reminders' }).getByText('No reminders today'),
+    ).toBeVisible();
 
     await page.reload();
     await unlock(page, TEST_PASSPHRASE);
-    await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+    ).toBeVisible();
     await expect(page.getByText('Congratulate on the launch')).toHaveCount(0);
     await openProfile(page);
     const past = page.getByRole('region', { name: 'Past reminders' });
@@ -139,12 +145,18 @@ test.describe('contextual reminders', () => {
     await expect(menu.getByRole('menuitem', { name: '1 week' })).toBeFocused();
     await page.keyboard.press('Enter');
 
-    await expect(page.getByRole('region', { name: 'Reminders' })).toHaveCount(0);
+    await expect(page.getByText('Check on the offsite')).toHaveCount(0);
+    await expect(
+      page.getByRole('region', { name: 'Reminders' }).getByText('No reminders today'),
+    ).toBeVisible();
 
     await page.reload();
     await unlock(page, TEST_PASSPHRASE);
     await openDashboard(page);
-    await expect(page.getByRole('region', { name: 'Reminders' })).toHaveCount(0);
+    await expect(page.getByText('Check on the offsite')).toHaveCount(0);
+    await expect(
+      page.getByRole('region', { name: 'Reminders' }).getByText('No reminders today'),
+    ).toBeVisible();
     await openProfile(page);
     await expect(page.getByText(/^Snoozed until /)).toBeVisible();
     await expect(page.getByText('Check on the offsite')).toBeVisible();

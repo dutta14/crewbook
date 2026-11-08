@@ -1,7 +1,197 @@
-/* Cards fill one column on small screens and flow into columns as the viewport widens. */
+.dashboard__greeting {
+  margin-bottom: var(--space-5);
+}
+
+.dashboard__title {
+  margin: 0;
+  color: var(--fg);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.dashboard__date {
+  margin: var(--space-1) 0 0;
+  color: var(--fg2);
+  font-size: var(--text-body);
+}
+
+/* Sections fill one column on small screens and flow into columns as the viewport widens. */
 .dashboard__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
   gap: var(--space-4);
   align-items: start;
+}
+
+.briefing-section {
+  min-width: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.briefing-section__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.briefing-section__heading {
+  flex: 1;
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.briefing-section__count {
+  min-width: 24px;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  text-align: center;
+}
+
+.briefing-section__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -8px -12px -8px 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--fg2);
+  cursor: pointer;
+}
+
+.briefing-section__toggle:hover {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+.briefing-section__toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+  box-shadow: var(--focus-ring);
+}
+
+.briefing-section__chevron {
+  display: inline-flex;
+}
+
+.briefing-section__chevron--collapsed {
+  transform: rotate(-90deg);
+}
+
+.briefing-section__content {
+  margin-top: var(--space-2);
+}
+
+.briefing-section__content[hidden] {
+  display: none;
+}
+
+.digest-item:hover {
+  background: var(--accent-subtle);
+}
+
+.briefing-todo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-left: var(--space-2);
+}
+
+.briefing-todo__link {
+  flex: 1;
+  min-width: 0;
+  padding-left: var(--space-1);
+}
+
+.briefing-todo__title--done {
+  color: var(--fg2);
+  text-decoration: line-through;
+}
+
+.briefing-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-size: var(--text-caption);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.briefing-badge--leave {
+  background: var(--status-on-leave-bg);
+  color: var(--status-on-leave-fg);
+}
+
+.briefing-starter {
+  margin: 0;
+  padding: 0 var(--space-2) var(--space-3);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-style: italic;
+}
+
+.briefing-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8, 48px) var(--space-4);
+  color: var(--fg2);
+  text-align: center;
+}
+
+.briefing-empty p {
+  max-width: 45ch;
+  margin: 0;
+  font-size: 1rem;
+}
+
+@media (max-width: 767.98px) {
+  .dashboard__title {
+    font-size: 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .briefing-section {
+    opacity: 0;
+    animation: briefing-section-in var(--transition-slow) var(--ease-out) forwards;
+    animation-delay: calc(var(--section-index, 0) * 60ms);
+  }
+
+  .briefing-section__chevron {
+    transition: transform var(--transition-fast) var(--ease-out);
+  }
+}
+
+@keyframes briefing-section-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

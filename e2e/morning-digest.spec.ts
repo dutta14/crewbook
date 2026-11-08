@@ -89,16 +89,12 @@ test.describe("today's 1:1s morning digest", () => {
     await expect(rows(page)).toHaveCount(1);
   });
 
-  test('shows the next upcoming 1:1 when none are scheduled today', async ({
+  test('says nothing is scheduled today when the 1:1s are on other days', async ({
     unlockedApp: page,
   }) => {
     await seedMembers(page, [withSchedule(ALICE, 3), withSchedule(BOB, 1, '11:00')]);
 
     await expect(digest(page).getByText('No 1:1s scheduled today')).toBeVisible();
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const weekday = tomorrow.toLocaleDateString(undefined, { weekday: 'long' });
-    await expect(digest(page).getByText(`Next: Bob Singh on ${weekday}`)).toBeVisible();
     await expect(rows(page)).toHaveCount(0);
     await expectNoViolations(page);
   });
@@ -135,6 +131,8 @@ test.describe("today's 1:1s morning digest", () => {
     await seedMembers(page, [withSchedule(ALICE, 0, '09:00'), withSchedule(BOB, 0, '10:00')]);
 
     await digest(page).getByRole('heading', { level: 3 }).click();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: "Toggle Today's 1:1s" })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(rows(page).nth(0)).toBeFocused();
     await expect(rows(page).nth(0)).not.toHaveCSS('box-shadow', 'none');

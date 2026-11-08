@@ -94,8 +94,8 @@ test.describe('meeting history and gap alerts', () => {
     await seedMembers(page, [ALICE]);
     await seedNotes(page, [{ memberIndex: 0, content: 'Recent', hoursAgo: 2 * HOURS_PER_DAY }]);
 
-    await expect(overdueCard(page).getByText("You're all caught up")).toBeVisible();
-    await expect(overdueCard(page).getByRole('link')).toHaveCount(0);
+    await expect(page.getByText('All clear today.')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Overdue 1:1s' })).toHaveCount(0);
   });
 
   test('the Meetings tab shows stats and a history that links to the full note', async ({

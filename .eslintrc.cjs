@@ -46,12 +46,14 @@ module.exports = {
       files: ['*.test.ts', '*.test.tsx', 'vitest.setup.ts'],
       env: { node: true },
     },
-    // The raw storage layer, the theme preference and the prep-dismissed flag (no personal data).
+    // The raw storage layer, the theme preference, the prep-dismissed flag and the dashboard
+    // collapse flags (no personal data).
     {
       files: [
         'src/utils/encryptedStorage.ts',
         'src/hooks/useDarkMode.ts',
         'src/data/prepDismissal.ts',
+        'src/data/dashboardCollapse.ts',
         '*.test.ts',
         '*.test.tsx',
         'vitest.setup.ts',

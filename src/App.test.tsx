@@ -26,7 +26,9 @@ describe('App', () => {
   it('app renders without crashing', async () => {
     await renderUnlocked();
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+    ).toBeInTheDocument();
   });
 
   it('app shell has sidebar and main content area', async () => {
@@ -116,7 +118,9 @@ describe('App', () => {
 
     await renderUnlocked();
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+    ).toBeInTheDocument();
   });
 
   it('makes the skip link the first focusable element', async () => {

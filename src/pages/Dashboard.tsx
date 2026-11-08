@@ -1,24 +1,63 @@
-import { useMemo } from 'react';
+import { BriefingCelebrations } from '../components/BriefingCelebrations';
+import { BriefingEmptyState } from '../components/BriefingEmptyState';
+import { BriefingOnLeave } from '../components/BriefingOnLeave';
+import { BriefingTodos } from '../components/BriefingTodos';
 import { DashboardReminders } from '../components/DashboardReminders';
 import { GapAlertCard } from '../components/GapAlert';
 import { TodaysOneOnes } from '../components/TodaysOneOnes';
-import { listMembers } from '../data/members';
-import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
+import { useBriefingData } from '../hooks/useBriefingData';
 import '../styles/dashboard.css';
 
-export function Dashboard() {
-  const storage = useEncryptedStorage();
-  const members = useMemo(() => listMembers(storage), [storage]);
+interface DashboardProps {
+  /** Fixed clock for tests; defaults to the current time. */
+  now?: Date;
+}
+
+const LOAD_FAILED = "Couldn't open your briefing. Lock and unlock Crewbook to try again.";
+
+/**
+ * The morning briefing. Everything on it is derived from decrypted in-memory data on render, and
+ * none of it reaches the page title or the URL.
+ */
+export function Dashboard({ now }: DashboardProps) {
+  const briefing = useBriefingData(now);
+  const { sections, members, actions } = briefing;
 
   return (
-    <>
-      <h1>Dashboard</h1>
-      <h2 className="sr-only">Today</h2>
-      <div className="dashboard__grid">
-        <TodaysOneOnes members={members} />
-        <GapAlertCard members={members} />
-        <DashboardReminders />
+    <div role="region" aria-label="Daily briefing" className="dashboard">
+      <div className="dashboard__greeting">
+        <h1 className="dashboard__title">{briefing.greeting}</h1>
+        <p className="dashboard__date">
+          <time dateTime={briefing.isoDate}>{briefing.formattedDate}</time>
+        </p>
       </div>
-    </>
+      {briefing.loadFailed ? (
+        <p className="form-error" role="alert">
+          {LOAD_FAILED}
+        </p>
+      ) : !briefing.isReady ? (
+        <p className="todays-card__status">Opening your briefing…</p>
+      ) : briefing.isEmpty ? (
+        <BriefingEmptyState nextMeetingInfo={briefing.nextMeetingInfo} />
+      ) : (
+        <div role="region" aria-label="Briefing sections" className="dashboard__grid">
+          <h2 className="sr-only">Today</h2>
+          <TodaysOneOnes meetings={sections.todaysMeetings} members={members} index={0} />
+          <GapAlertCard alerts={sections.overdueMeetings} members={members} index={1} />
+          <BriefingTodos todos={sections.dueTodos} onToggle={actions.toggleTodo} index={2} />
+          <DashboardReminders
+            reminders={sections.dueReminders}
+            importantDates={sections.importantDates}
+            members={members}
+            onDismiss={actions.dismissReminder}
+            onSnooze={actions.snoozeReminder}
+            index={3}
+            now={now}
+          />
+          <BriefingCelebrations celebrations={sections.celebrations} members={members} index={4} />
+          <BriefingOnLeave people={sections.onLeave} members={members} index={5} />
+        </div>
+      )}
+    </div>
   );
 }

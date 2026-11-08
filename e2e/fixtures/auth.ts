@@ -7,7 +7,9 @@ export async function setUpPassphrase(page: Page, passphrase = TEST_PASSPHRASE) 
   await page.getByLabel('Passphrase', { exact: true }).fill(passphrase);
   await page.getByLabel('Confirm passphrase').fill(passphrase);
   await page.getByRole('button', { name: 'Get Started' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
 }
 
 export async function unlock(page: Page, passphrase = TEST_PASSPHRASE) {
