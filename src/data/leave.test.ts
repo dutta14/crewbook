@@ -92,7 +92,7 @@ describe('createLeave', () => {
 
     await Promise.all([
       createLeave(input, storage),
-      createLeave({ ...input, memberId: PRIYA.id }, storage),
+      createLeave({ ...input, memberId: PRIYA.id, startDate: '2026-06-16' }, storage),
     ]);
 
     expect(getLeave(storage).map((entry) => entry.memberId)).toEqual([ALEX.id, PRIYA.id]);

@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
@@ -192,8 +192,7 @@ describe('SharedOneOnOne', () => {
     document.title = 'Crewbook';
     const { unmount } = await renderShared();
 
-    await screen.findByRole('heading', { level: 1 });
-    expect(document.title).toBe('1:1 Notes');
+    await waitFor(() => expect(document.title).toBe('1:1 Notes'));
     unmount();
     expect(document.title).toBe('Crewbook');
   });
