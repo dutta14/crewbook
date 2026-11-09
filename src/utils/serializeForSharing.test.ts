@@ -87,7 +87,7 @@ describe('serializeForSharing', () => {
       createdAt: '2026-03-01T10:00:00Z',
     });
     expect(payload.actionItems[0]).toEqual({
-      id: 'x',
+      id: 'a1',
       title: 'item x',
       status: 'open',
       dueDate: '2026-03-12',
@@ -120,6 +120,30 @@ describe('serializeForSharing', () => {
     );
   });
 
+  it('replaces action item record ids with plain row handles so internal ids stay on the device', () => {
+    const payload = build(
+      [],
+      [
+        action('record-one-secret', { title: 'First' }),
+        action('record-two-secret', { title: 'Second' }),
+      ],
+    );
+    expect(payload.actionItems.map((item) => item.id)).toEqual(['a1', 'a2']);
+    expect(JSON.stringify(payload)).not.toContain('record-');
+  });
+
+  it('leaves out action items the manager opted out, and shares ones with no choice recorded', () => {
+    const payload = build(
+      [],
+      [
+        action('a', { includeInShare: false, title: 'hidden' }),
+        action('b', { includeInShare: true, title: 'chosen' }),
+        action('c', { title: 'legacy' }),
+      ],
+    );
+    expect(payload.actionItems.map((item) => item.title)).toEqual(['chosen', 'legacy']);
+  });
+
   it('describes the engineer by name and avatar only', () => {
     const payload = build();
     expect(payload.engineerName).toBe('Alice Park');
@@ -147,17 +171,17 @@ describe('serializeForSharing', () => {
       ],
     );
     expect(payload.actionItems.map((i) => [i.id, i.owner])).toEqual([
-      ['mine', 'manager'],
-      ['theirs', 'engineer'],
+      ['a1', 'manager'],
+      ['a2', 'engineer'],
     ]);
   });
 
   it('leaves out cancelled action items and keeps done ones', () => {
     const payload = build(
       [],
-      [action('c', { status: 'cancelled' }), action('d', { status: 'done' })],
+      [action('c', { status: 'cancelled' }), action('d', { status: 'done', title: 'kept' })],
     );
-    expect(payload.actionItems.map((i) => i.id)).toEqual(['d']);
+    expect(payload.actionItems.map((i) => [i.id, i.title])).toEqual([['a1', 'kept']]);
   });
 
   it('includes only agenda items that are marked for sharing', () => {

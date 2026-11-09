@@ -1,0 +1,217 @@
+/* Action items on the shared page: a card with an open list and a collapsible done list. */
+.shared-actions__note {
+  margin-bottom: var(--space-3);
+}
+
+.shared-actions__card {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.shared-actions__heading {
+  margin: 0 0 var(--space-2);
+  color: var(--fg2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.shared-actions__none {
+  margin: 0;
+  padding: var(--space-2) 0;
+  color: var(--fg2);
+  font-size: 0.875rem;
+}
+
+.shared-actions__list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shared-action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+  transition: background-color var(--transition-fast) var(--ease-out);
+}
+
+.shared-action:last-child {
+  border-bottom: 0;
+}
+
+.shared-action:hover {
+  border-radius: 8px;
+  background: var(--accent-subtle);
+}
+
+/* The label gives the 18px box a 44px touch target. */
+.shared-action__check {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+}
+
+.shared-action__checkbox {
+  position: relative;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  transition:
+    background-color var(--transition-fast) var(--ease-out),
+    border-color var(--transition-fast) var(--ease-out);
+}
+
+.shared-action__checkbox:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.shared-action__checkbox:checked::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 4px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--on-accent);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.shared-action__checkbox:focus-visible,
+.collapsible__toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring);
+}
+
+.shared-action__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.shared-action__title {
+  overflow-wrap: anywhere;
+  color: var(--fg);
+  font-size: 0.875rem;
+  font-weight: 400;
+  transition:
+    color var(--transition-fast) var(--ease-out),
+    opacity var(--transition-fast) var(--ease-out);
+}
+
+.shared-action__title--done {
+  color: var(--fg2);
+  text-decoration: line-through;
+}
+
+.shared-action__owner,
+.shared-action__due {
+  color: var(--fg2);
+  font-size: 0.75rem;
+}
+
+.shared-action__due {
+  flex: none;
+  padding-right: var(--space-2);
+  font-feature-settings: 'tnum';
+}
+
+.shared-action__due--overdue {
+  color: #991b1b;
+  font-weight: 600;
+}
+
+body.dark .shared-action__due--overdue {
+  color: #fca5a5;
+}
+
+.collapsible {
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+.collapsible__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--fg2);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.collapsible__chevron {
+  display: inline-flex;
+  transition: transform var(--transition-fast) var(--ease-out);
+}
+
+.collapsible__chevron--open {
+  transform: rotate(90deg);
+}
+
+@keyframes shared-action-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .shared-action--moved {
+    animation: shared-action-in var(--transition-normal) var(--ease-out) both;
+  }
+}
+
+@media (max-width: 767px) {
+  .shared-action {
+    flex-wrap: wrap;
+  }
+
+  /* The due date drops below the title and owner. */
+  .shared-action__due {
+    flex-basis: 100%;
+    padding: 0 0 var(--space-2) calc(44px + var(--space-3));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shared-action,
+  .shared-action__checkbox,
+  .shared-action__title,
+  .collapsible__chevron {
+    transition: none;
+  }
+}

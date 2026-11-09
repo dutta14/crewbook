@@ -118,18 +118,19 @@ test.describe('shareable 1:1 view', () => {
     const recipient = await openAsRecipient(browser, await createLink(page));
     const items = recipient.page.getByRole('list', { name: 'Action items' });
 
-    await expect(items.getByRole('listitem')).toHaveCount(3);
+    await expect(items.getByRole('listitem')).toHaveCount(2);
     const overdue = items.getByRole('listitem').filter({ hasText: 'Send the design doc' });
     await expect(overdue).toContainText('(overdue)');
-    await expect(overdue.getByLabel(`Assigned to ${MANAGER}`)).toBeVisible();
+    await expect(overdue).toContainText(MANAGER);
     await expect(
       items.getByRole('listitem').filter({ hasText: 'Book the offsite' }),
     ).not.toContainText('(overdue)');
+    await recipient.page.getByRole('button', { name: 'Done (1)' }).click();
+    const done = recipient.page.getByRole('list', { name: 'Done action items' });
+    await expect(done.getByRole('listitem')).not.toContainText('(overdue)');
     await expect(
-      items.getByRole('listitem').filter({ hasText: 'Already finished' }),
-    ).not.toContainText('(overdue)');
-    await expect(items.getByRole('checkbox', { name: 'Already finished' })).toBeChecked();
-    await expect(items.getByRole('checkbox', { name: 'Send the design doc' })).toBeDisabled();
+      done.getByRole('checkbox', { name: 'Mark Already finished as done' }),
+    ).toBeChecked();
     await recipient.close();
   });
 
@@ -142,7 +143,7 @@ test.describe('shareable 1:1 view', () => {
     const recipient = await openAsRecipient(browser, await createLink(page));
 
     await expect(recipient.page.getByText('No shared notes yet.')).toBeVisible();
-    await expect(recipient.page.getByText('No action items yet.')).toBeVisible();
+    await expect(recipient.page.getByText('No action items yet')).toBeVisible();
     await expect(recipient.page.getByText('No agenda items yet.')).toBeVisible();
     await expect(recipient.page.getByRole('button')).toHaveCount(0);
     await recipient.close();

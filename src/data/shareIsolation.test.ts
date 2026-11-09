@@ -34,6 +34,7 @@ const ALLOWED_HOOKS = new Set([
   'useToast',
   'useDarkMode',
   'useSharedView',
+  'useSharedActionItems',
   'useNow',
 ]);
 const ALLOWED_COMPONENTS = new Set([
@@ -44,6 +45,9 @@ const ALLOWED_COMPONENTS = new Set([
   'ShareButton',
   'ActiveTokensList',
   'QRCode',
+  'SharedActionItems',
+  'SharedActionRow',
+  'CollapsibleSection',
   // Only for the storage type the data modules are written against.
   'EncryptedStorageProvider',
 ]);

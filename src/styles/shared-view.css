@@ -128,54 +128,6 @@
   font-size: 0.75rem;
 }
 
-.shared-view__action {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-  min-height: 44px;
-  font-size: 0.875rem;
-}
-
-.shared-view__action input[type='checkbox'] {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  accent-color: var(--accent);
-  opacity: 0.6;
-}
-
-.shared-view__action-title {
-  flex: 1 1 12rem;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.shared-view__action-title--done {
-  color: var(--fg2);
-  text-decoration: line-through;
-}
-
-.shared-view__owner {
-  padding: 2px var(--space-2);
-  border-radius: 999px;
-  background: var(--accent-subtle);
-  color: var(--accent);
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.shared-view__due {
-  color: var(--fg2);
-  font-size: 0.75rem;
-}
-
-.shared-view__due--overdue {
-  color: var(--danger);
-  font-weight: 600;
-}
-
 .shared-view__empty {
   margin: 0;
   padding: var(--space-6);

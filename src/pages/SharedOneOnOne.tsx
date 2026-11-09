@@ -2,13 +2,13 @@ import { useEffect, useRef, type MouseEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import '../styles/shared-view.css';
 import { EyeIcon, ClockIcon } from '../components/icons';
+import { SharedActionItems } from '../components/SharedActionItems';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { useNow } from '../hooks/useNow';
+import { useSharedActionItems } from '../hooks/useSharedActionItems';
 import { useSharedView } from '../hooks/useSharedView';
-import type { SharedActionItem, SharedViewPayload } from '../types/sharing';
+import type { SharedViewPayload } from '../types/sharing';
 import { formatNoteDate } from '../utils/noteFormat';
-import { isOverdue } from '../utils/scheduleCalculator';
-import { formatScheduleDate } from '../utils/scheduleFormat';
 import { describeTimeLeft, isExpiringSoon } from '../utils/shareExpiry';
 import { ExpiredLink } from './ExpiredLink';
 
@@ -33,38 +33,10 @@ function SharedAvatar({
   );
 }
 
-function ActionRow({ item, managerName }: { item: SharedActionItem; managerName: string }) {
-  const owner = item.owner === 'engineer' ? 'You' : managerName;
-  const due = item.dueDate ? formatScheduleDate(item.dueDate) : null;
-  const overdue = item.status === 'open' && item.dueDate !== undefined && isOverdue(item.dueDate);
-  const isDone = item.status === 'done';
-  return (
-    <li className="shared-view__action">
-      <input type="checkbox" disabled checked={isDone} aria-label={item.title} />
-      <span
-        className={`shared-view__action-title${isDone ? ' shared-view__action-title--done' : ''}`}
-      >
-        {item.title}
-      </span>
-      <span className="shared-view__owner" aria-label={`Assigned to ${owner}`}>
-        {owner}
-      </span>
-      {due && item.dueDate && (
-        <time
-          className={`shared-view__due${overdue ? ' shared-view__due--overdue' : ''}`}
-          dateTime={item.dueDate}
-        >
-          Due {due}
-          {overdue && <span className="sr-only"> (overdue)</span>}
-        </time>
-      )}
-    </li>
-  );
-}
-
 function SharedContent({ data }: { data: SharedViewPayload }) {
   const agendaHeading = useRef<HTMLHeadingElement>(null);
   const now = useNow();
+  const { items: actionItems, toggle } = useSharedActionItems(data.actionItems);
   const { managerName, engineerName, engineerAvatar } = data;
 
   useEffect(() => {
@@ -124,20 +96,13 @@ function SharedContent({ data }: { data: SharedViewPayload }) {
           )}
         </section>
 
-        <section className="shared-view__section" aria-labelledby="shared-actions-title">
-          <h2 id="shared-actions-title" className="shared-view__section-title">
-            Action items
-          </h2>
-          {data.actionItems.length === 0 ? (
-            <p className="shared-view__empty">No action items yet.</p>
-          ) : (
-            <ul className="shared-view__list shared-view__list--tight" aria-label="Action items">
-              {data.actionItems.map((item) => (
-                <ActionRow key={item.id} item={item} managerName={managerName} />
-              ))}
-            </ul>
-          )}
-        </section>
+        <SharedActionItems
+          items={actionItems}
+          currentUserIsManager={false}
+          managerName={managerName}
+          asOf={data.createdAt}
+          onToggle={toggle}
+        />
 
         <section className="shared-view__section" aria-labelledby="shared-agenda">
           <h2

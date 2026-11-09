@@ -41,6 +41,7 @@ function isActionItem(value: unknown): value is ActionItem {
     (item.dueDate === undefined || typeof item.dueDate === 'string') &&
     (item.noteId === undefined || typeof item.noteId === 'string') &&
     isActionItemStatus(item.status) &&
+    (item.includeInShare === undefined || typeof item.includeInShare === 'boolean') &&
     typeof item.createdAt === 'string' &&
     typeof item.updatedAt === 'string'
   );
@@ -147,6 +148,27 @@ export function updateStatus(
     const existing = previous.find((item) => item.id === id);
     if (!existing) throw new NotFoundError(id);
     const updated: ActionItem = { ...existing, status, updatedAt: new Date().toISOString() };
+    await commit(
+      storage,
+      previous,
+      previous.map((item) => (item.id === id ? updated : item)),
+    );
+    return { ...updated };
+  });
+}
+
+/** Whether a share link may carry this item. Does not touch `updatedAt`: the item itself is unchanged. */
+export function setIncludeInShare(
+  id: string,
+  includeInShare: boolean,
+  storage: ActionItemStorage,
+): Promise<ActionItem> {
+  return enqueue(async () => {
+    if (typeof includeInShare !== 'boolean') throw new ValidationError('Share choice is not valid');
+    const previous = readItems(storage);
+    const existing = previous.find((item) => item.id === id);
+    if (!existing) throw new NotFoundError(id);
+    const updated: ActionItem = { ...existing, includeInShare };
     await commit(
       storage,
       previous,

@@ -127,6 +127,9 @@ export interface SeedActionItem {
   /** Days from today; negative is overdue. Omit for no due date. */
   dueInDays?: number;
   status?: 'open' | 'done' | 'cancelled';
+  /** Defaults to the manager. The engineer is the person at `memberIndex`. */
+  owner?: 'manager' | 'engineer';
+  includeInShare?: boolean;
 }
 
 export const isoDateInDays = (days: number) => {
@@ -147,17 +150,20 @@ export async function seedActionItems(
   passphrase = TEST_PASSPHRASE,
 ) {
   const at = new Date().toISOString();
-  const stored = items.map(({ memberIndex, title, dueInDays, status }, index) => ({
-    id: `00000000-0000-4000-a000-${String(index).padStart(12, '0')}`,
-    memberId: seedId(memberIndex),
-    title,
-    ownerId: 'manager',
-    ownerName: 'Me',
-    ...(dueInDays === undefined ? {} : { dueDate: isoDateInDays(dueInDays) }),
-    status: status ?? 'open',
-    createdAt: at,
-    updatedAt: at,
-  }));
+  const stored = items.map(
+    ({ memberIndex, title, dueInDays, status, owner, includeInShare }, index) => ({
+      id: `00000000-0000-4000-a000-${String(index).padStart(12, '0')}`,
+      memberId: seedId(memberIndex),
+      title,
+      ownerId: owner === 'engineer' ? seedId(memberIndex) : 'manager',
+      ownerName: owner === 'engineer' ? SEED_TEAM[memberIndex].name : 'Me',
+      ...(dueInDays === undefined ? {} : { dueDate: isoDateInDays(dueInDays) }),
+      status: status ?? 'open',
+      ...(includeInShare === undefined ? {} : { includeInShare }),
+      createdAt: at,
+      updatedAt: at,
+    }),
+  );
   await page.evaluate(
     async ({ data, secret }) => {
       const modulePath = '/src/data/StorageManager.ts';

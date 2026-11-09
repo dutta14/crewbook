@@ -11,6 +11,7 @@ import {
   isItemOverdue,
   listAll,
   listByMember,
+  setIncludeInShare,
   updateStatus,
   type ActionItemStorage,
 } from './actionItems';
@@ -162,6 +163,46 @@ describe('updateStatus', () => {
     await expect(updateStatus(existing.id, 'done', storage)).rejects.toBe(failure);
 
     expect(data.get('actionItems')).toEqual([existing]);
+  });
+});
+
+describe('setIncludeInShare', () => {
+  it('records the share choice without changing anything else, and flushes', async () => {
+    const existing = buildItem();
+    const { storage, data, flush } = createStorage({ actionItems: [existing] });
+
+    const updated = await setIncludeInShare(existing.id, false, storage);
+
+    expect(updated).toEqual({ ...existing, includeInShare: false });
+    expect(data.get('actionItems')).toEqual([updated]);
+    expect(flush).toHaveBeenCalledOnce();
+  });
+
+  it('rejects an unknown id and a value that is not a boolean', async () => {
+    const existing = buildItem();
+    const { storage } = createStorage({ actionItems: [existing] });
+
+    await expect(setIncludeInShare('missing', true, storage)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(
+      setIncludeInShare(existing.id, 'no' as unknown as boolean, storage),
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('restores the previous choice when the write fails', async () => {
+    const existing = buildItem();
+    const failure = new StorageWriteError(false, true);
+    const { storage, data } = createStorage({ actionItems: [existing] }, failure);
+
+    await expect(setIncludeInShare(existing.id, false, storage)).rejects.toBe(failure);
+
+    expect(data.get('actionItems')).toEqual([existing]);
+  });
+
+  it('keeps the choice when the status changes later', async () => {
+    const existing = buildItem({ includeInShare: false });
+    const { storage } = createStorage({ actionItems: [existing] });
+
+    expect((await updateStatus(existing.id, 'done', storage)).includeInShare).toBe(false);
   });
 });
 

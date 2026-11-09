@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { updateStatus } from '../data/actionItems';
+import { MANAGER_OWNER_ID, setIncludeInShare, updateStatus } from '../data/actionItems';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { useToast } from '../hooks/useToast';
 import { useUndoableAction } from '../hooks/useUndoableAction';
@@ -17,6 +17,7 @@ interface ActionItemRowProps {
 }
 
 const UPDATE_FAILED = "Couldn't update that action item. Try again.";
+const SHARE_FAILED = "Couldn't change whether that action item is shared. Try again.";
 
 export function ActionItemRow({ item, ownerName, now, onChanged }: ActionItemRowProps) {
   const storage = useEncryptedStorage();
@@ -77,6 +78,15 @@ export function ActionItemRow({ item, ownerName, now, onChanged }: ActionItemRow
   };
 
   const isCancelled = status === 'cancelled';
+  // Only the manager's items and this person's own can travel in a link, so only those get a choice.
+  const canShare =
+    !isCancelled && (item.ownerId === MANAGER_OWNER_ID || item.ownerId === item.memberId);
+  const isShared = item.includeInShare !== false;
+
+  const handleShareChange = (include: boolean) => {
+    setIncludeInShare(id, include, storage).catch(() => showToast(SHARE_FAILED, 'error'));
+  };
+
   return (
     <li className={`action-item action-item--${status}`}>
       {isCancelled ? (
@@ -99,6 +109,7 @@ export function ActionItemRow({ item, ownerName, now, onChanged }: ActionItemRow
           <span className="action-item__owner">{ownerName}</span>
           <ActionItemDue item={item} now={now} />
           {isCancelled ? <span className="action-item__state">Cancelled</span> : null}
+          {canShare && !isShared ? <span className="action-item__state">Not shared</span> : null}
         </span>
       </div>
       <div className="action-item__actions">
@@ -117,6 +128,17 @@ export function ActionItemRow({ item, ownerName, now, onChanged }: ActionItemRow
           >
             Undo
           </button>
+        ) : null}
+        {canShare ? (
+          <label className="action-item__share">
+            <input
+              type="checkbox"
+              checked={isShared}
+              aria-label={`Include in share link: ${title}`}
+              onChange={(event) => handleShareChange(event.target.checked)}
+            />
+            <span>Include in share link</span>
+          </label>
         ) : null}
         {status === 'open' ? (
           <button

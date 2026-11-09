@@ -30,6 +30,8 @@ const renderList = (items: ActionItem[] = []) =>
     { initialData: { members: [ALEX, PRIYA] }, initialPrivateData: { actionItems: items } },
   );
 
+const offerCheckbox = () => screen.getByRole('checkbox', { name: 'Mark Send the offer as done' });
+
 afterEach(() => {
   vi.useRealTimers();
 });
@@ -78,34 +80,34 @@ describe('ActionItemList', () => {
     renderList([item({ title: 'Send the offer' })]);
 
     expect(screen.queryByRole('button', { name: 'Undo' })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('checkbox'));
+    await user.click(offerCheckbox());
     expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument();
 
     await act(() => vi.advanceTimersByTimeAsync(4900));
     expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument();
     await act(() => vi.advanceTimersByTimeAsync(200));
     expect(screen.queryByRole('button', { name: 'Undo' })).not.toBeInTheDocument();
-    expect(screen.getByRole('checkbox')).toBeChecked();
+    expect(offerCheckbox()).toBeChecked();
   });
 
   it('undo reverts item to open status', async () => {
     const user = userEvent.setup();
     renderList([item({ title: 'Send the offer' })]);
 
-    await user.click(screen.getByRole('checkbox'));
+    await user.click(offerCheckbox());
     await user.click(screen.getByRole('button', { name: 'Undo' }));
 
-    await waitFor(() => expect(screen.getByRole('checkbox')).not.toBeChecked());
+    await waitFor(() => expect(offerCheckbox()).not.toBeChecked());
     expect(screen.queryByRole('button', { name: 'Undo' })).not.toBeInTheDocument();
-    expect(screen.getByRole('checkbox')).toHaveFocus();
+    expect(offerCheckbox()).toHaveFocus();
   });
 
   it('undo link is next in tab order after checkbox', async () => {
     const user = userEvent.setup();
     renderList([item({ title: 'Send the offer' })]);
 
-    await user.click(screen.getByRole('checkbox'));
-    screen.getByRole('checkbox').focus();
+    await user.click(offerCheckbox());
+    offerCheckbox().focus();
     await user.tab();
 
     expect(screen.getByRole('button', { name: 'Undo' })).toHaveFocus();
@@ -116,19 +118,19 @@ describe('ActionItemList', () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderList([item({ title: 'Send the offer' })]);
 
-    await user.click(screen.getByRole('checkbox'));
+    await user.click(offerCheckbox());
     await user.tab();
     expect(screen.getByRole('button', { name: 'Undo' })).toHaveFocus();
     await act(() => vi.advanceTimersByTimeAsync(5100));
 
-    expect(screen.getByRole('checkbox')).toHaveFocus();
+    expect(offerCheckbox()).toHaveFocus();
   });
 
   it('undo announced via aria-live="assertive"', async () => {
     const user = userEvent.setup();
     const { container } = renderList([item({ title: 'Send the offer' })]);
 
-    await user.click(screen.getByRole('checkbox'));
+    await user.click(offerCheckbox());
 
     const live = container.querySelector('[aria-live="assertive"]');
     expect(live).toHaveTextContent('Send the offer marked as done. Undo available.');
@@ -274,6 +276,36 @@ describe('ActionItemList', () => {
 
     expect(screen.getByText('Priya Nair')).toBeInTheDocument();
     expect(screen.queryByText('Old Name')).not.toBeInTheDocument();
+  });
+
+  it('lets the manager leave an item out of the share link and put it back', async () => {
+    const user = userEvent.setup();
+    renderList([item({ title: 'Sensitive follow-up' })]);
+
+    const include = screen.getByRole('checkbox', {
+      name: 'Include in share link: Sensitive follow-up',
+    });
+    expect(include).toBeChecked();
+    expect(screen.queryByText('Not shared')).not.toBeInTheDocument();
+
+    await user.click(include);
+    await waitFor(() => expect(include).not.toBeChecked());
+    expect(screen.getByText('Not shared')).toBeInTheDocument();
+
+    await user.click(include);
+    await waitFor(() => expect(include).toBeChecked());
+    expect(screen.queryByText('Not shared')).not.toBeInTheDocument();
+  });
+
+  it('offers no share choice for an item owned by another team member or a cancelled one', () => {
+    renderList([
+      item({ title: 'Theirs', ownerId: PRIYA.id, ownerName: 'Priya Nair' }),
+      item({ title: 'Dropped', status: 'cancelled' }),
+    ]);
+
+    expect(
+      screen.queryByRole('checkbox', { name: /Include in share link/ }),
+    ).not.toBeInTheDocument();
   });
 
   it('has no accessibility violations', async () => {

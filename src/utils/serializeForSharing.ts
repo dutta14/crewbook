@@ -34,16 +34,19 @@ function shareNote(note: Note): SharedNote {
   };
 }
 
-function shareAction(item: ActionItem, engineerId: string): SharedActionItem | null {
+type SharedActionFields = Omit<SharedActionItem, 'id'>;
+
+function shareAction(item: ActionItem, engineerId: string): SharedActionFields | null {
   if (item.status !== 'open' && item.status !== 'done') return null;
+  if (item.includeInShare === false) return null;
   // Items owned by anyone else are left out so no other person's name travels in the link.
   const owner =
     item.ownerId === MANAGER_OWNER_ID ? 'manager' : item.ownerId === engineerId ? 'engineer' : null;
   if (owner === null) return null;
   const title = clip(item.title, SHARE_LIMITS.titleLength);
   return item.dueDate === undefined
-    ? { id: item.id, title, status: item.status, owner }
-    : { id: item.id, title, status: item.status, dueDate: item.dueDate, owner };
+    ? { title, status: item.status, owner }
+    : { title, status: item.status, dueDate: item.dueDate, owner };
 }
 
 function shareAgenda(item: AgendaItem): SharedAgendaItem {
@@ -80,8 +83,10 @@ export function serializeForSharing(
     actionItems: actionItems
       .filter((item) => item.memberId === member.id)
       .map((item) => shareAction(item, member.id))
-      .filter((item): item is SharedActionItem => item !== null)
-      .slice(0, SHARE_LIMITS.maxActionItems),
+      .filter((item): item is SharedActionFields => item !== null)
+      .slice(0, SHARE_LIMITS.maxActionItems)
+      // The manager's record ids stay on the device; the page only needs a handle per row.
+      .map((item, index) => ({ id: `a${index + 1}`, ...item })),
     agendaItems: agendaItems
       .filter((item) => item.memberId === member.id && item.includeInShare === true)
       .slice(0, SHARE_LIMITS.maxAgendaItems)

@@ -87,7 +87,8 @@ describe('SharedOneOnOne', () => {
     expect(list).toHaveTextContent('<img src=x onerror=alert(1)> **bold**');
   });
 
-  it('shows each action item with its owner, due date and a read-only checkbox', async () => {
+  it('shows each action item with its owner and due date, and lets the reader tick it', async () => {
+    const user = userEvent.setup();
     await renderShared({
       actionItems: [
         {
@@ -102,18 +103,20 @@ describe('SharedOneOnOne', () => {
     });
 
     const list = await screen.findByRole('list', { name: 'Action items' });
-    const open = screen.getByRole('checkbox', { name: 'Write the doc' });
-    const done = screen.getByRole('checkbox', { name: 'Book the room' });
-    expect(open).toBeDisabled();
+    const open = screen.getByRole('checkbox', { name: 'Mark Write the doc as done' });
+    expect(open).toBeEnabled();
     expect(open).not.toBeChecked();
-    expect(done).toBeDisabled();
-    expect(done).toBeChecked();
-    expect(within(list).getByLabelText('Assigned to You')).toHaveTextContent('You');
-    expect(within(list).getByLabelText('Assigned to Morgan Lee')).toHaveTextContent('Morgan Lee');
+    expect(within(list).getByText('You')).toBeInTheDocument();
     expect(within(list).getByText(/^Due .*2999/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Done (1)' }));
+    const doneList = screen.getByRole('list', { name: 'Done action items' });
+    expect(within(doneList).getByText('Morgan Lee')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Mark Book the room as done' })).toBeChecked();
   });
 
   it('marks an open item past its due date as overdue and a done one as not', async () => {
+    const user = userEvent.setup();
     await renderShared({
       actionItems: [
         { id: 'a1', title: 'Late', status: 'open', owner: 'engineer', dueDate: '2000-01-01' },
@@ -128,11 +131,12 @@ describe('SharedOneOnOne', () => {
       ],
     });
 
-    const [late, finished, onTime] = (await screen.findAllByText(/^Due /)).map((el) => el);
-    expect(late).toHaveClass('shared-view__due--overdue');
+    await user.click(await screen.findByRole('button', { name: 'Done (1)' }));
+    const [late, onTime, finished] = screen.getAllByText(/^Due /);
+    expect(late).toHaveClass('shared-action__due--overdue');
     expect(late).toHaveTextContent('(overdue)');
-    expect(finished).not.toHaveClass('shared-view__due--overdue');
-    expect(onTime).not.toHaveClass('shared-view__due--overdue');
+    expect(finished).not.toHaveClass('shared-action__due--overdue');
+    expect(onTime).not.toHaveClass('shared-action__due--overdue');
     expect(screen.getAllByText('(overdue)', { exact: false })).toHaveLength(1);
   });
 
@@ -196,7 +200,7 @@ describe('SharedOneOnOne', () => {
     await renderShared({ sharedNotes: [], actionItems: [], agendaItems: [] });
 
     expect(await screen.findByText('No shared notes yet.')).toBeInTheDocument();
-    expect(screen.getByText('No action items yet.')).toBeInTheDocument();
+    expect(screen.getByText('No action items yet')).toBeInTheDocument();
     expect(screen.getByText('No agenda items yet.')).toBeInTheDocument();
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();

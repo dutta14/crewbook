@@ -63,6 +63,19 @@ body.dark .share-dialog__warning {
   font-weight: 600;
 }
 
+.share-dialog__preview-list {
+  max-height: 9rem;
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-5);
+  overflow-y: auto;
+  font-size: var(--text-body);
+  overflow-wrap: anywhere;
+}
+
+.share-dialog__preview-meta {
+  font-size: var(--text-caption);
+}
+
 .share-dialog__link {
   display: flex;
   flex-direction: column;

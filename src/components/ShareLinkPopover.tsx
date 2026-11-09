@@ -249,6 +249,27 @@ export function ShareLinkPopover({ member, onClose }: ShareLinkPopoverProps) {
                   Some agenda items may reference other team members. Review before sharing.
                 </p>
               ) : null}
+              {link.payload.actionItems.length > 0 ? (
+                <div className="share-dialog__preview">
+                  <p className="share-dialog__warning-text">
+                    Action items in this link. To leave one out, turn off “Include in share link” on
+                    it, then create a new link.
+                  </p>
+                  <ul className="share-dialog__preview-list" aria-label="Action items in this link">
+                    {link.payload.actionItems.map((item) => (
+                      <li key={item.id}>
+                        {item.title}
+                        <span className="share-dialog__preview-meta">
+                          {' '}
+                          · {item.owner === 'manager' ? 'You' : member.name}
+                          {item.dueDate ? ` · due ${item.dueDate}` : ''}
+                          {item.status === 'done' ? ' · done' : ''}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
               <button
                 type="button"
                 className="btn btn-secondary"

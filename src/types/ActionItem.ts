@@ -13,6 +13,8 @@ export interface ActionItem {
   /** Calendar day, YYYY-MM-DD. */
   dueDate?: string;
   status: ActionItemStatus;
+  /** Only `false` keeps an item out of a share link, so items from before this existed stay shared. */
+  includeInShare?: boolean;
   createdAt: string;
   updatedAt: string;
 }

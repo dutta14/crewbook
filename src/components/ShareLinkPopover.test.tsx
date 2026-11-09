@@ -3,8 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
-import { createMember, createNote } from '../test-utils/factories';
+import { createActionItem, createMember, createNote } from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
+import type { ActionItem } from '../types/ActionItem';
 import type { ShareToken } from '../types/sharing';
 import { copyWithAutoClear } from '../utils/clipboard';
 import { readShareToken } from '../utils/shareUrl';
@@ -15,6 +16,9 @@ vi.mock('../utils/clipboard', () => ({ copyWithAutoClear: vi.fn(async () => unde
 const ALEX = createMember({ id: 'alex', name: 'Alex Chen' });
 const HOUR = 60 * 60 * 1000;
 
+const action = (title: string, overrides: Partial<ActionItem> = {}) =>
+  createActionItem({ memberId: 'alex', title, ...overrides });
+
 const newKey = () =>
   crypto.subtle.generateKey({ name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
 
@@ -24,7 +28,11 @@ function Tokens() {
   return <output data-testid="tokens">{tokens.map((t) => `${t.ttl}`).join(',')}</output>;
 }
 
-async function setup(agenda: unknown[] = [], extraMembers: ReturnType<typeof createMember>[] = []) {
+async function setup(
+  agenda: unknown[] = [],
+  extraMembers: ReturnType<typeof createMember>[] = [],
+  actionItems: ActionItem[] = [],
+) {
   const key = await newKey();
   const user = userEvent.setup();
   const view = renderWithProviders(
@@ -36,6 +44,7 @@ async function setup(agenda: unknown[] = [], extraMembers: ReturnType<typeof cre
       initialData: { members: [ALEX, ...extraMembers], settings: { managerName: 'Morgan Lee' } },
       initialPrivateData: {
         agendaItems: agenda,
+        actionItems,
         notes: [
           createNote({ id: 'n1', memberId: 'alex', content: 'Shared', visibility: 'shared' }),
         ],
@@ -98,6 +107,37 @@ describe('ShareLinkPopover', () => {
 
     await within(dialog).findByRole('button', { name: 'I understand' });
     expect(within(dialog).queryByText(/may reference other team members/)).not.toBeInTheDocument();
+  });
+
+  it('lists the action items in the link before it is revealed, leaving out opted-out ones', async () => {
+    const { dialog } = await setup(
+      [],
+      [],
+      [
+        action('Send the offer', { dueDate: '2999-02-03' }),
+        action('Hidden item', { includeInShare: false }),
+        action('Finished', { status: 'done', ownerId: 'alex', ownerName: 'Alex Chen' }),
+      ],
+    );
+
+    const list = await within(dialog).findByRole('list', { name: 'Action items in this link' });
+    const rows = within(list).getAllByRole('listitem');
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveTextContent('Send the offer');
+    expect(rows[0]).toHaveTextContent('You');
+    expect(rows[0]).toHaveTextContent('2999-02-03');
+    expect(rows[1]).toHaveTextContent('Alex Chen');
+    expect(within(dialog).queryByText(/Hidden item/)).not.toBeInTheDocument();
+    expect(within(dialog).getByText(/Include in share link/)).toBeInTheDocument();
+  });
+
+  it('shows no action item preview when the link carries none', async () => {
+    const { dialog } = await setup();
+
+    await within(dialog).findByRole('button', { name: 'I understand' });
+    expect(
+      within(dialog).queryByRole('list', { name: 'Action items in this link' }),
+    ).not.toBeInTheDocument();
   });
 
   it('offers the four lifetimes and starts on 24 hours', async () => {

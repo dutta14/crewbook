@@ -186,6 +186,20 @@
   font-size: var(--text-caption);
 }
 
+.action-item__share {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 44px;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+
+.action-item__share input {
+  accent-color: var(--accent);
+}
+
 .action-item__undo {
   min-height: 32px;
   padding: var(--space-1) var(--space-2);
