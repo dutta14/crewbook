@@ -9,8 +9,9 @@ export interface Note {
   createdAt: string;
   updatedAt: string;
   /**
-   * Whether the note may appear in a share link. Absent means private: a note is only shared when
-   * it says so. Seam for the issue that adds the per-note toggle.
+   * Whether the note may appear in a share link. It also says where the note is stored: shared
+   * notes live in the main envelope and private ones in the private envelope. Always 'private'
+   * unless the manager has explicitly shared the note.
    */
-  visibility?: NoteVisibility;
+  visibility: NoteVisibility;
 }

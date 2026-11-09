@@ -27,12 +27,15 @@ function Probe() {
   );
 }
 
+const sharedNotes = () => [
+  createNote({ id: 'n1', memberId: 'alex', content: 'Shared note', visibility: 'shared' }),
+  createNote({ id: 'n4', memberId: 'priya', content: `Other ${SECRET}`, visibility: 'shared' }),
+];
+
 const privateData = () => ({
   notes: [
-    createNote({ id: 'n1', memberId: 'alex', content: 'Shared note', visibility: 'shared' }),
     createNote({ id: 'n2', memberId: 'alex', content: `Hidden ${SECRET}`, visibility: 'private' }),
     createNote({ id: 'n3', memberId: 'alex', content: `Unmarked ${SECRET}` }),
-    createNote({ id: 'n4', memberId: 'priya', content: `Other ${SECRET}`, visibility: 'shared' }),
   ],
   actionItems: [createActionItem({ id: 'a1', memberId: 'alex', title: 'Ship it' })],
   moods: [{ memberId: 'alex', score: 1, note: SECRET }],
@@ -52,6 +55,7 @@ async function setup({
     {
       initialData: {
         members: [ALEX, PRIYA],
+        sharedNotes: sharedNotes(),
         settings: managerName ? { managerName } : {},
       },
       initialPrivateData: privateData(),

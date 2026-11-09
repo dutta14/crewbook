@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { StorageWriteError } from '../utils/encryptedStorage';
+import { ValidationError } from './errors';
 import {
   areLiveShortcutsEnabled,
   areRiskIndicatorsHidden,
   dismissLiveNotice,
+  getDefaultNoteVisibility,
   getManagerName,
   isLiveNoticeDismissed,
   isMoodTrackingEnabled,
+  setDefaultNoteVisibility,
   setLiveShortcutsEnabled,
   setManagerName,
   setMoodTrackingEnabled,
@@ -51,6 +54,51 @@ describe('settings', () => {
     await expect(setMoodTrackingEnabled(true, storage)).rejects.toBe(failure);
 
     expect(isMoodTrackingEnabled(storage)).toBe(false);
+  });
+});
+
+describe('default note visibility', () => {
+  it('is private until the manager chooses shared', async () => {
+    const { storage, store } = createStorage({ other: 'kept' });
+    expect(getDefaultNoteVisibility(storage)).toBe('private');
+
+    await setDefaultNoteVisibility('shared', storage);
+
+    expect(getDefaultNoteVisibility(storage)).toBe('shared');
+    expect(store.get('settings')).toEqual({ other: 'kept', defaultNoteVisibility: 'shared' });
+  });
+
+  it.each([undefined, '', 'Shared', 'SHARED', 'true', 'public', 1, true, null])(
+    'reads a stored value of %j as private',
+    (value) => {
+      const { storage } = createStorage({ defaultNoteVisibility: value });
+
+      expect(getDefaultNoteVisibility(storage)).toBe('private');
+    },
+  );
+
+  it('is private when settings are corrupt', () => {
+    expect(getDefaultNoteVisibility(createStorage('nonsense').storage)).toBe('private');
+    expect(getDefaultNoteVisibility(createStorage(['shared']).storage)).toBe('private');
+  });
+
+  it('rejects an invalid value without writing it', async () => {
+    const { storage, store } = createStorage({ other: 'kept' });
+
+    await expect(setDefaultNoteVisibility('everyone' as never, storage)).rejects.toThrow(
+      ValidationError,
+    );
+
+    expect(store.get('settings')).toEqual({ other: 'kept' });
+  });
+
+  it('restores the previous value when the write fails', async () => {
+    const { storage } = createStorage();
+    storage.failWith = new Error('full') as StorageWriteError;
+
+    await expect(setDefaultNoteVisibility('shared', storage)).rejects.toBe(storage.failWith);
+
+    expect(getDefaultNoteVisibility(storage)).toBe('private');
   });
 });
 

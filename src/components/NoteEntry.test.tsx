@@ -18,7 +18,13 @@ const renderEntry = (note: Note, onUpdate = vi.fn().mockResolvedValue(undefined)
   render(
     <ol>
       <li>
-        <NoteEntry note={note} onUpdate={onUpdate} query={query} />
+        <NoteEntry
+          note={note}
+          engineerName="Alex Chen"
+          onUpdate={onUpdate}
+          onSetVisibility={vi.fn()}
+          query={query}
+        />
       </li>
     </ol>,
   );
@@ -77,7 +83,15 @@ describe('NoteEntry', () => {
   it('edit button has aria-label "Edit note from [date]"', () => {
     const created = new Date(2026, 0, 7, 15, 5);
     const note = createNote({ createdAt: created.toISOString(), updatedAt: created.toISOString() });
-    render(<NoteEntry note={note} now={created.getTime() + 1000} onUpdate={vi.fn()} />);
+    render(
+      <NoteEntry
+        note={note}
+        engineerName="Alex Chen"
+        now={created.getTime() + 1000}
+        onUpdate={vi.fn()}
+        onSetVisibility={vi.fn()}
+      />,
+    );
 
     expect(
       screen.getByRole('button', { name: 'Edit note from Wed, Jan 7, 2026 · 3:05 PM' }),

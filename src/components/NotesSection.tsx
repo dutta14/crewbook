@@ -8,13 +8,17 @@ import {
   searchNotes,
   updateNote,
 } from '../data/notes';
+import { getDefaultNoteVisibility } from '../data/settings';
+import { getMember } from '../data/members';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
+import { useNoteVisibility } from '../hooks/useNoteVisibility';
 import { formatCount } from '../utils/noteFormat';
 import '../styles/button.css';
 import '../styles/form.css';
 import '../styles/notes.css';
 import { ActionItemList } from './ActionItemList';
 import { AddActionItem } from './ActionItemInline';
+import { BulkVisibilityToggle } from './BulkVisibilityToggle';
 import { SearchIcon } from './icons';
 import { MoodPrompt } from './MoodPrompt';
 import { NoteEntry } from './NoteEntry';
@@ -197,6 +201,9 @@ function NotesPanel({ memberId, focus }: NotesSectionProps) {
     (noteId: string, content: string) => updateNote(noteId, content, storage),
     [storage],
   );
+  const { setVisibility, bulkSetVisibility } = useNoteVisibility(memberId);
+  const engineerName = getMember(memberId, storage)?.name ?? 'this person';
+  const defaultVisibility = getDefaultNoteVisibility(storage);
 
   const resultCount = !isSearching
     ? ''
@@ -250,8 +257,10 @@ function NotesPanel({ memberId, focus }: NotesSectionProps) {
             </p>
           ) : null}
           <p className="notes__hint">
-            Notes are private to you. Avoid recording sensitive personal details shared in
-            confidence.
+            {defaultVisibility === 'shared'
+              ? `New notes are shared with ${engineerName} in your next share link. `
+              : 'New notes are private to you until you share them. '}
+            Avoid recording sensitive personal details shared in confidence.
           </p>
           <div className="notes__actions">
             <button type="submit" className="btn btn-primary" disabled={!canSave}>
@@ -289,6 +298,13 @@ function NotesPanel({ memberId, focus }: NotesSectionProps) {
               {resultCount}
             </p>
           </div>
+          {isSearching ? null : (
+            <BulkVisibilityToggle
+              notes={notes}
+              engineerName={engineerName}
+              onSetAll={bulkSetVisibility}
+            />
+          )}
           {visibleNotes.length > 0 ? (
             <ol className="notes__list" reversed aria-label="1:1 notes history">
               {visibleNotes.map((note) => (
@@ -298,7 +314,14 @@ function NotesPanel({ memberId, focus }: NotesSectionProps) {
                   tabIndex={note.id === focus?.noteId ? -1 : undefined}
                   className={`notes__item${note.id === newestId ? ' notes__item--new' : ''}${note.id === focus?.noteId ? ' notes__item--linked' : ''}`}
                 >
-                  <NoteEntry note={note} query={query} now={now} onUpdate={handleUpdate} />
+                  <NoteEntry
+                    note={note}
+                    engineerName={engineerName}
+                    query={query}
+                    now={now}
+                    onUpdate={handleUpdate}
+                    onSetVisibility={setVisibility}
+                  />
                 </li>
               ))}
             </ol>

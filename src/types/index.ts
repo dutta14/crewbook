@@ -19,7 +19,7 @@ export type {
 } from './feedback';
 export type { FlightRiskLevel, PrivateNote } from './flightRisk';
 export type { GrowthChangeType, GrowthEntry, GrowthEntryInput } from './growth';
-export type { Note } from './Note';
+export type { Note, NoteVisibility } from './Note';
 export type {
   Reminder,
   ReminderContext,

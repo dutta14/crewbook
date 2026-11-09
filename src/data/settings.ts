@@ -1,4 +1,6 @@
 import type { EncryptedStorageContextValue } from '../components/EncryptedStorageProvider';
+import type { NoteVisibility } from '../types/Note';
+import { ValidationError } from './errors';
 
 /** A property on the decrypted `crewbook_data` object; AppData types its values as strings. */
 const STORAGE_KEY = 'settings';
@@ -7,6 +9,7 @@ const HIDE_RISK_KEY = 'hideRiskIndicators';
 const LIVE_SHORTCUTS_KEY = 'liveModeShortcuts';
 const LIVE_NOTICE_KEY = 'liveModeNoticeDismissed';
 const MANAGER_NAME_KEY = 'managerName';
+const DEFAULT_NOTE_VISIBILITY_KEY = 'defaultNoteVisibility';
 
 export type SettingsStorage = Pick<EncryptedStorageContextValue, 'get' | 'set' | 'flush'>;
 
@@ -65,6 +68,25 @@ export function getManagerName(storage: Pick<SettingsStorage, 'get'>): string {
 
 export function setManagerName(name: string, storage: SettingsStorage): Promise<void> {
   return writeSetting(MANAGER_NAME_KEY, name, storage);
+}
+
+export function isNoteVisibility(value: unknown): value is NoteVisibility {
+  return value === 'shared' || value === 'private';
+}
+
+/** Fails closed: anything other than an explicit 'shared' (missing, corrupt, odd) is private. */
+export function getDefaultNoteVisibility(storage: Pick<SettingsStorage, 'get'>): NoteVisibility {
+  return readSettings(storage)[DEFAULT_NOTE_VISIBILITY_KEY] === 'shared' ? 'shared' : 'private';
+}
+
+export function setDefaultNoteVisibility(
+  visibility: NoteVisibility,
+  storage: SettingsStorage,
+): Promise<void> {
+  if (!isNoteVisibility(visibility)) {
+    return Promise.reject(new ValidationError('Choose shared or private'));
+  }
+  return writeSetting(DEFAULT_NOTE_VISIBILITY_KEY, visibility, storage);
 }
 
 /** On unless the manager turns them off, because live mode's shortcuts can clash with a browser's. */

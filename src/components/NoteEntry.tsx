@@ -1,27 +1,39 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { NOTE_MAX_LENGTH, NoteLockedError, isNoteEditable } from '../data/notes';
-import type { Note } from '../types/Note';
+import type { Note, NoteVisibility } from '../types/Note';
 import { highlightMatches, renderMarkdown } from '../utils/markdownRenderer';
 import { formatCount, formatNoteDate } from '../utils/noteFormat';
 import '../styles/button.css';
 import '../styles/form.css';
 import '../styles/notes.css';
-import { LockIcon, PencilIcon } from './icons';
+import '../styles/note-visibility.css';
+import { ClockIcon, EyeIcon, LockIcon, PencilIcon } from './icons';
+import { NoteVisibilityToggle } from './NoteVisibilityToggle';
 
 interface NoteEntryProps {
   note: Note;
+  /** Shown in the tooltip and in the confirmation before the note is shared. */
+  engineerName: string;
   /** Matches of this text are highlighted in the body. */
   query?: string;
   /** Epoch milliseconds for the 24 hour check; defaults to the current time. */
   now?: number;
   /** Rejects when the note could not be saved; the entry stays in edit mode. */
   onUpdate: (noteId: string, content: string) => Promise<unknown>;
+  onSetVisibility: (noteId: string, visibility: NoteVisibility) => unknown;
 }
 
 const SAVE_FAILED = "Couldn't save your changes. Try again.";
 const NOW_LOCKED = 'This note is now locked and can no longer be edited.';
 
-export function NoteEntry({ note, query = '', now, onUpdate }: NoteEntryProps) {
+export function NoteEntry({
+  note,
+  engineerName,
+  query = '',
+  now,
+  onUpdate,
+  onSetVisibility,
+}: NoteEntryProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(note.content);
   const [error, setError] = useState('');
@@ -76,11 +88,21 @@ export function NoteEntry({ note, query = '', now, onUpdate }: NoteEntryProps) {
   };
 
   const inputId = `note-edit-${note.id}`;
+  const isShared = note.visibility === 'shared';
 
   return (
-    <article className="note-entry">
+    <article
+      className={`note-entry note-entry--${isShared ? 'shared' : 'private'}`}
+      aria-label={isShared ? 'Shared note' : 'Private note'}
+    >
       <header className="note-entry__header">
         <div className="note-entry__meta">
+          <span
+            className={`note-entry__visibility note-entry__visibility--${isShared ? 'shared' : 'private'}`}
+            aria-hidden="true"
+          >
+            {isShared ? <EyeIcon size={14} /> : <LockIcon size={14} />}
+          </span>
           <time className="note-entry__date" dateTime={note.createdAt}>
             {dateLabel}
           </time>
@@ -88,26 +110,34 @@ export function NoteEntry({ note, query = '', now, onUpdate }: NoteEntryProps) {
             <span className="note-entry__edited">Edited</span>
           ) : null}
         </div>
-        {isEditing ? null : isEditable ? (
-          <button
-            ref={editRef}
-            type="button"
-            className="icon-btn note-entry__edit"
-            aria-label={`Edit note from ${dateLabel}`}
-            onClick={startEdit}
-          >
-            <PencilIcon size={16} />
-          </button>
-        ) : (
-          <span
-            className="note-entry__locked"
-            role="img"
-            aria-label="This note is locked and can no longer be edited"
-          >
-            <LockIcon size={12} />
-            <span aria-hidden="true">Locked</span>
-          </span>
-        )}
+        <div className="note-entry__controls">
+          {isEditing ? null : isEditable ? (
+            <button
+              ref={editRef}
+              type="button"
+              className="icon-btn note-entry__edit"
+              aria-label={`Edit note from ${dateLabel}`}
+              onClick={startEdit}
+            >
+              <PencilIcon size={16} />
+            </button>
+          ) : (
+            <span
+              className="note-entry__locked"
+              role="img"
+              aria-label="This note is locked and can no longer be edited"
+            >
+              <ClockIcon size={12} />
+              <span aria-hidden="true">Locked</span>
+            </span>
+          )}
+          <NoteVisibilityToggle
+            noteId={note.id}
+            visibility={note.visibility}
+            engineerName={engineerName}
+            onToggle={onSetVisibility}
+          />
+        </div>
       </header>
       {isEditing ? (
         <form

@@ -83,7 +83,10 @@ export interface SeedNote {
   visibility?: 'shared' | 'private';
 }
 
-/** Writes 1:1 notes into the private encrypted envelope. Seed members first, then call this. */
+/**
+ * Writes 1:1 notes the way the app stores them: shared notes in the main envelope, everything
+ * else in the private one. Seed members first, then call this.
+ */
 export async function seedNotes(page: Page, notes: SeedNote[], passphrase = TEST_PASSPHRASE) {
   const now = Date.now();
   const stored = notes.map(({ memberIndex, content, hoursAgo, visibility }, index) => {
@@ -94,7 +97,7 @@ export async function seedNotes(page: Page, notes: SeedNote[], passphrase = TEST
       content,
       createdAt: at,
       updatedAt: at,
-      ...(visibility === undefined ? {} : { visibility }),
+      visibility: visibility ?? 'private',
     };
   });
   await page.evaluate(
@@ -106,7 +109,14 @@ export async function seedNotes(page: Page, notes: SeedNote[], passphrase = TEST
       const manager = new StorageManager();
       await manager.unlock(secret);
       await manager.loadPrivate();
-      manager.setPrivateData('notes', data);
+      manager.setPrivateData(
+        'notes',
+        data.filter((note) => note.visibility !== 'shared'),
+      );
+      manager.setData(
+        'sharedNotes',
+        data.filter((note) => note.visibility === 'shared'),
+      );
       const failure = await manager.flush();
       if (failure) throw failure;
       await manager.lock();

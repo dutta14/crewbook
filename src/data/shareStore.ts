@@ -14,7 +14,7 @@ import { listAgendaForMember } from './agenda';
 import { listByMember } from './actionItems';
 import { NotFoundError, ValidationError } from './errors';
 import { getMember, listMembers } from './members';
-import { listNotes } from './notes';
+import { listSharedNotes } from './notes';
 
 /*
  * The single place share data is read from storage. It reads a fixed list of sources (the person,
@@ -66,7 +66,7 @@ export function getSharedData(
   if (!member) throw new NotFoundError(memberId);
   return serializeForSharing(
     member,
-    listNotes(memberId, storage),
+    listSharedNotes(memberId, storage),
     listByMember(memberId, storage),
     listAgendaForMember(memberId, storage),
     { ...rest, ttlMs: ttlToMs(ttl), managerName: cleanManagerName(managerName) },

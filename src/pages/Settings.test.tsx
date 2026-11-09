@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { describe, expect, it } from 'vitest';
@@ -71,5 +71,35 @@ describe('Settings', () => {
     const { container } = renderSettings();
 
     expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it('offers a default visibility for new notes that starts as private', () => {
+    renderSettings();
+
+    const group = screen.getByRole('group', { name: 'Default visibility for new notes' });
+    expect(within(group).getByRole('radio', { name: /Private/ })).toBeChecked();
+    expect(within(group).getByRole('radio', { name: /Shared/ })).not.toBeChecked();
+  });
+
+  it('stores the chosen default visibility and can return to private', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('radio', { name: /Shared/ }));
+    expect(screen.getByRole('radio', { name: /Shared/ })).toBeChecked();
+    expect(screen.getByRole('status', { name: 'Stored settings' })).toHaveTextContent(
+      '"defaultNoteVisibility":"shared"',
+    );
+
+    await user.click(screen.getByRole('radio', { name: /Private/ }));
+    expect(screen.getByRole('status', { name: 'Stored settings' })).toHaveTextContent(
+      '"defaultNoteVisibility":"private"',
+    );
+  });
+
+  it('shows private when the stored default is not exactly shared', () => {
+    renderSettings({ defaultNoteVisibility: 'Shared' });
+
+    expect(screen.getByRole('radio', { name: /Private/ })).toBeChecked();
   });
 });

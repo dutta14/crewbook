@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { axe } from 'vitest-axe';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
-import { createNote } from '../test-utils/factories';
+import { createMember, createNote } from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
 import type { Note } from '../types/Note';
 import { NOTE_MAX_LENGTH } from '../data/notes';
@@ -491,5 +491,113 @@ describe('NotesSection mood rating', () => {
     await screen.findByText('Note saved');
     expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
     expect(screen.queryByText('Private')).not.toBeInTheDocument();
+  });
+});
+
+describe('NotesSection note visibility', () => {
+  const renderVisibility = (notes: Note[], defaultVisibility?: 'shared' | 'private') =>
+    renderWithProviders(<NotesSection memberId={MEMBER} />, {
+      initialData: {
+        members: [createMember({ id: MEMBER, name: 'Alex Chen' })],
+        ...(defaultVisibility ? { settings: { defaultNoteVisibility: defaultVisibility } } : {}),
+      },
+      initialPrivateData: { notes },
+    });
+
+  it('saves a new note as private and says so when no default is set', async () => {
+    const user = userEvent.setup();
+    renderVisibility([]);
+
+    await user.type(await textarea(), 'Fresh note');
+    await user.click(saveButton());
+
+    expect(await screen.findByRole('article', { name: 'Private note' })).toHaveTextContent(
+      'Fresh note',
+    );
+    expect(screen.queryByRole('article', { name: 'Shared note' })).not.toBeInTheDocument();
+    expect(screen.getByText(/New notes are private to you until you share them/)).toBeVisible();
+  });
+
+  it('saves a new note as shared when the default setting is shared', async () => {
+    const user = userEvent.setup();
+    renderVisibility([], 'shared');
+
+    expect(screen.getByText(/New notes are shared with Alex Chen/)).toBeVisible();
+    await user.type(await textarea(), 'Fresh note');
+    await user.click(saveButton());
+
+    expect(await screen.findByRole('article', { name: 'Shared note' })).toHaveTextContent(
+      'Fresh note',
+    );
+  });
+
+  it('shares a private note only after confirming, then shows it as shared', async () => {
+    const user = userEvent.setup();
+    renderVisibility([note('Old note', 48)]);
+
+    await user.click(
+      await screen.findByRole('button', { name: /Toggle note visibility, currently private/ }),
+    );
+    expect(screen.getByRole('article', { name: 'Private note' })).toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: 'Share Note' }));
+
+    expect(await screen.findByRole('article', { name: 'Shared note' })).toHaveTextContent(
+      'Old note',
+    );
+  });
+
+  it('makes a shared note private straight away, even after the edit lock', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<NotesSection memberId={MEMBER} />, {
+      initialData: {
+        members: [createMember({ id: MEMBER, name: 'Alex Chen' })],
+        sharedNotes: [{ ...note('Locked shared', 72), visibility: 'shared' }],
+      },
+    });
+
+    await user.click(
+      await screen.findByRole('button', { name: /Toggle note visibility, currently shared/ }),
+    );
+
+    expect(await screen.findByRole('article', { name: 'Private note' })).toHaveTextContent(
+      'Locked shared',
+    );
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+  });
+
+  it('shares every note after confirming the count and makes them all private without asking', async () => {
+    const user = userEvent.setup();
+    renderVisibility([note('One', 48), note('Two', 30)]);
+
+    await user.click(await screen.findByRole('button', { name: /^Make all shared/ }));
+    expect(await screen.findByRole('alertdialog', { name: 'Share 2 notes?' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Share Notes' }));
+    expect(await screen.findAllByRole('article', { name: 'Shared note' })).toHaveLength(2);
+
+    await user.click(screen.getByRole('button', { name: /^Make all private/ }));
+    expect(await screen.findAllByRole('article', { name: 'Private note' })).toHaveLength(2);
+  });
+
+  it('hides the bulk buttons while searching', async () => {
+    const user = userEvent.setup();
+    renderVisibility([note('Alpha', 48)]);
+    await screen.findByRole('button', { name: /^Make all shared/ });
+
+    await user.type(screen.getByRole('searchbox'), 'Alpha');
+
+    expect(screen.queryByRole('button', { name: /^Make all shared/ })).not.toBeInTheDocument();
+  });
+
+  it('has no accessibility violations with both kinds of note', async () => {
+    const { container } = renderWithProviders(<NotesSection memberId={MEMBER} />, {
+      initialData: {
+        members: [createMember({ id: MEMBER, name: 'Alex Chen' })],
+        sharedNotes: [{ ...note('Shared one', 30), visibility: 'shared' }],
+      },
+      initialPrivateData: { notes: [note('Private one', 48)] },
+    });
+    await screen.findByRole('article', { name: 'Shared note' });
+
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

@@ -40,6 +40,7 @@ export function createNote(overrides: Partial<Note> = {}): Note {
     content: 'Discussed the Q3 roadmap and growth goals.',
     createdAt: timestamp,
     updatedAt: timestamp,
+    visibility: 'private',
     ...overrides,
   };
 }

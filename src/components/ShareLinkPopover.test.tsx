@@ -41,14 +41,14 @@ async function setup(
       <Tokens />
     </>,
     {
-      initialData: { members: [ALEX, ...extraMembers], settings: { managerName: 'Morgan Lee' } },
-      initialPrivateData: {
-        agendaItems: agenda,
-        actionItems,
-        notes: [
+      initialData: {
+        members: [ALEX, ...extraMembers],
+        settings: { managerName: 'Morgan Lee' },
+        sharedNotes: [
           createNote({ id: 'n1', memberId: 'alex', content: 'Shared', visibility: 'shared' }),
         ],
       },
+      initialPrivateData: { agendaItems: agenda, actionItems },
       signingKey: key,
     },
   );

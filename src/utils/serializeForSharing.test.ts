@@ -24,15 +24,20 @@ const member = {
   updatedAt: '2019-04-01T00:00:00Z',
 } as TeamMember;
 
-const note = (id: string, visibility: Note['visibility'], extra: Partial<Note> = {}): Note => ({
-  id,
-  memberId: 'm1',
-  content: `note ${id}`,
-  createdAt: '2026-03-01T10:00:00Z',
-  updatedAt: `2026-03-01T10:00:00Z ${SECRET}`,
-  visibility,
-  ...extra,
-});
+const note = (
+  id: string,
+  visibility: Note['visibility'] | undefined,
+  extra: Partial<Note> = {},
+): Note =>
+  ({
+    id,
+    memberId: 'm1',
+    content: `note ${id}`,
+    createdAt: '2026-03-01T10:00:00Z',
+    updatedAt: `2026-03-01T10:00:00Z ${SECRET}`,
+    visibility,
+    ...extra,
+  }) as Note;
 
 const action = (id: string, extra: Partial<ActionItem> = {}): ActionItem => ({
   id,
@@ -73,6 +78,19 @@ describe('serializeForSharing', () => {
   it('includes only notes marked shared, and treats a missing marker as private', () => {
     const payload = build([note('a', 'shared'), note('b', 'private'), note('c', undefined)]);
     expect(payload.sharedNotes.map((n) => n.id)).toEqual(['a']);
+  });
+
+  it.each([null, '', 'Shared', 'SHARED', 'true', 1, true, {}, ['shared']])(
+    'never shares a note whose visibility is %j',
+    (value) => {
+      const payload = build([note('a', value as unknown as Note['visibility'])]);
+      expect(payload.sharedNotes).toEqual([]);
+    },
+  );
+
+  it('does not put the visibility field in a shared note', () => {
+    const payload = build([note('a', 'shared')]);
+    expect(JSON.stringify(payload)).not.toContain('visibility');
   });
 
   it('copies only the named fields of each note, action item and agenda item', () => {

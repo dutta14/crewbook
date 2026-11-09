@@ -10,6 +10,8 @@ export interface AppData {
   actionItems: ActionItem[];
   moods: MoodEntry[];
   settings: Record<string, string>;
+  /** Notes the manager explicitly shared; every other note is in the private envelope. */
+  sharedNotes?: Note[];
   /** The links the manager has made; see shareStore. */
   shareTokens?: ShareToken[];
 }

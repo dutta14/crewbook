@@ -1,3 +1,4 @@
+import { DefaultVisibilitySetting } from '../components/DefaultVisibilitySetting';
 import { LeadTimeSettings } from '../components/LeadTimeSettings';
 import { SettingsSwitchRow } from '../components/SettingsSwitchRow';
 import {
@@ -43,6 +44,7 @@ export function Settings() {
           checked={areRiskIndicatorsHidden(storage)}
           onChange={(next) => void save(() => setRiskIndicatorsHidden(next, storage))}
         />
+        <DefaultVisibilitySetting />
       </section>
       <LeadTimeSettings />
     </>

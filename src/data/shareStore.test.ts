@@ -23,11 +23,31 @@ const PRIYA = createMember({ id: 'priya', name: 'Priya Nair' });
 const SECRET = 'SENTINEL-SECRET';
 const stamp = '2026-03-01T10:00:00.000Z';
 
-const notes = [
+// Shared notes live in the main envelope; the private envelope is never a source for share links.
+const sharedNotes = [
   {
     id: 'n1',
     memberId: 'alex',
     content: 'Shared note',
+    createdAt: stamp,
+    updatedAt: stamp,
+    visibility: 'shared',
+  },
+  {
+    id: 'n4',
+    memberId: 'priya',
+    content: `Other ${SECRET}`,
+    createdAt: stamp,
+    updatedAt: stamp,
+    visibility: 'shared',
+  },
+];
+
+const notes = [
+  {
+    id: 'n5',
+    memberId: 'alex',
+    content: `Mislabelled ${SECRET}`,
     createdAt: stamp,
     updatedAt: stamp,
     visibility: 'shared',
@@ -41,18 +61,13 @@ const notes = [
     visibility: 'private',
   },
   { id: 'n3', memberId: 'alex', content: `Unmarked ${SECRET}`, createdAt: stamp, updatedAt: stamp },
-  {
-    id: 'n4',
-    memberId: 'priya',
-    content: `Other ${SECRET}`,
-    createdAt: stamp,
-    updatedAt: stamp,
-    visibility: 'shared',
-  },
 ];
 
 function setup(key: CryptoKey | null) {
-  const publicData = new Map<string, unknown>([['members', [ALEX, PRIYA]]]);
+  const publicData = new Map<string, unknown>([
+    ['members', [ALEX, PRIYA]],
+    ['sharedNotes', sharedNotes],
+  ]);
   const privateData = new Map<string, unknown>([
     ['notes', notes],
     [
@@ -151,6 +166,19 @@ describe('createShareLink', () => {
     expect(link.url).not.toContain(SECRET);
     expect(link.tokenLength).toBeGreaterThan(50);
     expect(await readShareToken(link.url, key)).toEqual(link.payload);
+  });
+
+  it('never puts a private note in the signed link, even one with a shared-looking record', async () => {
+    const key = await newKey();
+    const { storage } = setup(key);
+    const link = await createShareLink('alex', 'Morgan', storage);
+    const decoded = await readShareToken(link.url, key);
+    const serialized = JSON.stringify(decoded);
+
+    expect(decoded?.sharedNotes.map((note) => note.text)).toEqual(['Shared note']);
+    for (const hidden of ['Hidden', 'Unmarked', 'Mislabelled', SECRET]) {
+      expect(serialized).not.toContain(hidden);
+    }
   });
 
   it('refuses while the app is locked', async () => {
