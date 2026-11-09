@@ -21,11 +21,18 @@ import {
   createTodo,
 } from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
+import type { CustomFieldDefinition } from '../types/customField';
 import type { TeamMember } from '../types/TeamMember';
 import { Profile } from './Profile';
 
 const ALEX = '11111111-1111-4111-8111-111111111111';
 const PRIYA = '22222222-2222-4222-8222-222222222222';
+const TEAM_FIELD: CustomFieldDefinition = {
+  id: 'team-field',
+  name: 'Team',
+  type: 'text',
+  order: 0,
+};
 
 function CurrentUrl() {
   const { pathname } = useLocation();
@@ -42,7 +49,7 @@ const team = (): TeamMember[] => [
     startDate: '2023-03-13',
     email: 'alex.chen@example.com',
     manager: PRIYA,
-    customFields: { Team: 'Payments' },
+    customFields: { [TEAM_FIELD.id]: 'Payments' },
     createdAt: '2024-01-01T12:00:00.000Z',
     history: [
       {
@@ -64,7 +71,11 @@ const team = (): TeamMember[] => [
   createMember({ id: PRIYA, name: 'Priya Nair', role: 'Engineering Manager', level: 'L6' }),
 ];
 
-function renderProfile(id: string, members: TeamMember[] = team()) {
+function renderProfile(
+  id: string,
+  members: TeamMember[] = team(),
+  customFieldDefinitions: CustomFieldDefinition[] = [],
+) {
   return renderWithProviders(
     <>
       <Routes>
@@ -73,7 +84,7 @@ function renderProfile(id: string, members: TeamMember[] = team()) {
       </Routes>
       <CurrentUrl />
     </>,
-    { route: `/person/${id}`, initialData: { members } },
+    { route: `/person/${id}`, initialData: { members, customFieldDefinitions } },
   );
 }
 
@@ -104,7 +115,7 @@ const reduceMotion = () =>
 
 describe('Profile', () => {
   it('Overview tab shows all member fields', () => {
-    renderProfile(ALEX);
+    renderProfile(ALEX, team(), [TEAM_FIELD]);
 
     const overview = screen.getByRole('tabpanel', { name: 'Overview' });
     const fields = within(overview);
@@ -899,12 +910,22 @@ describe('Profile', () => {
     expect(within(overview).getAllByText('Not set')).toHaveLength(7);
   });
 
-  it('renders freeform custom field content as text, not markup', () => {
-    renderProfile(ALEX, [
-      createMember({ id: ALEX, customFields: { Notes: '&lt;b&gt;bold&lt;/b&gt;' } }),
-    ]);
+  it('renders a custom field value as text, not markup, and hides values without a definition', () => {
+    renderProfile(
+      ALEX,
+      [
+        createMember({
+          id: ALEX,
+          customFields: { [TEAM_FIELD.id]: '<b>bold</b>', removedField: 'Leftover' },
+        }),
+      ],
+      [TEAM_FIELD],
+    );
 
-    expect(screen.getByText('&lt;b&gt;bold&lt;/b&gt;')).toBeInTheDocument();
+    const overview = screen.getByRole('tabpanel', { name: 'Overview' });
+    expect(within(overview).getByText('<b>bold</b>')).toBeInTheDocument();
+    expect(overview.querySelector('b')).toBeNull();
+    expect(within(overview).queryByText('Leftover')).not.toBeInTheDocument();
   });
 
   it('never puts the member name in the page title', () => {

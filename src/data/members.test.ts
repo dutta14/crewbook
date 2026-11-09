@@ -256,6 +256,53 @@ describe('customFields validation', () => {
   });
 });
 
+describe('custom field definitions', () => {
+  const definitions = [
+    { id: 'wiki', name: 'Wiki', type: 'url', order: 0 },
+    { id: 'when', name: 'When', type: 'date', order: 1 },
+    { id: 'size', name: 'Size', type: 'select', options: ['S', 'L'], order: 2 },
+  ];
+
+  async function createStorageWithFields() {
+    const created = await createStorage();
+    created.manager.setData('customFieldDefinitions', definitions);
+    return created;
+  }
+
+  it('stores the cleaned value of each defined field and drops empty ones', async () => {
+    const { storage } = await createStorageWithFields();
+
+    const member = await addMember(
+      input({ customFields: { wiki: ' https://example.com/a ', when: '', size: 'L' } }),
+      storage,
+    );
+
+    expect(member.customFields).toEqual({ wiki: 'https://example.com/a', size: 'L' });
+  });
+
+  it.each([
+    [{ wiki: 'javascript:alert(1)' }, 'Wiki: '],
+    [{ when: '2023-02-30' }, 'When: '],
+    [{ size: 'XL' }, 'Size: '],
+  ])('rejects %j without echoing the value', async (customFields, prefix) => {
+    const { storage } = await createStorageWithFields();
+
+    const attempt = addMember(input({ customFields }), storage);
+
+    await expect(attempt).rejects.toThrow(prefix);
+    await expect(attempt).rejects.not.toThrow(Object.values(customFields)[0]);
+  });
+
+  it('validates the same way when a member is updated', async () => {
+    const { storage } = await createStorageWithFields();
+    const member = await addMember(input(), storage);
+
+    await expect(
+      updateMember(member.id, { customFields: { size: 'XL' } }, storage),
+    ).rejects.toThrow('Size: ');
+  });
+});
+
 describe('getMember', () => {
   it('returns member by id', async () => {
     const { storage } = await createStorage();

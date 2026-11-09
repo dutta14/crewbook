@@ -14,11 +14,19 @@ import {
   parseIsoDate,
 } from '../utils/scheduleCalculator';
 import { toDateAttribute } from '../utils/startDate';
+import type { CustomFieldDefinition } from '../types/customField';
+import {
+  CUSTOM_FIELDS_STORAGE_KEY,
+  HTML_TAG_PATTERN,
+  cleanDefinedValues,
+  parseDefinitions,
+} from './customFieldRules';
 import { NotFoundError, ValidationError } from './errors';
 import { MAX_HISTORY_ENTRIES, diffMember } from './timeline';
 
 /** A property on the decrypted `crewbook_data` object, not a separate localStorage key. */
-const STORAGE_KEY = 'members';
+export const MEMBERS_STORAGE_KEY = 'members';
+const STORAGE_KEY = MEMBERS_STORAGE_KEY;
 
 /** The slice of useEncryptedStorage() these functions need. */
 export type MemberStorage = Pick<EncryptedStorageContextValue, 'get' | 'set' | 'flush'>;
@@ -36,7 +44,6 @@ export const MEMBER_LIMITS = {
 
 const STATUSES: readonly TeamMemberStatus[] = ['active', 'on_leave', 'departing', 'new_hire'];
 const EMAIL_PATTERN = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
-const HTML_TAG_PATTERN = /<\/?[a-z!?]/i;
 const CUSTOM_KEY_PATTERN = /^[A-Za-z0-9_-]+$/;
 const RESERVED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 const ISO_DATE_PATTERN =
@@ -215,6 +222,7 @@ function validate(
   input: TeamMemberInput | TeamMember,
   members: TeamMember[],
   selfId: string | null,
+  definitions: CustomFieldDefinition[],
 ): TeamMemberInput {
   if (!isTeamMemberStatus(input.status)) throw new ValidationError('Status is not valid');
   const avatarUrl = cleanAvatarUrl(input.avatarUrl);
@@ -231,7 +239,7 @@ function validate(
     status: input.status,
     ...(departureDate === undefined ? {} : { departureDate }),
     ...(avatarUrl === undefined ? {} : { avatarUrl }),
-    customFields: cleanCustomFields(input.customFields),
+    customFields: cleanDefinedValues(cleanCustomFields(input.customFields), definitions),
     ...(schedule === undefined ? {} : { schedule }),
   };
 }
@@ -241,10 +249,15 @@ function readMembers(storage: MemberStorage): TeamMember[] {
   return Array.isArray(stored) ? (stored as TeamMember[]) : [];
 }
 
+function readDefinitions(storage: MemberStorage): CustomFieldDefinition[] {
+  return parseDefinitions(storage.get<unknown>(CUSTOM_FIELDS_STORAGE_KEY));
+}
+
 // Mutations run one at a time so a rollback can never overwrite a later, successful write.
 let mutationQueue: Promise<unknown> = Promise.resolve();
 
-function enqueue<T>(operation: () => Promise<T>): Promise<T> {
+/** Also used by the custom field store, whose writes change members and must not interleave. */
+export function enqueue<T>(operation: () => Promise<T>): Promise<T> {
   const result = mutationQueue.then(operation);
   mutationQueue = result.catch(() => undefined);
   return result;
@@ -278,7 +291,7 @@ export function addMember(input: TeamMemberInput, storage: MemberStorage): Promi
     const previous = readMembers(storage);
     const now = new Date().toISOString();
     const member: TeamMember = {
-      ...validate(input, previous, null),
+      ...validate(input, previous, null, readDefinitions(storage)),
       id: crypto.randomUUID(),
       createdAt: now,
       updatedAt: now,
@@ -300,7 +313,7 @@ export function updateMember(
     if (!existing) throw new NotFoundError(id);
     const now = new Date().toISOString();
     const updated: TeamMember = {
-      ...validate({ ...existing, ...update }, previous, id),
+      ...validate({ ...existing, ...update }, previous, id, readDefinitions(storage)),
       id: existing.id,
       createdAt: existing.createdAt,
       updatedAt: now,

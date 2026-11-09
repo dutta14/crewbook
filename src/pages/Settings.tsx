@@ -1,3 +1,4 @@
+import { CustomFieldSettings } from '../components/CustomFieldSettings';
 import { DefaultVisibilitySetting } from '../components/DefaultVisibilitySetting';
 import { LeadTimeSettings } from '../components/LeadTimeSettings';
 import { SettingsSwitchRow } from '../components/SettingsSwitchRow';
@@ -7,6 +8,7 @@ import {
   setMoodTrackingEnabled,
   setRiskIndicatorsHidden,
 } from '../data/settings';
+import { useCustomFields } from '../hooks/useCustomFields';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { useToast } from '../hooks/useToast';
 import '../styles/settings.css';
@@ -16,6 +18,7 @@ const SAVE_FAILED = "Couldn't save that setting. Try again.";
 export function Settings() {
   const storage = useEncryptedStorage();
   const { showToast } = useToast();
+  const customFields = useCustomFields();
 
   const save = async (write: () => Promise<void>) => {
     try {
@@ -47,6 +50,14 @@ export function Settings() {
         <DefaultVisibilitySetting />
       </section>
       <LeadTimeSettings />
+      <CustomFieldSettings
+        definitions={customFields.definitions}
+        getAffectedCount={customFields.countAffectedMembers}
+        onAddField={customFields.addField}
+        onEditField={customFields.editField}
+        onRemoveField={customFields.removeField}
+        onReorder={customFields.reorderFields}
+      />
     </>
   );
 }

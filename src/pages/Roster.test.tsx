@@ -5,6 +5,7 @@ import { axe } from 'vitest-axe';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createMember, createNote } from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
+import type { CustomFieldDefinition } from '../types/customField';
 import type { TeamMember } from '../types/TeamMember';
 import { Roster } from './Roster';
 
@@ -17,7 +18,7 @@ function CurrentUrl() {
   return <output aria-label="Current URL">{pathname + search + hash}</output>;
 }
 
-function renderRoster(members: TeamMember[]) {
+function renderRoster(members: TeamMember[], customFieldDefinitions: CustomFieldDefinition[] = []) {
   return renderWithProviders(
     <>
       <Routes>
@@ -26,7 +27,7 @@ function renderRoster(members: TeamMember[]) {
       </Routes>
       <CurrentUrl />
     </>,
-    { route: '/roster', initialData: { members } },
+    { route: '/roster', initialData: { members, customFieldDefinitions } },
   );
 }
 
@@ -632,5 +633,83 @@ describe('Roster live updates', () => {
 
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Team members' })).toBeInTheDocument();
+  });
+});
+
+describe('Roster custom field filters', () => {
+  const definitions: CustomFieldDefinition[] = [
+    { id: 'squad', name: 'Squad', type: 'text', order: 0 },
+    { id: 'size', name: 'Shirt size', type: 'select', options: ['S', 'L'], order: 1 },
+    { id: 'since', name: 'Certified', type: 'date', order: 2 },
+  ];
+  const withValues = (): TeamMember[] => [
+    createMember({
+      id: 'a',
+      name: 'Alice Park',
+      customFields: { squad: 'Payments', size: 'S', since: '2024-03-01' },
+    }),
+    createMember({
+      id: 'b',
+      name: 'Bob Singh',
+      customFields: { squad: 'Search', size: 'L', since: '2024-08-15' },
+    }),
+    createMember({ id: 'c', name: 'Carmen Diaz' }),
+  ];
+  const names = () =>
+    within(screen.getByRole('table', { name: 'Team members' }))
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => within(row).getAllByRole('cell')[0].textContent);
+
+  it('offers no custom field filters when none are defined', () => {
+    renderRoster(withValues());
+
+    expect(
+      screen.queryByRole('group', { name: 'Filter by custom fields' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('filters a text field by case-insensitive substring and clears', async () => {
+    const user = userEvent.setup();
+    renderRoster(withValues(), definitions);
+
+    await user.type(screen.getByLabelText('Squad'), 'pay');
+    expect(names()).toEqual([expect.stringContaining('Alice Park')]);
+
+    await user.click(screen.getByRole('button', { name: 'Clear filters' }));
+    expect(names()).toHaveLength(3);
+    expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument();
+  });
+
+  it('filters a select field with Any as the default', async () => {
+    const user = userEvent.setup();
+    renderRoster(withValues(), definitions);
+    const select = screen.getByLabelText('Shirt size');
+    expect(select).toHaveValue('');
+
+    await user.selectOptions(select, 'L');
+
+    expect(names()).toEqual([expect.stringContaining('Bob Singh')]);
+  });
+
+  it('filters a date field by a from and to range', async () => {
+    const user = userEvent.setup();
+    renderRoster(withValues(), definitions);
+
+    await user.type(screen.getByLabelText('Certified from'), '2024-06-01');
+    expect(names()).toEqual([expect.stringContaining('Bob Singh')]);
+    await user.type(screen.getByLabelText('Certified to'), '2024-07-01');
+
+    expect(screen.getByText('No members found')).toBeInTheDocument();
+  });
+
+  it('combines with the search box', async () => {
+    const user = userEvent.setup();
+    renderRoster(withValues(), definitions);
+
+    await user.selectOptions(screen.getByLabelText('Shirt size'), 'S');
+    await user.type(screen.getByRole('searchbox'), 'bob');
+
+    expect(screen.getByText('No members found')).toBeInTheDocument();
   });
 });

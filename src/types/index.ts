@@ -39,6 +39,12 @@ export type {
 } from './reminder';
 export type { LeaveEntry, LeaveType } from './leave';
 export type { Priority, Todo, TodoFilters, TodoSortField, TodoStatus } from './todo';
+export type {
+  CustomFieldDefinition,
+  CustomFieldInput,
+  CustomFieldType,
+  CustomFieldValue,
+} from './customField';
 export type { Cadence, DayOfWeek, Schedule } from './Schedule';
 export type { TeamMember, TeamMemberInput, TeamMemberStatus, TeamMemberUpdate } from './TeamMember';
 export type { ChangedField, MemberChange, TimelineEntry } from './Timeline';

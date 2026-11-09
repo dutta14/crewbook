@@ -2,18 +2,21 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AddMemberModal } from '../components/AddMemberModal';
 import { CsvImportModal } from '../components/CsvImportModal';
+import { CustomFieldFilters } from '../components/CustomFieldFilters';
 import { EmptyState } from '../components/EmptyState';
 import { FilterChips } from '../components/FilterChips';
 import { SearchIcon, TeamIcon } from '../components/icons';
 import { RosterCards } from '../components/RosterCards';
 import { RosterTable } from '../components/RosterTable';
 import { isTeamMemberStatus, listMembers } from '../data/members';
+import { useCustomFields } from '../hooks/useCustomFields';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { useFeedbackQuickAdd } from '../hooks/useFeedbackQuickAdd';
 import { useGapAlerts } from '../hooks/useMeetingStats';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useToast } from '../hooks/useToast';
 import type { TeamMember, TeamMemberStatus } from '../types/TeamMember';
+import { matchesCustomFieldFilters } from '../utils/customFieldFilter';
 import { startOfStartDay } from '../utils/startDate';
 import '../styles/button.css';
 import '../styles/form.css';
@@ -71,6 +74,8 @@ export function Roster() {
   const [isImportOpen, setIsImportOpen] = useState(false);
 
   const members = useMemo(() => listMembers(storage), [storage]);
+  const { definitions } = useCustomFields();
+  const [customFilters, setCustomFilters] = useState<Record<string, string>>({});
   const gapAlerts = useGapAlerts();
   const gapAlertsById = useMemo(
     () => new Map(gapAlerts.map((alert) => [alert.engineerId, alert])),
@@ -86,8 +91,9 @@ export function Roster() {
           member.name.toLowerCase().includes(query) ||
           member.role.toLowerCase().includes(query),
       )
+      .filter((member) => matchesCustomFieldFilters(member, definitions, customFilters))
       .sort(COMPARATORS[sortBy]);
-  }, [members, search, statusFilter, sortBy]);
+  }, [members, search, statusFilter, sortBy, definitions, customFilters]);
 
   const handleAddMember = () => setIsAddOpen(true);
   const handleImportCsv = () => setIsImportOpen(true);
@@ -175,6 +181,12 @@ export function Roster() {
             </select>
           </div>
         </div>
+        <CustomFieldFilters
+          definitions={definitions}
+          filters={customFilters}
+          onChange={(key, value) => setCustomFilters((current) => ({ ...current, [key]: value }))}
+          onClear={() => setCustomFilters({})}
+        />
         <div className="sr-only" role="status" aria-live="polite">
           {countLabel(visibleMembers.length)}
         </div>

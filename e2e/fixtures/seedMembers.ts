@@ -73,6 +73,41 @@ export async function seedMembers(page: Page, members: SeedMember[], passphrase 
   ).toBeVisible();
 }
 
+export interface SeedCustomField {
+  name: string;
+  type: 'text' | 'date' | 'select' | 'url';
+  options?: string[];
+}
+
+/** Defines custom fields (ids are `seed-field-<index>`) the way the app stores them, then reloads. */
+export async function seedCustomFieldDefinitions(
+  page: Page,
+  fields: SeedCustomField[],
+  passphrase = TEST_PASSPHRASE,
+) {
+  const stored = fields.map((field, order) => ({ ...field, id: `seed-field-${order}`, order }));
+  await page.evaluate(
+    async ({ data, secret }) => {
+      const modulePath = '/src/data/StorageManager.ts';
+      const { StorageManager } = (await import(
+        /* @vite-ignore */ modulePath
+      )) as typeof import('../../src/data/StorageManager');
+      const manager = new StorageManager();
+      await manager.unlock(secret);
+      manager.setData('customFieldDefinitions', data);
+      const failure = await manager.flush();
+      if (failure) throw failure;
+      await manager.lock();
+    },
+    { data: stored, secret: passphrase },
+  );
+  await page.reload();
+  await unlock(page, passphrase);
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
+}
+
 export interface SeedNote {
   /** Index into the seeded list of members. */
   memberIndex: number;

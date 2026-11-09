@@ -54,7 +54,7 @@ const ALLOWED_COMPONENTS = new Set([
 ]);
 
 const PRIVATE_DOMAIN =
-  /feedback|flight|mood|growth|skill|proficien|reminder|private|leaveEntr|keyDate|connection|peer|network|threeSixty|relationship|documentLink|promo_packet|career_ladder/i;
+  /feedback|flight|mood|growth|skill|proficien|reminder|private|leaveEntr|keyDate|connection|peer|network|threeSixty|relationship|documentLink|customField|promo_packet|career_ladder/i;
 
 const specifiers = (code: string) =>
   [...code.matchAll(/(?:from|import\()\s*['"]([^'"]+)['"]/g)].map((match) => match[1]);
@@ -142,7 +142,7 @@ describe('share isolation', () => {
 
   it('does not reach private storage keys by name', () => {
     const keys =
-      /['"`](flightRisk|moods?|moodEntries|growth\w*|skills?|connections?|documentLinks|feedback\w*|reminders|leave|dateEvents|todos|decisions|followUps)['"`]/i;
+      /['"`](flightRisk|moods?|moodEntries|growth\w*|skills?|connections?|documentLinks|customFieldDefinitions|feedback\w*|reminders|leave|dateEvents|todos|decisions|followUps)['"`]/i;
     for (const { path, code } of shareFiles) {
       expect(code, path).not.toMatch(keys);
     }

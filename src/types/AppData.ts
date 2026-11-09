@@ -1,4 +1,5 @@
 import type { ActionItem } from './ActionItem';
+import type { CustomFieldDefinition } from './customField';
 import type { MoodEntry } from './MoodEntry';
 import type { Note } from './Note';
 import type { ShareToken } from './sharing';
@@ -14,4 +15,6 @@ export interface AppData {
   sharedNotes?: Note[];
   /** The links the manager has made; see shareStore. */
   shareTokens?: ShareToken[];
+  /** The manager's custom profile fields; each member's values live in `TeamMember.customFields`. */
+  customFieldDefinitions?: CustomFieldDefinition[];
 }

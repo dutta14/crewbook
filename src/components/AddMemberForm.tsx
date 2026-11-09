@@ -1,6 +1,8 @@
 import { useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { addMember, isTeamMemberStatus, updateMember } from '../data/members';
+import { cleanFieldValue } from '../data/customFieldRules';
 import { ValidationError } from '../data/errors';
+import { useCustomFields } from '../hooks/useCustomFields';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { useToast } from '../hooks/useToast';
 import type { TeamMember, TeamMemberInput, TeamMemberStatus } from '../types/TeamMember';
@@ -15,6 +17,7 @@ import {
 import '../styles/button.css';
 import '../styles/form.css';
 import { FormField } from './FormField';
+import { CustomFieldInputs, customFieldInputId } from './CustomFieldInputs';
 
 const STATUS_OPTIONS: Array<{ value: TeamMemberStatus; label: string }> = [
   { value: 'active', label: 'Active' },
@@ -70,6 +73,11 @@ export function AddMemberForm({ members, editMember, onClose, onSuccess }: AddMe
   const prefix = useId();
   const [values, setValues] = useState(() => initialValues(editMember));
   const [errors, setErrors] = useState<FormErrors>({});
+  const { definitions } = useCustomFields();
+  const [customValues, setCustomValues] = useState<Record<string, string>>(() => ({
+    ...editMember?.customFields,
+  }));
+  const [customErrors, setCustomErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
   const startDateRef = useRef<HTMLInputElement>(null);
@@ -114,6 +122,17 @@ export function AddMemberForm({ members, editMember, onClose, onSuccess }: AddMe
       { ...values, departureDate },
       { originalStartDate: editMember ? initialValues(editMember).startDate : undefined },
     );
+    const nextCustomErrors: Record<string, string> = {};
+    const cleanedCustom: Record<string, string> = {};
+    for (const field of definitions) {
+      try {
+        cleanedCustom[field.id] = cleanFieldValue(field, customValues[field.id] ?? '');
+      } catch (error) {
+        if (error instanceof ValidationError) nextCustomErrors[field.id] = error.message;
+      }
+    }
+    setCustomErrors(nextCustomErrors);
+
     setErrors(nextErrors);
     const firstInvalid = (['name', 'startDate', 'departureDate', 'email'] as const).find(
       (field) => nextErrors[field],
@@ -129,6 +148,18 @@ export function AddMemberForm({ members, editMember, onClose, onSuccess }: AddMe
       )[firstInvalid].current?.focus();
       return;
     }
+    const firstInvalidCustom = definitions.find((field) => nextCustomErrors[field.id]);
+    if (firstInvalidCustom) {
+      document.getElementById(customFieldInputId(prefix, firstInvalidCustom.id))?.focus();
+      return;
+    }
+
+    // Values of fields that are no longer defined are kept here; the data layer's cleanup drops them.
+    const customFields = { ...editMember?.customFields };
+    for (const field of definitions) {
+      if (cleanedCustom[field.id] === '') delete customFields[field.id];
+      else customFields[field.id] = cleanedCustom[field.id];
+    }
 
     const input: TeamMemberInput = {
       name: stripHtml(values.name),
@@ -140,7 +171,7 @@ export function AddMemberForm({ members, editMember, onClose, onSuccess }: AddMe
       status: values.status,
       // Always present so an edit that stops being "departing" clears the stored date.
       departureDate: departureDate || undefined,
-      customFields: editMember?.customFields ?? {},
+      customFields,
     };
 
     setIsSubmitting(true);
@@ -281,6 +312,15 @@ export function AddMemberForm({ members, editMember, onClose, onSuccess }: AddMe
           />
         </FormField>
       ) : null}
+      <CustomFieldInputs
+        idPrefix={prefix}
+        definitions={definitions}
+        values={customValues}
+        errors={customErrors}
+        onChange={(fieldId, value) =>
+          setCustomValues((current) => ({ ...current, [fieldId]: value }))
+        }
+      />
       <div className="form-actions">
         <button type="button" className="btn btn-secondary" onClick={onClose}>
           Cancel

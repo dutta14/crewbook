@@ -1,7 +1,12 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures/auth';
-import { seedId, seedMembers, type SeedMember } from './fixtures/seedMembers';
+import {
+  seedCustomFieldDefinitions,
+  seedId,
+  seedMembers,
+  type SeedMember,
+} from './fixtures/seedMembers';
 
 const TEAM: SeedMember[] = [
   {
@@ -12,7 +17,7 @@ const TEAM: SeedMember[] = [
     startDate: '2023-03-13',
     email: 'alex.chen@example.com',
     managerIndex: 1,
-    customFields: { Team: 'Payments' },
+    customFields: { 'seed-field-0': 'Payments' },
   },
   {
     name: 'Priya Nair',
@@ -34,6 +39,7 @@ const header = (page: Page) => page.locator('header.profile-header');
 test.describe('member profile', () => {
   test.beforeEach(async ({ unlockedApp: page }) => {
     await seedMembers(page, TEAM);
+    await seedCustomFieldDefinitions(page, [{ name: 'Team', type: 'text' }]);
   });
 
   test('manager navigates from roster to member profile and back', async ({ page }) => {

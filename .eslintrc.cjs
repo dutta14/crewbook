@@ -103,9 +103,12 @@ module.exports = {
                   '**/FlightRiskIndicator',
                   '**/PrivateNotes',
                   '**/Mood*',
+                  '**/customField*',
+                  '**/CustomField*',
+                  '**/useCustomFields',
                 ],
                 message:
-                  'Share code must not touch private notes, flight risk, moods, feedback, growth, skills, peer connections, document links, reminders, leave or key dates.',
+                  'Share code must not touch private notes, flight risk, moods, feedback, growth, skills, peer connections, document links, custom fields, reminders, leave or key dates.',
               },
             ],
           },
