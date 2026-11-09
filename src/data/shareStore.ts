@@ -13,7 +13,7 @@ import { ShareUnsupportedError, createShareUrl } from '../utils/shareUrl';
 import { listAgendaForMember } from './agenda';
 import { listByMember } from './actionItems';
 import { NotFoundError, ValidationError } from './errors';
-import { getMember } from './members';
+import { getMember, listMembers } from './members';
 import { listNotes } from './notes';
 
 /*
@@ -213,4 +213,26 @@ export async function deleteShareTokensForMember(
   const kept = tokens.filter((token) => token.engineerId !== engineerId);
   if (kept.length === tokens.length) return;
   await writeTokens(kept, storage);
+}
+
+const MENTION = /(^|\s)@\w/;
+
+/**
+ * True when a shared agenda topic seems to name someone else on the team: an @mention, or another
+ * member's full name. The manager is warned before sharing; the text itself is never changed.
+ */
+export function agendaMentionsOthers(
+  payload: Pick<SharedViewPayload, 'agendaItems'>,
+  engineerId: string,
+  storage: Pick<ShareStorage, 'get' | 'set' | 'flush'>,
+): boolean {
+  if (payload.agendaItems.length === 0) return false;
+  const others = listMembers(storage)
+    .filter((member) => member.id !== engineerId)
+    .map((member) => member.name.trim().toLowerCase())
+    .filter((name) => name.length > 0);
+  return payload.agendaItems.some(({ text }) => {
+    const lower = text.toLowerCase();
+    return MENTION.test(text) || others.some((name) => lower.includes(name));
+  });
 }

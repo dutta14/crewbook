@@ -12,6 +12,8 @@ import { SharedOneOnOne } from './SharedOneOnOne';
 
 const FUTURE = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 const PAST = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+// A one-hour link made now: links only come in preset lifetimes.
+const ONE_HOUR_LINK_CREATED = new Date(Date.parse(FUTURE) - 60 * 60 * 1000).toISOString();
 
 const newKey = () =>
   crypto.subtle.generateKey({ name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
@@ -152,6 +154,31 @@ describe('SharedOneOnOne', () => {
     expect(within(list).getByText(/Added by you/)).toBeInTheDocument();
     expect(within(list).getByText(/Added by Morgan Lee/)).toBeInTheDocument();
     expect(within(list).getAllByText(/2026/)).toHaveLength(2);
+  });
+
+  it('labels the agenda as a snapshot taken when the link was made, with nothing to edit', async () => {
+    await renderShared({
+      createdAt: ONE_HOUR_LINK_CREATED,
+      expiresAt: FUTURE,
+      agendaItems: [
+        {
+          id: 'g1',
+          text: 'Promo timeline',
+          addedBy: 'engineer',
+          createdAt: '2026-01-05T09:00:00Z',
+        },
+      ],
+    });
+
+    const label = await screen.findByText(
+      (_, element) =>
+        element?.tagName === 'P' && /^Agenda items as of/.test(element.textContent ?? ''),
+    );
+    expect(label).toHaveTextContent(/snapshot and cannot be edited/);
+    expect(label.querySelector('time')).toHaveAttribute('datetime', ONE_HOUR_LINK_CREATED);
+    const list = screen.getByRole('list', { name: 'Agenda items' });
+    expect(within(list).queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(within(list).queryByRole('button')).not.toBeInTheDocument();
   });
 
   it('has no navigation, no controls to add anything and no other people', async () => {

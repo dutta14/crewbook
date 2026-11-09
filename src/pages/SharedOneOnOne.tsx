@@ -148,6 +148,11 @@ function SharedContent({ data }: { data: SharedViewPayload }) {
           >
             Agenda
           </h2>
+          <p className="shared-view__time">
+            Agenda items as of{' '}
+            <time dateTime={data.createdAt}>{formatNoteDate(data.createdAt)}</time>. This page is a
+            snapshot and cannot be edited.
+          </p>
           {data.agendaItems.length === 0 ? (
             <p className="shared-view__empty">No agenda items yet.</p>
           ) : (

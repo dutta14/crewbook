@@ -1,6 +1,7 @@
 import type { EncryptedStorageContextValue } from '../components/EncryptedStorageProvider';
 import type { LiveSession } from '../types/LiveSession';
 import type { Note } from '../types/Note';
+import { archiveAgendaForMember } from './agenda';
 import { NotFoundError, ValidationError } from './errors';
 
 /** Notes and drafts live in the private envelope, which the caller must have loaded already. */
@@ -95,7 +96,10 @@ export function isNoteEditable(note: Pick<Note, 'createdAt'>, now: number = Date
   return !Number.isNaN(created) && now - created < EDIT_WINDOW_MS;
 }
 
-/** Saves a new note and discards that member's draft in the same write. */
+/**
+ * Saves a new note and discards that member's draft in the same write. A new note is a new 1:1,
+ * so the topics on that member's agenda are archived once it is saved.
+ */
 export function addNote(memberId: string, content: string, storage: NoteStorage): Promise<Note> {
   return enqueue(async () => {
     if (typeof memberId !== 'string' || memberId.length === 0) {
@@ -117,6 +121,8 @@ export function addNote(memberId: string, content: string, storage: NoteStorage)
       { notes, drafts },
       { notes: [...notes, note], drafts: withoutDraft(drafts, memberId) },
     );
+    // The note is saved, so a failure here must not fail it; the topics stay on the agenda.
+    await archiveAgendaForMember(memberId, storage, new Date(now)).catch(() => undefined);
     return { ...note };
   });
 }

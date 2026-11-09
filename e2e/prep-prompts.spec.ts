@@ -154,7 +154,8 @@ test.describe('1:1 prep prompts', () => {
 
     await page.getByRole('button', { name: 'Dismiss prep prompts' }).click();
     await expect(prepCard(page)).toHaveCount(0);
-    await expect(page.getByRole('tab', { name: 'Overview' })).toBeFocused();
+    // The agenda card sits right after the prep card, so its input is the next control.
+    await expect(page.getByRole('textbox', { name: 'Add an agenda item' })).toBeFocused();
 
     await page.reload();
     await unlock(page, TEST_PASSPHRASE);

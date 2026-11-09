@@ -5,6 +5,7 @@ import { StorageWriteError } from '../utils/encryptedStorage';
 import { NotFoundError, ValidationError } from './errors';
 import {
   ShareLockedError,
+  agendaMentionsOthers,
   cleanManagerName,
   createShareLink,
   deleteShareTokensForMember,
@@ -96,6 +97,40 @@ describe('getSharedData', () => {
     const { storage } = setup(null);
     expect(() => getSharedData('nobody', 'Morgan', storage)).toThrow(NotFoundError);
     expect(() => getSharedData('alex', '   ', storage)).toThrow(ValidationError);
+  });
+});
+
+describe('agendaMentionsOthers', () => {
+  const payload = (...texts: string[]) => ({
+    agendaItems: texts.map((text, index) => ({
+      id: `g${index}`,
+      text,
+      addedBy: 'manager' as const,
+      createdAt: stamp,
+    })),
+  });
+  const members = {
+    get: <T>() => [ALEX, PRIYA] as T,
+    set: vi.fn(),
+    flush: vi.fn(async () => null),
+  };
+
+  it('is false when there are no agenda items', () => {
+    expect(agendaMentionsOthers(payload(), 'alex', members)).toBe(false);
+  });
+
+  it('finds another member by full name, ignoring case', () => {
+    expect(agendaMentionsOthers(payload('Compare with priya nair'), 'alex', members)).toBe(true);
+  });
+
+  it('does not count the engineer’s own name', () => {
+    expect(agendaMentionsOthers(payload('Alex Chen promotion'), 'alex', members)).toBe(false);
+  });
+
+  it('finds an @mention at the start or after a space but not inside an email address', () => {
+    expect(agendaMentionsOthers(payload('@sam to join'), 'alex', members)).toBe(true);
+    expect(agendaMentionsOthers(payload('Ask @sam'), 'alex', members)).toBe(true);
+    expect(agendaMentionsOthers(payload('mail a@b.com'), 'alex', members)).toBe(false);
   });
 });
 

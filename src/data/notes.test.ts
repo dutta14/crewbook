@@ -88,6 +88,26 @@ describe('addNote', () => {
     await expect(addNote(ALEX, 'x'.repeat(NOTE_MAX_LENGTH), storage)).resolves.toBeDefined();
   });
 
+  it('archives that person’s agenda because a new 1:1 starts a new agenda', async () => {
+    const agenda = (id: string, memberId: string) => ({
+      id,
+      memberId,
+      text: 'Topic',
+      addedBy: 'manager',
+      createdAt: '2026-01-05T09:00:00Z',
+    });
+    const { storage, data } = createStorage({
+      agendaItems: [agenda('a1', ALEX), agenda('p1', PRIYA)],
+    });
+
+    await addNote(ALEX, 'done', storage);
+
+    expect(data.get('agendaItems')).toEqual([
+      expect.objectContaining({ id: 'a1', archived: true }),
+      agenda('p1', PRIYA),
+    ]);
+  });
+
   it('discards the member draft in the same write', async () => {
     const { storage } = createStorage({ noteDrafts: { [ALEX]: 'half', [PRIYA]: 'other' } });
 

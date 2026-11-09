@@ -24,7 +24,7 @@ function Tokens() {
   return <output data-testid="tokens">{tokens.map((t) => `${t.ttl}`).join(',')}</output>;
 }
 
-async function setup() {
+async function setup(agenda: unknown[] = [], extraMembers: ReturnType<typeof createMember>[] = []) {
   const key = await newKey();
   const user = userEvent.setup();
   const view = renderWithProviders(
@@ -33,8 +33,9 @@ async function setup() {
       <Tokens />
     </>,
     {
-      initialData: { members: [ALEX], settings: { managerName: 'Morgan Lee' } },
+      initialData: { members: [ALEX, ...extraMembers], settings: { managerName: 'Morgan Lee' } },
       initialPrivateData: {
+        agendaItems: agenda,
         notes: [
           createNote({ id: 'n1', memberId: 'alex', content: 'Shared', visibility: 'shared' }),
         ],
@@ -62,6 +63,43 @@ beforeEach(() => {
 });
 
 describe('ShareLinkPopover', () => {
+  const topic = (text: string, overrides: Record<string, unknown> = {}) => ({
+    id: text,
+    memberId: 'alex',
+    text,
+    addedBy: 'manager',
+    createdAt: '2026-01-05T09:00:00Z',
+    includeInShare: true,
+    ...overrides,
+  });
+
+  it('warns before sharing when an agenda item names another team member', async () => {
+    const priya = createMember({ id: 'priya', name: 'Priya Nair' });
+    const { dialog } = await setup([topic('Ask Priya Nair about the launch')], [priya]);
+
+    expect(
+      await within(dialog).findByText(
+        'Some agenda items may reference other team members. Review before sharing.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('warns about an @mention', async () => {
+    const { dialog } = await setup([topic('Loop in @sam')]);
+
+    expect(await within(dialog).findByText(/may reference other team members/)).toBeInTheDocument();
+  });
+
+  it('does not warn for plain topics, or for a mention in an item that is not shared', async () => {
+    const { dialog } = await setup([
+      topic('Career growth'),
+      topic('Loop in @sam', { includeInShare: false }),
+    ]);
+
+    await within(dialog).findByRole('button', { name: 'I understand' });
+    expect(within(dialog).queryByText(/may reference other team members/)).not.toBeInTheDocument();
+  });
+
   it('offers the four lifetimes and starts on 24 hours', async () => {
     const { dialog } = await setup();
 

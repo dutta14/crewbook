@@ -8,6 +8,7 @@ import type { ActionItem } from '../types/ActionItem';
 import type { Note } from '../types/Note';
 import { formatNoteDate } from '../utils/noteFormat';
 import '../styles/pages/live-mode.css';
+import { AgendaSection } from './AgendaSection';
 import { PrepPrompts } from './PrepPrompts';
 import { ReminderStack } from './ReminderStack';
 
@@ -87,6 +88,7 @@ export function ContextSidebar({ id, memberId, isOpen, isInert, footer }: Contex
       inert={isInert}
     >
       <PrepPrompts memberId={memberId} showReminders={false} />
+      <AgendaSection memberId={memberId} mode="live" />
       <section className="context-sidebar__section" aria-labelledby={`${ids}-reminders`}>
         <h3 id={`${ids}-reminders`} className="context-sidebar__title">
           Reminders

@@ -7,6 +7,7 @@ import { getManagerName, setManagerName } from '../data/settings';
 import { ValidationError } from '../data/errors';
 import {
   ShareLockedError,
+  agendaMentionsOthers,
   cleanManagerName,
   createShareLink,
   recordShareToken,
@@ -59,7 +60,7 @@ export function ShareLinkPopover({ member, onClose }: ShareLinkPopoverProps) {
   const [isBusy, setIsBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showQr, setShowQr] = useState(false);
-
+  const mentionsOthers = link ? agendaMentionsOthers(link.payload, member.id, storage) : false;
   const create = useCallback(
     async (rawName: string, lifetime: ShareTokenTTL, keepAcknowledged = false) => {
       const run = (runRef.current += 1);
@@ -243,6 +244,11 @@ export function ShareLinkPopover({ member, onClose }: ShareLinkPopoverProps) {
                 This link contains your 1:1 data. Share it only with your direct report. Anyone with
                 this link can view its contents until it expires.
               </p>
+              {mentionsOthers ? (
+                <p className="share-dialog__warning-text">
+                  Some agenda items may reference other team members. Review before sharing.
+                </p>
+              ) : null}
               <button
                 type="button"
                 className="btn btn-secondary"

@@ -16,6 +16,7 @@ import { MoodTrendSection } from '../components/MoodTrendSection';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { ProfileOverview } from '../components/ProfileOverview';
 import { NotesSection } from '../components/NotesSection';
+import { AgendaSection } from '../components/AgendaSection';
 import { PrepPrompts } from '../components/PrepPrompts';
 import { PrivateNotes } from '../components/PrivateNotes';
 import { ReminderForm } from '../components/ReminderForm';
@@ -32,6 +33,7 @@ import { deleteGrowthForMember } from '../data/growthStore';
 import { deleteLeaveForMember } from '../data/leave';
 import { deleteMember, getMember, listMembers, updateMember } from '../data/members';
 import { deleteMoodEntriesForMember } from '../data/moodEntries';
+import { deleteAgendaForMember } from '../data/agenda';
 import { deleteNotesForMember } from '../data/notes';
 import { deletePrivateNotesForMember } from '../data/privateStore';
 import { deleteRemindersForMember } from '../data/reminders';
@@ -136,6 +138,7 @@ export function Profile() {
     // Left in the private envelope on failure; the next successful write does not resurrect the
     // member. Each purge runs on its own so one failure does not strand the other's data.
     await deleteNotesForMember(memberId, storage).catch(() => undefined);
+    await deleteAgendaForMember(memberId, storage).catch(() => undefined);
     await deleteActionItemsForMember(memberId, storage).catch(() => undefined);
     await deleteMoodEntriesForMember(memberId, storage).catch(() => undefined);
     await deleteDecisionsForMember(memberId, storage).catch(() => undefined);
@@ -202,6 +205,14 @@ export function Profile() {
       />
       {isLive ? null : (
         <PrepPrompts key={`prep-${member.id}`} memberId={member.id} className="prep-card--page" />
+      )}
+      {isLive ? null : (
+        <AgendaSection
+          key={`agenda-${member.id}`}
+          memberId={member.id}
+          memberName={member.name}
+          mode="prep"
+        />
       )}
       {isLive ? null : <ReminderList key={`reminders-${member.id}`} person={member} />}
       {rateNoteId && isMoodTrackingEnabled(storage) ? (
