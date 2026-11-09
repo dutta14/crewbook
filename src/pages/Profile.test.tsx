@@ -15,6 +15,7 @@ import {
   createMoodEntry,
   createNote,
   createReminder,
+  createSkill,
   createTodo,
 } from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
@@ -276,11 +277,13 @@ describe('Profile', () => {
       'Decisions & Follow-ups',
       'Goals',
       'Growth',
+      'Skills',
       'Feedback',
       'Timeline',
     ]);
     expect(tabs.map((tab) => tab.getAttribute('aria-selected'))).toEqual([
       'true',
+      'false',
       'false',
       'false',
       'false',
@@ -350,7 +353,7 @@ describe('Profile', () => {
     expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('Arrow keys move between Goals, Growth, Feedback and Timeline', async () => {
+  it('Arrow keys move between Goals, Growth, Skills, Feedback and Timeline', async () => {
     const user = userEvent.setup();
     renderProfile(ALEX);
     screen.getByRole('tab', { name: 'Goals' }).focus();
@@ -360,12 +363,16 @@ describe('Profile', () => {
     expect(await screen.findByRole('heading', { name: 'Growth' })).toBeInTheDocument();
 
     await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: 'Skills' })).toHaveAttribute('aria-selected', 'true');
+    expect(await screen.findByRole('heading', { name: 'Strengths' })).toBeInTheDocument();
+
+    await user.keyboard('{ArrowRight}');
     expect(screen.getByRole('tab', { name: 'Feedback' })).toHaveAttribute('aria-selected', 'true');
     expect(await screen.findByRole('heading', { name: 'Feedback' })).toBeInTheDocument();
 
     await user.keyboard('{ArrowRight}');
     expect(screen.getByRole('tab', { name: 'Timeline' })).toHaveAttribute('aria-selected', 'true');
-    await user.keyboard('{ArrowLeft}{ArrowLeft}{ArrowLeft}');
+    await user.keyboard('{ArrowLeft}{ArrowLeft}{ArrowLeft}{ArrowLeft}');
     expect(screen.getByRole('tab', { name: 'Goals' })).toHaveAttribute('aria-selected', 'true');
   });
 
@@ -535,6 +542,75 @@ describe('Profile', () => {
       ),
     );
     expect(screen.getByRole('status', { name: 'Remaining growth' })).not.toHaveTextContent(ALEX);
+  });
+
+  it('shows only the member’s own skills on the Skills tab', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Routes>
+        <Route path="/person/:id" element={<Profile />} />
+      </Routes>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          skills: [
+            createSkill({ memberId: ALEX, name: 'Kotlin' }),
+            createSkill({ memberId: PRIYA, name: 'Haskell' }),
+          ],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('tab', { name: 'Skills' }));
+
+    const panel = await screen.findByRole('tabpanel', { name: 'Skills' });
+    expect(await within(panel).findByText('Kotlin')).toBeInTheDocument();
+    expect(within(panel).queryByText('Haskell')).toBeNull();
+  });
+
+  it('deleting a member also purges their skills but keeps everyone else’s', async () => {
+    const user = userEvent.setup();
+    function Remaining() {
+      const { getPrivate } = useEncryptedStorage();
+      const skills = getPrivate<Array<{ memberId: string; name: string }>>('skills') ?? [];
+      return (
+        <output aria-label="Remaining skills">
+          {skills.map((skill) => `${skill.memberId}:${skill.name}`).join(',')}
+        </output>
+      );
+    }
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/roster" element={<h1>Roster page</h1>} />
+          <Route path="/person/:id" element={<Profile />} />
+        </Routes>
+        <Remaining />
+      </>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          skills: [
+            createSkill({ memberId: ALEX, name: 'Kotlin' }),
+            createSkill({ memberId: PRIYA, name: 'Haskell' }),
+          ],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Delete Alex Chen' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Remaining skills' })).toHaveTextContent(
+        `${PRIYA}:Haskell`,
+      ),
+    );
+    expect(screen.getByRole('status', { name: 'Remaining skills' })).not.toHaveTextContent(ALEX);
   });
 
   it('deleting a member also purges their feedback but keeps everyone else’s', async () => {

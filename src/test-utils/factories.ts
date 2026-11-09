@@ -8,6 +8,7 @@ import type {
   MoodEntry,
   Note,
   Reminder,
+  Skill,
   TeamMember,
   Todo,
 } from '../types';
@@ -134,6 +135,22 @@ export function createGrowthEntry(overrides: Partial<GrowthEntry> = {}): GrowthE
     from: 'L4',
     to: 'L5',
     notes: 'Led the payments migration.',
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    ...overrides,
+  };
+}
+
+export function createSkill(overrides: Partial<Skill> = {}): Skill {
+  const timestamp = now();
+  return {
+    id: crypto.randomUUID(),
+    memberId: crypto.randomUUID(),
+    name: 'TypeScript',
+    level: 'proficient',
+    category: 'strength',
+    notes: '',
+    visibility: 'private',
     createdAt: timestamp,
     updatedAt: timestamp,
     ...overrides,

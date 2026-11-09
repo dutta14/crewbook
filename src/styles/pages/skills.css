@@ -1,0 +1,377 @@
+.skills__loading {
+  margin: 0;
+  padding: var(--space-4) 0;
+  color: var(--fg2);
+  font-size: var(--text-body);
+}
+
+.skills-page__title {
+  margin: 0 0 var(--space-4);
+}
+
+.skills-page__title:focus {
+  outline: none;
+}
+
+/* Proficiency badges: the status pairs already carry both light and dark variants. */
+.proficiency-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.proficiency-badge--learning {
+  background: var(--status-new-bg);
+  color: var(--status-new-fg);
+}
+
+.proficiency-badge--competent {
+  background: var(--status-active-bg);
+  color: var(--status-active-fg);
+}
+
+.proficiency-badge--proficient {
+  background: var(--status-on-leave-bg);
+  color: var(--status-on-leave-fg);
+}
+
+.proficiency-badge--expert {
+  background: var(--status-departing-bg);
+  color: var(--status-departing-fg);
+}
+
+/* Profile tab */
+.skills-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.skills-section__title {
+  margin: 0 0 var(--space-2);
+  color: var(--fg2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.skills-card {
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.skills-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skill-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+  animation: skill-row-in var(--transition-normal) var(--ease-out) both;
+}
+
+.skill-row--editing {
+  display: block;
+}
+
+.skill-row__main {
+  min-width: 0;
+}
+
+.skill-row__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.skill-row__name {
+  color: var(--fg);
+  font-size: var(--text-body);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.skill-row__notes {
+  margin: var(--space-1) 0 0;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.skill-row__actions {
+  display: flex;
+  flex: none;
+  /* The 44px buttons would otherwise make every row taller than its text needs. */
+  margin: calc(-1 * var(--space-3)) 0;
+}
+
+/* Where there is a real pointer the icons wait for hover or focus; touch always shows them. */
+@media (hover: hover) and (pointer: fine) {
+  .skill-row__actions {
+    opacity: 0;
+    transition: opacity var(--transition-fast) var(--ease-out);
+  }
+
+  .skill-row:hover .skill-row__actions,
+  .skill-row:focus-within .skill-row__actions {
+    opacity: 1;
+  }
+}
+
+.skill-row__confirm {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  animation: skill-fade-in var(--transition-fast) var(--ease-out) both;
+}
+
+.skill-row__confirm-text {
+  margin-right: var(--space-2);
+  color: var(--fg);
+  font-size: var(--text-caption);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.skill-row__confirm-btn {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.skills-section__add {
+  margin-top: var(--space-2);
+  min-height: 44px;
+}
+
+.skill-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  animation: skill-form-in var(--transition-normal) var(--ease-out) both;
+}
+
+.skill-form__notes {
+  resize: vertical;
+}
+
+.skill-form__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* Matrix */
+.skills-matrix__notice {
+  margin: 0 0 var(--space-3);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+.skills-matrix__filter {
+  margin-bottom: var(--space-2);
+}
+
+.skills-matrix__count {
+  min-height: 1.25em;
+  margin: 0 0 var(--space-3);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-feature-settings: 'tnum';
+}
+
+.skills-matrix__none {
+  margin: 0;
+  padding: var(--space-6) 0;
+  color: var(--fg2);
+  font-size: var(--text-body);
+}
+
+.skills-matrix__scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.skills-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.skills-table th,
+.skills-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.skills-table tbody tr:last-child th,
+.skills-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.skills-table thead th {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+
+.skills-table__skill {
+  min-width: 112px;
+  overflow-wrap: anywhere;
+}
+
+.skills-table__corner,
+.skills-table__person {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--card-bg);
+}
+
+.skills-table__person {
+  min-width: 180px;
+  color: var(--fg);
+  font-size: var(--text-body);
+  font-weight: 500;
+}
+
+.skills-table__person-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.skills-table__cell {
+  color: var(--fg2);
+  font-feature-settings: 'tnum';
+}
+
+.skills-table tbody tr {
+  transition: background-color var(--transition-fast) var(--ease-out);
+}
+
+.skills-table tbody tr:hover {
+  background: var(--accent-subtle);
+}
+
+/* The hover tint is translucent, so the sticky cell keeps a solid base underneath it. */
+.skills-table tbody tr:hover .skills-table__person {
+  background: linear-gradient(var(--accent-subtle), var(--accent-subtle)), var(--card-bg);
+}
+
+/* Narrow screens: one card per person */
+.skills-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skills-cards__card {
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.skills-cards__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-section);
+  font-weight: 600;
+}
+
+.skills-cards__none {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-body);
+}
+
+.skills-cards__skills {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skills-cards__skill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--text-body);
+  overflow-wrap: anywhere;
+}
+
+@keyframes skill-row-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes skill-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes skill-form-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skill-row,
+  .skill-row__confirm,
+  .skill-form,
+  .skills-table tbody tr {
+    animation: none;
+    transition: none;
+  }
+
+  .skill-row__actions {
+    opacity: 1;
+    transition: none;
+  }
+}

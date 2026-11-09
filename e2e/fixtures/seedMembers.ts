@@ -319,6 +319,51 @@ export async function seedGrowth(
   ).toBeVisible();
 }
 
+export interface SeedSkill {
+  memberIndex: number;
+  name: string;
+  level: 'learning' | 'competent' | 'proficient' | 'expert';
+  category?: 'strength' | 'growth';
+  notes?: string;
+}
+
+/** Writes skills into the private encrypted envelope. Seed members first. */
+export async function seedSkills(page: Page, skills: SeedSkill[], passphrase = TEST_PASSPHRASE) {
+  const base = Date.now() - 60_000;
+  const stored = skills.map(({ memberIndex, name, level, category, notes }, index) => ({
+    id: `00000000-0000-4000-e000-${String(index).padStart(12, '0')}`,
+    memberId: seedId(memberIndex),
+    name,
+    level,
+    category: category ?? 'strength',
+    notes: notes ?? '',
+    visibility: 'private',
+    createdAt: new Date(base + index * 1000).toISOString(),
+    updatedAt: new Date(base + index * 1000).toISOString(),
+  }));
+  await page.evaluate(
+    async ({ data, secret }) => {
+      const modulePath = '/src/data/StorageManager.ts';
+      const { StorageManager } = (await import(
+        /* @vite-ignore */ modulePath
+      )) as typeof import('../../src/data/StorageManager');
+      const manager = new StorageManager();
+      await manager.unlock(secret);
+      await manager.loadPrivate();
+      manager.setPrivateData('skills', data);
+      const failure = await manager.flush();
+      if (failure) throw failure;
+      await manager.lock();
+    },
+    { data: stored, secret: passphrase },
+  );
+  await page.reload();
+  await unlock(page, passphrase);
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
+}
+
 export interface SeedFeedback {
   memberIndex: number;
   /** ISO date (YYYY-MM-DD) of the observation. */

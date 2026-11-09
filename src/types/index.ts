@@ -20,6 +20,7 @@ export type {
 export type { FlightRiskLevel, PrivateNote } from './flightRisk';
 export type { GrowthChangeType, GrowthEntry, GrowthEntryInput } from './growth';
 export type { Note, NoteVisibility } from './Note';
+export type { ProficiencyLevel, Skill, SkillCategory, SkillInput } from './skill';
 export type {
   Reminder,
   ReminderContext,

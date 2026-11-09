@@ -47,6 +47,7 @@ describe('App', () => {
     expect(links).toEqual([
       'Dashboard',
       'Team',
+      'Skills Matrix',
       'Action Items',
       'Decisions & Follow-ups',
       'Feedback',
@@ -112,6 +113,20 @@ describe('App', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Team' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Team' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('navigates to the skills matrix when Skills Matrix is clicked', async () => {
+    const { user } = await renderUnlocked();
+
+    await user.click(screen.getByRole('link', { name: 'Skills Matrix' }));
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Skills Matrix' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Skills Matrix' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
   });
 
   it('redirects unknown routes to the dashboard', async () => {

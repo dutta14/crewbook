@@ -23,6 +23,7 @@ import { ReminderForm } from '../components/ReminderForm';
 import { ReminderList } from '../components/ReminderList';
 import { ScheduleCard } from '../components/ScheduleCard';
 import { ShareButton } from '../components/ShareButton';
+import { SkillsPanel } from '../components/SkillsPanel';
 import { Tabs } from '../components/Tabs';
 import { Timeline } from '../components/Timeline';
 import { deleteActionItemsForMember } from '../data/actionItems';
@@ -38,6 +39,7 @@ import { deleteNotesForMember } from '../data/notes';
 import { deletePrivateNotesForMember } from '../data/privateStore';
 import { deleteRemindersForMember } from '../data/reminders';
 import { deleteShareTokensForMember } from '../data/shareStore';
+import { deleteSkillsForMember } from '../data/skillsStore';
 import { deleteTodosForMember } from '../data/todos';
 import { isMoodTrackingEnabled } from '../data/settings';
 import { buildTimeline } from '../data/timeline';
@@ -125,7 +127,7 @@ export function Profile() {
 
   const goToRoster = () => navigate('/roster');
 
-  // A removed person's 1:1 history, action items, decisions, tasks, reminders, key dates, leave, growth history, feedback, private notes and mood ratings must not linger in the
+  // A removed person's 1:1 history, action items, decisions, tasks, reminders, key dates, leave, growth history, skills, feedback, private notes and mood ratings must not linger in the
   // encrypted store. Best effort: the person is already gone, so a failure here must not turn a
   // successful delete into an error.
   const purgePrivateData = async (memberId: string) => {
@@ -147,6 +149,7 @@ export function Profile() {
     await deleteDateEventsForMember(memberId, storage).catch(() => undefined);
     await deleteLeaveForMember(memberId, storage).catch(() => undefined);
     await deleteGrowthForMember(memberId, storage).catch(() => undefined);
+    await deleteSkillsForMember(memberId, storage).catch(() => undefined);
     await deleteFeedbackForMember(memberId, storage).catch(() => undefined);
     await deletePrivateNotesForMember(memberId, storage).catch(() => undefined);
   };
@@ -269,6 +272,13 @@ export function Profile() {
             // Mounted only while open, so career history is not in the page until it is asked for.
             content:
               activeTab === 'growth' ? <GrowthPanel key={member.id} member={member} /> : null,
+          },
+          {
+            id: 'skills',
+            label: 'Skills',
+            // Mounted only while open, like growth: assessments stay out of the page until asked for.
+            content:
+              activeTab === 'skills' ? <SkillsPanel key={member.id} memberId={member.id} /> : null,
           },
           {
             id: 'feedback',

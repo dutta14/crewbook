@@ -8,6 +8,7 @@ import {
   CloseIcon,
   DashboardIcon,
   GavelIcon,
+  GridIcon,
   MessageSquareIcon,
   MoonIcon,
   SettingsIcon,
@@ -25,6 +26,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: <DashboardIcon />, end: true },
   { to: '/roster', label: 'Team', icon: <TeamIcon /> },
+  { to: '/skills-matrix', label: 'Skills Matrix', icon: <GridIcon /> },
   { to: '/actions', label: 'Action Items', icon: <ChecklistIcon /> },
   { to: '/decisions', label: 'Decisions & Follow-ups', icon: <GavelIcon /> },
   { to: '/feedback', label: 'Feedback', icon: <MessageSquareIcon /> },

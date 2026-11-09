@@ -12,6 +12,7 @@ import { GlobalActions } from './pages/GlobalActions';
 import { Profile } from './pages/Profile';
 import { Roster } from './pages/Roster';
 import { Settings } from './pages/Settings';
+import { SkillsMatrixPage } from './pages/SkillsMatrixPage';
 import { TeamTenure } from './pages/TeamTenure';
 import { Todos } from './pages/Todos';
 
@@ -40,6 +41,7 @@ export default function App() {
                 <Route index element={<Dashboard />} />
                 <Route path="roster" element={<Roster />} />
                 <Route path="team/tenure" element={<TeamTenure />} />
+                <Route path="skills-matrix" element={<SkillsMatrixPage />} />
                 <Route path="person/:id" element={<Profile />} />
                 <Route path="actions" element={<GlobalActions />} />
                 <Route path="decisions" element={<DecisionsGlobalView />} />
