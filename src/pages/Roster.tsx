@@ -9,6 +9,7 @@ import { RosterCards } from '../components/RosterCards';
 import { RosterTable } from '../components/RosterTable';
 import { isTeamMemberStatus, listMembers } from '../data/members';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
+import { useFeedbackQuickAdd } from '../hooks/useFeedbackQuickAdd';
 import { useGapAlerts } from '../hooks/useMeetingStats';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useToast } from '../hooks/useToast';
@@ -60,6 +61,7 @@ function countLabel(count: number): string {
 export function Roster() {
   const storage = useEncryptedStorage();
   const { showToast } = useToast();
+  const { openQuickAdd, quickAddModal } = useFeedbackQuickAdd();
   const isMobile = useMediaQuery(MOBILE_QUERY);
   // Search, filter and sort live in React state only, never in the URL or storage.
   const [search, setSearch] = useState('');
@@ -100,6 +102,7 @@ export function Roster() {
         members={members}
       />
       <CsvImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
+      {quickAddModal}
     </>
   );
 
@@ -178,9 +181,17 @@ export function Roster() {
         {visibleMembers.length === 0 ? (
           <p className="roster-empty">No members found</p>
         ) : isMobile ? (
-          <RosterCards members={visibleMembers} gapAlerts={gapAlertsById} />
+          <RosterCards
+            members={visibleMembers}
+            gapAlerts={gapAlertsById}
+            onLogFeedback={(memberId) => void openQuickAdd(memberId)}
+          />
         ) : (
-          <RosterTable members={visibleMembers} gapAlerts={gapAlertsById} />
+          <RosterTable
+            members={visibleMembers}
+            gapAlerts={gapAlertsById}
+            onLogFeedback={(memberId) => void openQuickAdd(memberId)}
+          />
         )}
       </>
     );

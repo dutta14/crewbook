@@ -5,8 +5,11 @@ import { BriefingTodos } from '../components/BriefingTodos';
 import { BriefingWhosOut } from '../components/BriefingWhosOut';
 import { DashboardReminders } from '../components/DashboardReminders';
 import { GapAlertCard } from '../components/GapAlert';
+import { MessageSquareIcon } from '../components/icons';
 import { TodaysOneOnes } from '../components/TodaysOneOnes';
 import { useBriefingData } from '../hooks/useBriefingData';
+import { useFeedbackQuickAdd } from '../hooks/useFeedbackQuickAdd';
+import '../styles/button.css';
 import '../styles/dashboard.css';
 
 interface DashboardProps {
@@ -22,16 +25,28 @@ const LOAD_FAILED = "Couldn't open your briefing. Lock and unlock Crewbook to tr
  */
 export function Dashboard({ now }: DashboardProps) {
   const briefing = useBriefingData(now);
+  const { openQuickAdd, quickAddModal } = useFeedbackQuickAdd();
   const { sections, members, actions } = briefing;
 
   return (
     <div role="region" aria-label="Daily briefing" className="dashboard">
       <div className="dashboard__greeting">
-        <h1 className="dashboard__title">{briefing.greeting}</h1>
-        <p className="dashboard__date">
-          <time dateTime={briefing.isoDate}>{briefing.formattedDate}</time>
-        </p>
+        <div>
+          <h1 className="dashboard__title">{briefing.greeting}</h1>
+          <p className="dashboard__date">
+            <time dateTime={briefing.isoDate}>{briefing.formattedDate}</time>
+          </p>
+        </div>
+        <button
+          type="button"
+          className="btn btn-secondary dashboard__feedback"
+          onClick={() => void openQuickAdd()}
+        >
+          <MessageSquareIcon size={16} />
+          Log feedback
+        </button>
       </div>
+      {quickAddModal}
       {briefing.loadFailed ? (
         <p className="form-error" role="alert">
           {LOAD_FAILED}

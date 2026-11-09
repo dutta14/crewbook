@@ -49,6 +49,20 @@
   animation: tabs-panel-in var(--transition-fast) var(--ease-out) both;
 }
 
+.tabs__badge {
+  display: inline-block;
+  min-width: 20px;
+  margin-left: var(--space-2);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  line-height: 20px;
+  text-align: center;
+}
+
 .tabs__panel:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 4px;

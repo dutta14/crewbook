@@ -130,7 +130,7 @@ test.describe("today's 1:1s morning digest", () => {
   }) => {
     await seedMembers(page, [withSchedule(ALICE, 0, '09:00'), withSchedule(BOB, 0, '10:00')]);
 
-    await digest(page).getByRole('heading', { level: 3 }).click();
+    await page.getByRole('button', { name: 'Log feedback', exact: true }).focus();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: "Toggle Today's 1:1s" })).toBeFocused();
     await page.keyboard.press('Tab');

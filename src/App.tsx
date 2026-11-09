@@ -6,6 +6,7 @@ import { ToastProvider } from './components/Toast';
 import { Calendar } from './pages/Calendar';
 import { Dashboard } from './pages/Dashboard';
 import { DecisionsGlobalView } from './pages/DecisionsGlobalView';
+import { Feedback } from './pages/Feedback';
 import { GlobalActions } from './pages/GlobalActions';
 import { Profile } from './pages/Profile';
 import { Roster } from './pages/Roster';
@@ -27,6 +28,7 @@ export default function App() {
                 <Route path="person/:id" element={<Profile />} />
                 <Route path="actions" element={<GlobalActions />} />
                 <Route path="decisions" element={<DecisionsGlobalView />} />
+                <Route path="feedback" element={<Feedback />} />
                 <Route path="tasks" element={<Todos />} />
                 <Route path="calendar" element={<Calendar />} />
                 <Route path="settings" element={<Settings />} />

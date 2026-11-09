@@ -6,15 +6,18 @@ import { GapAlert } from './GapAlert';
 import { NewHireCountdown } from './NewHireCountdown';
 import { NextOneOnOne } from './NextOneOnOne';
 import { RosterAvatar } from './RosterAvatar';
+import { RosterFeedbackButton } from './RosterFeedbackButton';
 import { StatusBadge, toBadgeStatus } from './StatusBadge';
 
 interface RosterCardsProps {
   members: TeamMember[];
   /** Overdue 1:1s by member id. */
   gapAlerts?: ReadonlyMap<string, GapAlertData>;
+  /** A Log feedback button is shown on each card when provided. */
+  onLogFeedback?: (memberId: string) => void;
 }
 
-export function RosterCards({ members, gapAlerts }: RosterCardsProps) {
+export function RosterCards({ members, gapAlerts, onLogFeedback }: RosterCardsProps) {
   return (
     <ul className="roster-cards" aria-label="Team members">
       {members.map((member) => (
@@ -38,6 +41,9 @@ export function RosterCards({ members, gapAlerts }: RosterCardsProps) {
           </div>
           <span className="roster-card__status">
             <StatusBadge status={toBadgeStatus(member.status)} />
+            {onLogFeedback ? (
+              <RosterFeedbackButton member={member} onLogFeedback={onLogFeedback} />
+            ) : null}
           </span>
           <span className="level-tag roster-card__level">{member.level}</span>
           {member.schedule ? (

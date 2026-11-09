@@ -12,6 +12,8 @@ export interface Tab {
   id: string;
   label: string;
   content: ReactNode;
+  /** A count shown beside the label; hidden when zero or unknown. */
+  badge?: number | null;
 }
 
 export interface TabsProps {
@@ -78,6 +80,15 @@ export function Tabs({ tabs, defaultActiveId, activeId, onActiveChange, ariaLabe
             onKeyDown={(event) => handleKeyDown(event, index)}
           >
             {tab.label}
+            {tab.badge ? (
+              <>
+                {' '}
+                <span className="tabs__badge">
+                  {tab.badge}{' '}
+                  <span className="sr-only">{tab.badge === 1 ? 'entry' : 'entries'}</span>
+                </span>
+              </>
+            ) : null}
           </button>
         ))}
         <span

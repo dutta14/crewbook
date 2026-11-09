@@ -7,6 +7,7 @@ import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import {
   createActionItem,
   createDecision,
+  createFeedback,
   createFollowUp,
   createGrowthEntry,
   createLeave,
@@ -275,10 +276,12 @@ describe('Profile', () => {
       'Decisions & Follow-ups',
       'Goals',
       'Growth',
+      'Feedback',
       'Timeline',
     ]);
     expect(tabs.map((tab) => tab.getAttribute('aria-selected'))).toEqual([
       'true',
+      'false',
       'false',
       'false',
       'false',
@@ -347,7 +350,7 @@ describe('Profile', () => {
     expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('Arrow keys move between Goals, Growth and Timeline', async () => {
+  it('Arrow keys move between Goals, Growth, Feedback and Timeline', async () => {
     const user = userEvent.setup();
     renderProfile(ALEX);
     screen.getByRole('tab', { name: 'Goals' }).focus();
@@ -357,9 +360,64 @@ describe('Profile', () => {
     expect(await screen.findByRole('heading', { name: 'Growth' })).toBeInTheDocument();
 
     await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: 'Feedback' })).toHaveAttribute('aria-selected', 'true');
+    expect(await screen.findByRole('heading', { name: 'Feedback' })).toBeInTheDocument();
+
+    await user.keyboard('{ArrowRight}');
     expect(screen.getByRole('tab', { name: 'Timeline' })).toHaveAttribute('aria-selected', 'true');
-    await user.keyboard('{ArrowLeft}{ArrowLeft}');
+    await user.keyboard('{ArrowLeft}{ArrowLeft}{ArrowLeft}');
     expect(screen.getByRole('tab', { name: 'Goals' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('shows how many feedback entries the member has on the Feedback tab', () => {
+    renderWithProviders(
+      <Routes>
+        <Route path="/person/:id" element={<Profile />} />
+      </Routes>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          feedback: [
+            createFeedback({ engineerId: ALEX }),
+            createFeedback({ engineerId: ALEX }),
+            createFeedback({ engineerId: PRIYA }),
+          ],
+        },
+      },
+    );
+
+    expect(screen.getByRole('tab', { name: 'Feedback 2 entries' })).toBeInTheDocument();
+  });
+
+  it('keeps feedback out of the page until the Feedback tab is opened', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Routes>
+        <Route path="/person/:id" element={<Profile />} />
+      </Routes>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          feedback: [createFeedback({ engineerId: ALEX, text: 'Mentored the new hire' })],
+        },
+      },
+    );
+
+    expect(screen.queryByText('Mentored the new hire')).toBeNull();
+    await user.click(screen.getByRole('tab', { name: /^Feedback/ }));
+    expect(await screen.findByText('Mentored the new hire')).toBeInTheDocument();
+  });
+
+  it('Log feedback in the header opens the form with this person selected', async () => {
+    const user = userEvent.setup();
+    renderProfile(ALEX);
+
+    await user.click(screen.getByRole('button', { name: 'Log feedback for Alex Chen' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Log feedback' });
+    expect(within(dialog).getByRole('combobox', { name: /Person/ })).toHaveValue(ALEX);
   });
 
   it('shows only the member’s own growth entries on the Growth tab', async () => {
@@ -429,6 +487,52 @@ describe('Profile', () => {
       ),
     );
     expect(screen.getByRole('status', { name: 'Remaining growth' })).not.toHaveTextContent(ALEX);
+  });
+
+  it('deleting a member also purges their feedback but keeps everyone else’s', async () => {
+    const user = userEvent.setup();
+    function Remaining() {
+      const { getPrivate } = useEncryptedStorage();
+      const feedback = getPrivate<Array<{ engineerId: string; text: string }>>('feedback') ?? [];
+      return (
+        <output aria-label="Remaining feedback">
+          {feedback.map((entry) => `${entry.engineerId}:${entry.text}`).join(',')}
+        </output>
+      );
+    }
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/roster" element={<h1>Roster page</h1>} />
+          <Route path="/person/:id" element={<Profile />} />
+        </Routes>
+        <Remaining />
+      </>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          feedback: [
+            createFeedback({ engineerId: ALEX, text: 'alex-note' }),
+            createFeedback({ engineerId: PRIYA, text: 'priya-note' }),
+          ],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Delete Alex Chen' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Remaining feedback' })).toHaveTextContent(
+        `${PRIYA}:priya-note`,
+      ),
+    );
+    expect(screen.getByRole('status', { name: 'Remaining feedback' })).not.toHaveTextContent(
+      'alex-note',
+    );
   });
 
   it('deleting a member also purges their private notes but keeps everyone else’s', async () => {

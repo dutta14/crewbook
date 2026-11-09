@@ -4,6 +4,7 @@ import { AddMemberModal } from '../components/AddMemberModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DecisionsPanel } from '../components/DecisionsPanel';
 import { EmptyState } from '../components/EmptyState';
+import { FeedbackPanel } from '../components/FeedbackPanel';
 import { GrowthPanel } from '../components/GrowthPanel';
 import { TeamIcon } from '../components/icons';
 import { KeyDates } from '../components/KeyDates';
@@ -24,6 +25,7 @@ import { Timeline } from '../components/Timeline';
 import { deleteActionItemsForMember } from '../data/actionItems';
 import { deleteDecisionsForMember } from '../data/decisions';
 import { deleteDateEventsForMember } from '../data/dateEvents';
+import { deleteFeedbackForMember } from '../data/feedbackStore';
 import { deleteGrowthForMember } from '../data/growthStore';
 import { deleteLeaveForMember } from '../data/leave';
 import { deleteMember, getMember, listMembers, updateMember } from '../data/members';
@@ -35,6 +37,8 @@ import { deleteTodosForMember } from '../data/todos';
 import { isMoodTrackingEnabled } from '../data/settings';
 import { buildTimeline } from '../data/timeline';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
+import { useFeedbackCount } from '../hooks/useFeedbackCount';
+import { useFeedbackQuickAdd } from '../hooks/useFeedbackQuickAdd';
 import { useReminders } from '../hooks/useReminders';
 import { useToast } from '../hooks/useToast';
 import type { LiveSession } from '../types/LiveSession';
@@ -66,6 +70,8 @@ export function Profile() {
   const [activeTab, setActiveTab] = useState('overview');
 
   const { createReminder } = useReminders({ personId: id });
+  const { openQuickAdd, quickAddModal } = useFeedbackQuickAdd();
+  const feedbackCount = useFeedbackCount(id);
   const members = useMemo(() => listMembers(storage), [storage]);
   // Anything that is not a UUID is rejected before it reaches the store.
   const member = useMemo(
@@ -114,7 +120,7 @@ export function Profile() {
 
   const goToRoster = () => navigate('/roster');
 
-  // A removed person's 1:1 history, action items, decisions, tasks, reminders, key dates, leave, growth history, private notes and mood ratings must not linger in the
+  // A removed person's 1:1 history, action items, decisions, tasks, reminders, key dates, leave, growth history, feedback, private notes and mood ratings must not linger in the
   // encrypted store. Best effort: the person is already gone, so a failure here must not turn a
   // successful delete into an error.
   const purgePrivateData = async (memberId: string) => {
@@ -134,6 +140,7 @@ export function Profile() {
     await deleteDateEventsForMember(memberId, storage).catch(() => undefined);
     await deleteLeaveForMember(memberId, storage).catch(() => undefined);
     await deleteGrowthForMember(memberId, storage).catch(() => undefined);
+    await deleteFeedbackForMember(memberId, storage).catch(() => undefined);
     await deletePrivateNotesForMember(memberId, storage).catch(() => undefined);
   };
 
@@ -179,6 +186,7 @@ export function Profile() {
         onEdit={() => setIsEditOpen(true)}
         onStartOneOnOne={() => void handleStartLive()}
         onAddReminder={() => setIsReminderOpen(true)}
+        onLogFeedback={() => void openQuickAdd(member.id)}
         onDelete={() => setIsDeleteOpen(true)}
       />
       <ScheduleCard
@@ -245,6 +253,14 @@ export function Profile() {
             content:
               activeTab === 'growth' ? <GrowthPanel key={member.id} member={member} /> : null,
           },
+          {
+            id: 'feedback',
+            label: 'Feedback',
+            badge: feedbackCount,
+            // Mounted only while open, like growth: observations stay out of the page until asked for.
+            content:
+              activeTab === 'feedback' ? <FeedbackPanel key={member.id} member={member} /> : null,
+          },
           { id: 'timeline', label: 'Timeline', content: <Timeline entries={timeline} /> },
         ]}
       />
@@ -258,6 +274,7 @@ export function Profile() {
         />
       ) : null}
       <MoodTrendSection key={`mood-${member.id}`} memberId={member.id} />
+      {quickAddModal}
       <AddMemberModal
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}

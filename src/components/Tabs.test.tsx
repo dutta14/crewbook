@@ -22,6 +22,22 @@ describe('Tabs', () => {
     expect(screen.getAllByRole('tabpanel')).toHaveLength(1);
   });
 
+  it('adds a count to a tab’s name, and nothing while it is unknown or zero-less', () => {
+    render(
+      <Tabs
+        tabs={[
+          { ...tabs[0], badge: 3 },
+          { ...tabs[1], badge: null },
+          { ...tabs[2], badge: 1 },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole('tab', { name: 'One 3 entries' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Two' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Three 1 entry' })).toBeInTheDocument();
+  });
+
   it('keeps inactive panels mounted but hidden', () => {
     render(<Tabs tabs={tabs} />);
 

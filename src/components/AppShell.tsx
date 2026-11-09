@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react
 import { Outlet, useLocation } from 'react-router-dom';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { ErrorBoundary } from './ErrorBoundary';
+import { FeedbackFab } from './FeedbackFab';
 import { MenuIcon } from './icons';
 import { Sidebar } from './Sidebar';
 
@@ -81,6 +82,7 @@ export function AppShell() {
             </ErrorBoundary>
           </div>
         </main>
+        <FeedbackFab />
       </div>
     </div>
   );

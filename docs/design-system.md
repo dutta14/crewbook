@@ -208,6 +208,15 @@ All colors via CSS variables. Never hardcode hex. Dark mode via `body.dark` clas
 - Seam for sharing, export and summary features: never import `privateStore`, `PrivateNotes` or `FlightRiskIndicator` from share or export code, and build those payloads from an allowlist of fields.
 - The section collapses on tab blur and after five minutes idle (`usePrivateViewGuard`, timeout is a parameter for a future auto-lock setting). Envelope-level auto-lock is not part of this feature.
 
+### Feedback log (private by design)
+
+- Entries live only in the private envelope (`feedback` key, `src/data/feedbackStore.ts`) and are purged when the member is deleted. `src/data/feedbackIsolation.test.ts` fails if share, export or summary code imports the store or its hooks; extend its allowlist only on purpose.
+- Type colours: positive uses `--status-active-*`, constructive uses `--status-on-leave-*`, neutral uses `--bg2` with `--fg` and a border (`--fg2` on `--bg2` is below AA). Constructive cards also say "For your eyes only" so the type never rests on colour alone.
+- The tab count badge (`Tabs` `badge` prop, `.tabs__badge`) adds visually hidden "entries" text so it reads as "Feedback 2 entries".
+- Quick-add: the `useFeedbackQuickAdd` hook backs the dashboard and roster buttons, the profile header and `FeedbackFab`. The FAB is 48px, sits at `--z-fab` (30, below the modal layers) and is hidden from 768px up, where each page has its own button. Roster row buttons appear on hover or focus where hover exists, and always on touch.
+- Promo packet output is plain text built by `formatPromoPacket` from `getPromoPacketEntries` (positive only, oldest first). It is the only route feedback text takes out of the app, and the clipboard toast never echoes it.
+- Filters live in component state only, never in the URL or storage.
+
 ---
 
 ## Motion

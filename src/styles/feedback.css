@@ -1,0 +1,537 @@
+/* Feedback log. Everything here is private to the manager; see data/feedbackStore.ts. */
+
+.feedback-log {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.feedback-log__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.feedback-log__title {
+  margin: 0;
+  font-size: var(--text-section);
+  font-weight: 600;
+}
+
+h1.feedback-log__title {
+  font-size: var(--text-title);
+  font-weight: 700;
+}
+
+.feedback-log__title:focus {
+  outline: none;
+}
+
+.feedback-log__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.feedback-log__privacy,
+.feedback-log__loading {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-body);
+}
+
+/* Filters */
+
+.feedback-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+}
+
+.feedback-filters__search {
+  position: relative;
+  display: flex;
+  flex: 1 1 100%;
+  align-items: center;
+  color: var(--fg2);
+}
+
+.feedback-filters__search > svg {
+  position: absolute;
+  left: var(--space-3);
+  pointer-events: none;
+}
+
+.feedback-filters__search .form-input {
+  width: 100%;
+  padding-left: calc(var(--space-3) + 16px + var(--space-2));
+}
+
+.feedback-filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.feedback-filters__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.feedback-filters__count {
+  min-width: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  line-height: 24px;
+  text-align: center;
+}
+
+/* List and cards */
+
+.feedback-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedback-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  animation: feedback-card-in var(--transition-normal) var(--ease-out) both;
+}
+
+.feedback-card--positive {
+  border-left-color: var(--status-active-fg);
+}
+
+.feedback-card--constructive {
+  border-left-color: var(--status-on-leave-fg);
+}
+
+.feedback-card__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.feedback-card__who {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.feedback-card__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.feedback-card__date {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-feature-settings: 'tnum';
+}
+
+.feedback-card__actions {
+  display: flex;
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-3)) calc(-1 * var(--space-2)) 0;
+}
+
+.feedback-card__text {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.feedback-card__private {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+.feedback-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedback-badge {
+  padding: 2px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg2);
+  color: var(--fg);
+  font-size: var(--text-caption);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.feedback-badge--positive {
+  border-color: transparent;
+  background: var(--status-active-bg);
+  color: var(--status-active-fg);
+}
+
+.feedback-badge--constructive {
+  border-color: transparent;
+  background: var(--status-on-leave-bg);
+  color: var(--status-on-leave-fg);
+}
+
+/* Tags */
+
+.feedback-tags {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.feedback-tags__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedback-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-size: var(--text-caption);
+  font-weight: 500;
+  animation: feedback-pop var(--transition-fast) var(--ease-out) both;
+}
+
+.feedback-tag__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* A 24px target inside a pill; the pill itself is the visual affordance. */
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.feedback-tag__remove:hover {
+  background: var(--accent-subtle);
+}
+
+.feedback-tag__remove:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Type control: three native radios drawn as one segmented control. */
+
+.feedback-type {
+  --feedback-type-index: 0;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--bg2);
+}
+
+.feedback-type__indicator {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / 3);
+  transform: translateX(calc(var(--feedback-type-index) * 100%));
+  border-radius: calc(var(--radius-control) - 2px);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  transition: transform var(--transition-fast) var(--ease-out);
+}
+
+.feedback-type__indicator[data-type='positive'] {
+  background: var(--status-active-bg);
+}
+
+.feedback-type__indicator[data-type='constructive'] {
+  background: var(--status-on-leave-bg);
+}
+
+.feedback-type__option {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  cursor: pointer;
+}
+
+.feedback-type__input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.feedback-type__label {
+  color: var(--fg);
+  font-size: var(--text-body);
+  font-weight: 500;
+}
+
+.feedback-type__input:checked + .feedback-type__label {
+  font-weight: 600;
+}
+
+.feedback-type__indicator[data-type='positive']
+  ~ .feedback-type__option
+  .feedback-type__input:checked
+  + .feedback-type__label {
+  color: var(--status-active-fg);
+}
+
+.feedback-type__indicator[data-type='constructive']
+  ~ .feedback-type__option
+  .feedback-type__input:checked
+  + .feedback-type__label {
+  color: var(--status-on-leave-fg);
+}
+
+.feedback-type__input:focus-visible + .feedback-type__label {
+  outline: 2px solid var(--accent);
+  outline-offset: 6px;
+  border-radius: var(--radius-control);
+}
+
+.feedback-form__text {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Promo packet */
+
+.promo-packet {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+}
+
+.promo-packet__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.promo-packet__type {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  color: var(--status-active-fg);
+  font-weight: 600;
+}
+
+.promo-packet__hint {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-body);
+}
+
+.promo-packet__output {
+  width: 100%;
+  max-height: 320px;
+  margin: 0;
+  padding: var(--space-4);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--bg2);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-body);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.promo-packet__output:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Roster row quick-add; it sits above the row-wide link. */
+
+.roster-feedback-btn {
+  position: relative;
+  z-index: 1;
+  margin-left: auto;
+}
+
+@media (hover: hover) {
+  .roster-feedback-btn {
+    opacity: 0;
+    transition: opacity var(--transition-fast) var(--ease-out);
+  }
+
+  .roster-row:hover .roster-feedback-btn,
+  .roster-row:focus-within .roster-feedback-btn,
+  .roster-feedback-btn:focus-visible {
+    opacity: 1;
+  }
+}
+
+.roster-card__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Mobile quick-add. Always mounted; hidden from 768px up, where the page has its own buttons. */
+
+.feedback-fab {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-fab);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-dropdown);
+  cursor: pointer;
+  transition: background-color var(--transition-fast) var(--ease-out);
+}
+
+.feedback-fab:hover {
+  background: var(--accent-hover);
+}
+
+.feedback-fab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (min-width: 768px) {
+  .feedback-fab {
+    display: none;
+  }
+}
+
+@keyframes feedback-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes feedback-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feedback-card {
+    animation: feedback-fade var(--transition-fast) linear both;
+  }
+
+  .feedback-tag {
+    animation: none;
+  }
+
+  .feedback-type__indicator,
+  .roster-feedback-btn,
+  .feedback-fab {
+    transition: none;
+  }
+}
+
+@keyframes feedback-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .feedback-filters__field,
+  .feedback-filters__field .form-input {
+    width: 100%;
+  }
+
+  .promo-packet__controls,
+  .promo-packet__controls .feedback-filters__field {
+    width: 100%;
+  }
+
+  .feedback-log__actions {
+    width: 100%;
+  }
+}

@@ -1,6 +1,7 @@
 import type {
   ActionItem,
   Decision,
+  FeedbackEntry,
   FollowUp,
   GrowthEntry,
   LeaveEntry,
@@ -132,6 +133,21 @@ export function createGrowthEntry(overrides: Partial<GrowthEntry> = {}): GrowthE
     from: 'L4',
     to: 'L5',
     notes: 'Led the payments migration.',
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    ...overrides,
+  };
+}
+
+export function createFeedback(overrides: Partial<FeedbackEntry> = {}): FeedbackEntry {
+  const timestamp = now();
+  return {
+    id: crypto.randomUUID(),
+    engineerId: crypto.randomUUID(),
+    date: '2025-03-03',
+    type: 'positive',
+    text: 'Ran the incident review calmly and kept everyone on the timeline.',
+    tags: [],
     createdAt: timestamp,
     updatedAt: timestamp,
     ...overrides,

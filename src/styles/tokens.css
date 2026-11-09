@@ -83,6 +83,7 @@
   --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
 
   /* Stacking */
+  --z-fab: 30;
   --z-sidebar: 40;
   --z-live-mode: 50;
   --z-modal: 60;

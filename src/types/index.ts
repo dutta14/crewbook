@@ -10,6 +10,13 @@ export type {
   LeadTimeConfig,
   StoredDateEventType,
 } from './dateEvent';
+export type {
+  FeedbackDateRange,
+  FeedbackEntry,
+  FeedbackFilter,
+  FeedbackInput,
+  FeedbackType,
+} from './feedback';
 export type { FlightRiskLevel, PrivateNote } from './flightRisk';
 export type { GrowthChangeType, GrowthEntry, GrowthEntryInput } from './growth';
 export type { Note } from './Note';

@@ -6,15 +6,18 @@ import { GapAlert } from './GapAlert';
 import { NewHireCountdown } from './NewHireCountdown';
 import { NextOneOnOne } from './NextOneOnOne';
 import { RosterAvatar } from './RosterAvatar';
+import { RosterFeedbackButton } from './RosterFeedbackButton';
 import { StatusBadge, toBadgeStatus } from './StatusBadge';
 
 interface RosterTableProps {
   members: TeamMember[];
   /** Overdue 1:1s by member id. */
   gapAlerts?: ReadonlyMap<string, GapAlertData>;
+  /** A Log feedback button is shown on each row when provided. */
+  onLogFeedback?: (memberId: string) => void;
 }
 
-export function RosterTable({ members, gapAlerts }: RosterTableProps) {
+export function RosterTable({ members, gapAlerts, onLogFeedback }: RosterTableProps) {
   return (
     <table className="roster-table">
       <caption className="sr-only">Team members</caption>
@@ -44,6 +47,9 @@ export function RosterTable({ members, gapAlerts }: RosterTableProps) {
                     <NewHireCountdown startDate={member.startDate} />
                   ) : null}
                 </div>
+                {onLogFeedback ? (
+                  <RosterFeedbackButton member={member} onLogFeedback={onLogFeedback} />
+                ) : null}
               </div>
             </td>
             <td>
