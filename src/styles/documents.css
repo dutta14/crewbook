@@ -1,0 +1,311 @@
+.documents {
+  margin-top: var(--space-6);
+}
+
+.documents__title {
+  margin: 0 0 var(--space-2);
+  color: var(--fg2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.documents__card {
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.documents__add {
+  min-height: 44px;
+  color: var(--accent);
+}
+
+/* Category groups */
+.doc-group {
+  margin-bottom: var(--space-4);
+}
+
+.doc-group__heading {
+  margin: 0;
+  font-size: inherit;
+}
+
+.doc-group__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.doc-group__toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.doc-group__chevron {
+  display: inline-flex;
+  color: var(--fg2);
+  transition: transform var(--transition-fast) var(--ease-out);
+}
+
+.doc-group__chevron--open {
+  transform: rotate(90deg);
+}
+
+.doc-group__label {
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.doc-group__count {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-feature-settings: 'tnum';
+}
+
+/* Collapsing animates the row track from 1fr to 0fr, so the list needs no fixed height. */
+.doc-group__body {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows var(--transition-slow) var(--ease-in-out),
+    opacity var(--transition-normal) var(--ease-out),
+    visibility 0s linear 0s;
+}
+
+.doc-group__body--collapsed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  /* Hidden once the collapse finishes, so the links leave the tab order and the reading order. */
+  visibility: hidden;
+  transition:
+    grid-template-rows var(--transition-slow) var(--ease-in-out),
+    opacity var(--transition-normal) var(--ease-out),
+    visibility 0s linear var(--transition-slow);
+}
+
+.doc-group__inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.doc-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Link rows */
+.doc-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-2);
+  border-bottom: 1px solid var(--border);
+  transition: background-color var(--transition-fast) var(--ease-out);
+}
+
+.doc-row:last-child {
+  border-bottom: 0;
+}
+
+.doc-row:hover {
+  border-radius: 8px;
+  background: var(--accent-subtle);
+}
+
+.doc-row--editing {
+  display: block;
+}
+
+.doc-row--editing:hover {
+  background: transparent;
+}
+
+.doc-row__icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--fg2);
+}
+
+.doc-row__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.doc-row__link {
+  color: var(--accent);
+  font-size: var(--text-body);
+  font-weight: 400;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+a.doc-row__link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+a.doc-row__link:focus-visible {
+  border-radius: 4px;
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.doc-row__host {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-row__date {
+  flex: none;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-feature-settings: 'tnum';
+}
+
+.doc-row__actions {
+  display: flex;
+  flex: none;
+  /* The 44px buttons would otherwise make every row taller than its text needs. */
+  margin: calc(-1 * var(--space-3)) 0;
+}
+
+.doc-row__actions .icon-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Where there is a real pointer the icons wait for hover or focus; touch always shows them. */
+@media (hover: hover) and (pointer: fine) {
+  .doc-row__actions {
+    opacity: 0;
+    transition: opacity var(--transition-fast) var(--ease-out);
+  }
+
+  .doc-row:hover .doc-row__actions,
+  .doc-row:focus-within .doc-row__actions {
+    opacity: 1;
+  }
+}
+
+.doc-row__confirm {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  animation: doc-fade-in var(--transition-fast) var(--ease-out) both;
+}
+
+.doc-row__confirm-text {
+  margin-right: var(--space-2);
+  color: var(--fg);
+  font-size: var(--text-caption);
+  font-weight: 500;
+}
+
+.doc-row__confirm-btn {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Form */
+.doc-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  animation: doc-form-in var(--transition-normal) var(--ease-out) both;
+}
+
+.doc-form__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+@keyframes doc-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes doc-form-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Below 768px the date drops under the title and the actions never wait for hover. */
+@media (max-width: 767px) {
+  .doc-row {
+    flex-wrap: wrap;
+  }
+
+  .doc-row__main {
+    flex-basis: calc(100% - 16px - var(--space-3));
+  }
+
+  .doc-row__date {
+    order: 3;
+    flex: 1;
+    padding-left: calc(16px + var(--space-3));
+  }
+
+  .doc-row__actions,
+  .doc-row__confirm {
+    order: 4;
+  }
+
+  .doc-row__confirm {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doc-group__chevron,
+  .doc-group__body,
+  .doc-group__body--collapsed,
+  .doc-row,
+  .doc-row__actions,
+  .doc-row__confirm,
+  .doc-form {
+    animation: none;
+    transition: none;
+  }
+
+  .doc-group__body--collapsed {
+    display: none;
+  }
+
+  .doc-row__actions {
+    opacity: 1;
+  }
+}

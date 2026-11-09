@@ -14,8 +14,8 @@ interface EmptyStateProps {
     label: string;
     onClick: () => void;
   };
-  /** The heading level; use 1 when the empty state is the page's only heading, 3 inside a section. */
-  headingLevel?: 1 | 2 | 3;
+  /** The heading level; use 1 when the empty state is the page's only heading, 3 or 4 inside a section. */
+  headingLevel?: 1 | 2 | 3 | 4;
   /** Makes the heading programmatically focusable so a page can move focus to it. */
   titleRef?: Ref<HTMLHeadingElement>;
 }

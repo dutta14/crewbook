@@ -85,6 +85,9 @@ module.exports = {
                   '**/PeerCombobox',
                   '**/Network*',
                   '**/ThreeSixty*',
+                  '**/documentLinksStore',
+                  '**/useDocumentLinks',
+                  '**/Document*',
                   '**/reminders',
                   '**/leave',
                   '**/dateEvents',
@@ -102,7 +105,7 @@ module.exports = {
                   '**/Mood*',
                 ],
                 message:
-                  'Share code must not touch private notes, flight risk, moods, feedback, growth, skills, peer connections, reminders, leave or key dates.',
+                  'Share code must not touch private notes, flight risk, moods, feedback, growth, skills, peer connections, document links, reminders, leave or key dates.',
               },
             ],
           },

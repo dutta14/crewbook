@@ -4,6 +4,7 @@ import { AddMemberModal } from '../components/AddMemberModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ConnectionsPanel } from '../components/ConnectionsPanel';
 import { DecisionsPanel } from '../components/DecisionsPanel';
+import { DocumentsPanel } from '../components/DocumentsPanel';
 import { EmptyState } from '../components/EmptyState';
 import { FeedbackPanel } from '../components/FeedbackPanel';
 import { GrowthPanel } from '../components/GrowthPanel';
@@ -30,6 +31,7 @@ import { Timeline } from '../components/Timeline';
 import { deleteActionItemsForMember } from '../data/actionItems';
 import { deleteConnectionsForMember } from '../data/connectionsStore';
 import { deleteDecisionsForMember } from '../data/decisions';
+import { deleteDocumentLinksForMember } from '../data/documentLinksStore';
 import { deleteDateEventsForMember } from '../data/dateEvents';
 import { deleteFeedbackForMember } from '../data/feedbackStore';
 import { deleteGrowthForMember } from '../data/growthStore';
@@ -129,7 +131,7 @@ export function Profile() {
 
   const goToRoster = () => navigate('/roster');
 
-  // A removed person's 1:1 history, action items, decisions, tasks, reminders, key dates, leave, growth history, skills, connections, feedback, private notes and mood ratings must not linger in the
+  // A removed person's 1:1 history, action items, decisions, tasks, reminders, key dates, leave, growth history, skills, connections, document links, feedback, private notes and mood ratings must not linger in the
   // encrypted store. Best effort: the person is already gone, so a failure here must not turn a
   // successful delete into an error.
   const purgePrivateData = async (memberId: string) => {
@@ -154,6 +156,7 @@ export function Profile() {
     await deleteSkillsForMember(memberId, storage).catch(() => undefined);
     // Removes links the person added and links others added to them, so none points at nobody.
     await deleteConnectionsForMember(memberId, storage).catch(() => undefined);
+    await deleteDocumentLinksForMember(memberId, storage).catch(() => undefined);
     await deleteFeedbackForMember(memberId, storage).catch(() => undefined);
     await deletePrivateNotesForMember(memberId, storage).catch(() => undefined);
   };
@@ -238,6 +241,10 @@ export function Profile() {
             content: (
               <>
                 <ProfileOverview member={member} manager={manager} />
+                {/* Mounted only while open, like growth: links stay out of the page on other tabs. */}
+                {activeTab === 'overview' ? (
+                  <DocumentsPanel key={`documents-${member.id}`} memberId={member.id} />
+                ) : null}
                 <KeyDates key={`dates-${member.id}`} member={member} />
                 <ActiveTokensList key={`tokens-${member.id}`} memberId={member.id} />
                 <PrivateNotes key={`private-notes-${member.id}`} member={member} />

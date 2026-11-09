@@ -8,6 +8,7 @@ import {
   createActionItem,
   createConnection,
   createDecision,
+  createDocumentLink,
   createFeedback,
   createFollowUp,
   createGrowthEntry,
@@ -621,6 +622,78 @@ describe('Profile', () => {
       ),
     );
     expect(screen.getByRole('status', { name: 'Remaining skills' })).not.toHaveTextContent(ALEX);
+  });
+
+  it('shows only the member’s own document links on the Overview tab, and not on other tabs', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Routes>
+        <Route path="/person/:id" element={<Profile />} />
+      </Routes>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          documentLinks: [
+            createDocumentLink({ memberId: ALEX, title: 'Alex promo packet' }),
+            createDocumentLink({ memberId: PRIYA, title: 'Priya IDP', category: 'idp' }),
+          ],
+        },
+      },
+    );
+
+    const overview = await screen.findByRole('tabpanel', { name: 'Overview' });
+    expect(await within(overview).findByRole('link', { name: /Alex promo packet/ })).toBeVisible();
+    expect(screen.queryByText('Priya IDP')).toBeNull();
+
+    await user.click(screen.getByRole('tab', { name: 'Notes' }));
+    expect(screen.queryByText('Alex promo packet')).toBeNull();
+  });
+
+  it('deleting a member also purges their document links but keeps everyone else’s', async () => {
+    const user = userEvent.setup();
+    function Remaining() {
+      const { getPrivate } = useEncryptedStorage();
+      const links = getPrivate<Array<{ memberId: string; title: string }>>('documentLinks') ?? [];
+      return (
+        <output aria-label="Remaining document links">
+          {links.map((link) => `${link.memberId}:${link.title}`).join(',')}
+        </output>
+      );
+    }
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/roster" element={<h1>Roster page</h1>} />
+          <Route path="/person/:id" element={<Profile />} />
+        </Routes>
+        <Remaining />
+      </>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          documentLinks: [
+            createDocumentLink({ memberId: ALEX, title: 'Alex promo packet' }),
+            createDocumentLink({ memberId: PRIYA, title: 'Priya IDP' }),
+          ],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Delete Alex Chen' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Remaining document links' })).toHaveTextContent(
+        `${PRIYA}:Priya IDP`,
+      ),
+    );
+    expect(screen.getByRole('status', { name: 'Remaining document links' })).not.toHaveTextContent(
+      ALEX,
+    );
   });
 
   it('shows connections from either side on the Connections tab', async () => {

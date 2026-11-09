@@ -2,6 +2,7 @@ import type {
   ActionItem,
   Connection,
   Decision,
+  DocumentLink,
   FeedbackEntry,
   FollowUp,
   GrowthEntry,
@@ -151,6 +152,21 @@ export function createSkill(overrides: Partial<Skill> = {}): Skill {
     level: 'proficient',
     category: 'strength',
     notes: '',
+    visibility: 'private',
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    ...overrides,
+  };
+}
+
+export function createDocumentLink(overrides: Partial<DocumentLink> = {}): DocumentLink {
+  const timestamp = now();
+  return {
+    id: crypto.randomUUID(),
+    memberId: crypto.randomUUID(),
+    title: 'Q3 promo packet',
+    url: 'https://docs.google.com/document/d/abc123',
+    category: 'promo_packet',
     visibility: 'private',
     createdAt: timestamp,
     updatedAt: timestamp,
