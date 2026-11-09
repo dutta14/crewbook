@@ -130,7 +130,7 @@ describe('Custom Fields settings', () => {
     await user.click(within(section()).getByRole('button', { name: 'Add field' }));
     await user.type(screen.getByLabelText(/Field name/), 'Team');
 
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await user.click(within(section()).getByRole('button', { name: 'Cancel' }));
 
     expect(screen.queryByLabelText(/Field name/)).not.toBeInTheDocument();
     expect(storedDefinitions()).toEqual([]);

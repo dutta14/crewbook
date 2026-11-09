@@ -4,6 +4,8 @@ import { createMoodEntry } from '../test-utils/factories';
 import { ValidationError } from './errors';
 import {
   addMoodEntry,
+  countMoodEntries,
+  deleteAllMoodEntries,
   deleteMoodEntriesForMember,
   deleteMoodEntry,
   listMoodEntries,
@@ -116,5 +118,29 @@ describe('moodEntries', () => {
     ).rejects.toBe(failure);
 
     expect(ctx.store.get('moods')).toEqual([]);
+  });
+
+  it('counts every stored entry and deletes them all in one write', async () => {
+    await addMoodEntry({ memberId: ALEX, noteId: 'n1', score: 2 }, ctx.storage);
+    await addMoodEntry({ memberId: PRIYA, noteId: 'n2', score: 3 }, ctx.storage);
+    expect(countMoodEntries(ctx.storage)).toBe(2);
+
+    await deleteAllMoodEntries(ctx.storage);
+
+    expect(countMoodEntries(ctx.storage)).toBe(0);
+    expect(ctx.store.get('moods')).toEqual([]);
+  });
+
+  it('restores the entries when deleting them all fails to save', async () => {
+    await addMoodEntry({ memberId: ALEX, noteId: 'n1', score: 2 }, ctx.storage);
+    ctx.storage.failWith = new Error('disk full') as StorageWriteError;
+
+    await expect(deleteAllMoodEntries(ctx.storage)).rejects.toThrow('disk full');
+
+    expect(countMoodEntries(ctx.storage)).toBe(1);
+  });
+
+  it('counts nothing when no entries were ever stored', () => {
+    expect(countMoodEntries(createStorage(null).storage)).toBe(0);
   });
 });

@@ -45,7 +45,7 @@ import { deleteRemindersForMember } from '../data/reminders';
 import { deleteShareTokensForMember } from '../data/shareStore';
 import { deleteSkillsForMember } from '../data/skillsStore';
 import { deleteTodosForMember } from '../data/todos';
-import { isMoodTrackingEnabled } from '../data/settings';
+import { getDefaultCadence, isMoodTrackingEnabled } from '../data/settings';
 import { buildTimeline } from '../data/timeline';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { useFeedbackCount } from '../hooks/useFeedbackCount';
@@ -211,6 +211,7 @@ export function Profile() {
         key={`schedule-${member.id}`}
         memberId={member.id}
         schedule={member.schedule ?? null}
+        defaultCadence={getDefaultCadence(storage)}
         onSave={(schedule) => updateMember(member.id, { schedule }, storage)}
       />
       {isLive ? null : (

@@ -9,11 +9,13 @@ import {
   getManagerName,
   isLiveNoticeDismissed,
   isMoodTrackingEnabled,
+  readAppSettings,
   setDefaultNoteVisibility,
   setLiveShortcutsEnabled,
   setManagerName,
   setMoodTrackingEnabled,
   setRiskIndicatorsHidden,
+  updateAppSetting,
   type SettingsStorage,
 } from './settings';
 
@@ -158,5 +160,65 @@ describe('live mode settings', () => {
       moodTrackingEnabled: 'true',
       managerName: 'Morgan Lee',
     });
+  });
+});
+
+describe('app configuration settings', () => {
+  it('falls back to the defaults for anything missing or not on the list', () => {
+    const { storage } = createStorage({
+      defaultCadence: 'daily',
+      dateFormat: 'YYYY',
+      firstDayOfWeek: 'friday',
+      privateAutoLockMinutes: '7',
+    });
+
+    expect(readAppSettings(storage)).toEqual({
+      defaultCadence: 'weekly',
+      dateFormat: 'MM/DD/YYYY',
+      firstDayOfWeek: 'monday',
+      defaultNoteVisibility: 'private',
+      moodTrackingEnabled: false,
+      hideRiskIndicators: false,
+      liveShortcutsEnabled: true,
+      privateAutoLockMinutes: 5,
+      managerName: '',
+    });
+  });
+
+  it('stores each preference as text and reads it back', async () => {
+    const { storage, store } = createStorage();
+
+    await updateAppSetting('defaultCadence', 'monthly', storage);
+    await updateAppSetting('dateFormat', 'DD/MM/YYYY', storage);
+    await updateAppSetting('firstDayOfWeek', 'sunday', storage);
+    await updateAppSetting('privateAutoLockMinutes', 0, storage);
+
+    expect(store.get('settings')).toEqual({
+      defaultCadence: 'monthly',
+      dateFormat: 'DD/MM/YYYY',
+      firstDayOfWeek: 'sunday',
+      privateAutoLockMinutes: '0',
+    });
+    expect(readAppSettings(storage)).toMatchObject({
+      defaultCadence: 'monthly',
+      dateFormat: 'DD/MM/YYYY',
+      firstDayOfWeek: 'sunday',
+      privateAutoLockMinutes: 0,
+    });
+  });
+
+  it.each([
+    ['defaultCadence', 'daily'],
+    ['dateFormat', 'YYYY-MM-DD'],
+    ['firstDayOfWeek', 'friday'],
+    ['privateAutoLockMinutes', 7],
+  ] as const)('rejects %s = %s and stores nothing', async (key, value) => {
+    const { storage, store } = createStorage();
+
+    await expect(updateAppSetting(key, value as never, storage)).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+
+    expect(store.has('settings')).toBe(false);
   });
 });

@@ -42,6 +42,17 @@ export interface EncryptedStorageContextValue {
   exportSnapshot: () => Promise<DataSnapshot>;
   /** Replaces all data at once, keeping a 24-hour safety copy. Rejects with the old data intact. */
   replaceAll: (next: DataSnapshot, onProgress?: (fraction: number) => void) => Promise<void>;
+  /**
+   * Re-encrypts all data under a new passphrase. Rejects with WrongPassphraseError for a wrong
+   * current passphrase; on any other failure the old passphrase keeps working.
+   */
+  changePassphrase: (
+    current: string,
+    next: string,
+    onProgress?: (fraction: number) => void,
+  ) => Promise<void>;
+  /** Empties both envelopes, share links included. Stays unlocked with the same passphrase. */
+  clearAllData: () => Promise<void>;
 }
 
 export const EncryptedStorageContext = createContext<EncryptedStorageContextValue | null>(null);
@@ -172,6 +183,20 @@ export function EncryptedStorageProvider({ children }: { children: ReactNode }) 
     [manager],
   );
 
+  const changePassphrase = useCallback(
+    async (current: string, next: string, onProgress?: (fraction: number) => void) => {
+      await manager.changePassphrase(current, next, onProgress);
+      setVersion((value) => value + 1);
+    },
+    [manager],
+  );
+
+  const clearAllData = useCallback(async () => {
+    await manager.clearAllData();
+    setIsPrivateUnlocked(true);
+    setVersion((value) => value + 1);
+  }, [manager]);
+
   const value = useMemo<EncryptedStorageContextValue>(
     () => ({
       isUnlocked,
@@ -193,6 +218,8 @@ export function EncryptedStorageProvider({ children }: { children: ReactNode }) 
       verifyPassphrase,
       exportSnapshot,
       replaceAll,
+      changePassphrase,
+      clearAllData,
     }),
     // `version` is intentional: it gives consumers a new context value after each write.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -216,6 +243,8 @@ export function EncryptedStorageProvider({ children }: { children: ReactNode }) 
       verifyPassphrase,
       exportSnapshot,
       replaceAll,
+      changePassphrase,
+      clearAllData,
     ],
   );
 

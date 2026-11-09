@@ -7,6 +7,7 @@ import {
   generateSalt,
   isCryptoAvailable,
   PBKDF2_ITERATIONS,
+  type EncryptedEnvelope,
 } from '../utils/crypto';
 import {
   CHECK_SENTINEL,
@@ -15,11 +16,15 @@ import {
   CorruptedDataError,
   CryptoUnavailableError,
   getStorageStatus,
+  overwriteWithRandom,
   purgeExpiredPreImportBackup,
   readEnvelope,
   readSalt,
+  restoreRawStorage,
+  snapshotRawStorage,
   STORAGE_CHECK_KEY,
   STORAGE_DATA_KEY,
+  STORAGE_PRE_IMPORT_KEY,
   STORAGE_PRIVATE_KEY,
   STORAGE_PRIVATE_SALT_KEY,
   STORAGE_SALT_KEY,
@@ -34,6 +39,12 @@ export const WRITE_DEBOUNCE_MS = 500;
 
 type DataObject = Record<string, unknown>;
 type WriteErrorListener = (error: StorageWriteError) => void;
+
+interface SealedEnvelopes {
+  check: EncryptedEnvelope;
+  main: EncryptedEnvelope;
+  private: EncryptedEnvelope;
+}
 
 interface Slot {
   storageKey: string;
@@ -94,6 +105,8 @@ export class StorageManager {
   private lockPromise: Promise<void> | null = null;
   private recoveredFromCorruption = false;
   private signingKey: CryptoKey | null = null;
+  // Counts every write to either cache, so a long operation can tell whether data moved under it.
+  private writeCount = 0;
 
   get isUnlocked(): boolean {
     return this.unlocked;
@@ -354,6 +367,152 @@ export class StorageManager {
     }
   }
 
+  /**
+   * Re-encrypts both envelopes under a new passphrase with fresh salts. The new files are fully
+   * built before anything is written, then written together and read back with the new keys. If any
+   * step fails the old files and keys are restored, so the old passphrase keeps working.
+   * Throws WrongPassphraseError when `current` is not the passphrase in use.
+   */
+  async changePassphrase(
+    current: string,
+    next: string,
+    onProgress?: (fraction: number) => void,
+  ): Promise<void> {
+    this.assertUnlocked();
+    if (next.length === 0) throw new RangeError('Passphrase must not be empty');
+    if (!(await this.verifyPassphrase(current))) throw new WrongPassphraseError();
+    await this.loadPrivate();
+    onProgress?.(0.1);
+
+    const { main, priv } = this;
+    const mainSalt = generateSalt();
+    const privateSalt = generateSalt();
+    const [mainKey, privateKey, signingKey] = await Promise.all([
+      deriveKey(next, mainSalt),
+      deriveKey(next, privateSalt),
+      deriveSigningKey(next, mainSalt),
+    ]);
+    onProgress?.(0.5);
+
+    let sealed: SealedEnvelopes;
+    let plaintext: { main: string; priv: string };
+    // A write during encryption would be missing from the new files, so seal again until quiet.
+    for (;;) {
+      const failure = await this.flush();
+      if (failure) throw failure;
+      const writesBefore = this.writeCount;
+      if (!main.cache || !priv.cache) throw new Error('Crewbook storage is locked');
+      plaintext = { main: JSON.stringify(main.cache), priv: JSON.stringify(priv.cache) };
+      const [check, mainEnvelope, privateEnvelope] = await Promise.all([
+        encryptString(CHECK_SENTINEL, mainKey),
+        encryptString(plaintext.main, mainKey),
+        encryptString(plaintext.priv, privateKey),
+      ]);
+      sealed = { check, main: mainEnvelope, private: privateEnvelope };
+      if (this.writeCount === writesBefore) break;
+    }
+    this.assertUnlocked();
+    onProgress?.(0.8);
+
+    const before = snapshotRawStorage();
+    const previous = {
+      main: { key: main.key, iterations: main.iterations },
+      priv: { key: priv.key, iterations: priv.iterations },
+      signingKey: this.signingKey,
+    };
+    // Nothing is awaited between the writes and the key swap, so no save can use a mismatched pair.
+    try {
+      writeEnvelope(STORAGE_DATA_KEY, sealed.main);
+      writeEnvelope(STORAGE_PRIVATE_KEY, sealed.private, true);
+      writeEnvelope(STORAGE_CHECK_KEY, sealed.check);
+      writeSalt(STORAGE_SALT_KEY, mainSalt);
+      writeSalt(STORAGE_PRIVATE_SALT_KEY, privateSalt, true);
+    } catch (error) {
+      restoreRawStorage(before);
+      throw error;
+    }
+    for (const slot of [main, priv]) {
+      if (slot.timer) clearTimeout(slot.timer);
+      slot.timer = null;
+      slot.isDirty = false;
+    }
+    main.key = mainKey;
+    main.iterations = PBKDF2_ITERATIONS;
+    priv.key = privateKey;
+    priv.iterations = PBKDF2_ITERATIONS;
+    this.signingKey = signingKey;
+
+    try {
+      const stored = {
+        check: readEnvelope(STORAGE_CHECK_KEY),
+        main: readEnvelope(STORAGE_DATA_KEY),
+        private: readEnvelope(STORAGE_PRIVATE_KEY),
+      };
+      if (!stored.check || !stored.main || !stored.private) throw new CorruptedDataError();
+      const [check, mainText, privateText] = await Promise.all([
+        decryptString(stored.check, mainKey),
+        decryptString(stored.main, mainKey),
+        decryptString(stored.private, privateKey),
+      ]);
+      if (
+        check !== CHECK_SENTINEL ||
+        mainText !== plaintext.main ||
+        privateText !== plaintext.priv
+      ) {
+        throw new CorruptedDataError();
+      }
+    } catch (error) {
+      restoreRawStorage(before);
+      main.key = previous.main.key;
+      main.iterations = previous.main.iterations;
+      priv.key = previous.priv.key;
+      priv.iterations = previous.priv.iterations;
+      this.signingKey = previous.signingKey;
+      throw error;
+    }
+    // The safety copy of a past import is sealed with the old key and could no longer be opened.
+    clearPreImportBackup();
+    onProgress?.(1);
+  }
+
+  /**
+   * Erases everything in both envelopes, including share links, and the pre-import safety copy.
+   * The stored text is first overwritten with random characters, best effort, then replaced by
+   * empty envelopes under the same keys, so the passphrase and this session stay as they are.
+   */
+  async clearAllData(): Promise<void> {
+    this.assertUnlocked();
+    const { main, priv } = this;
+    if (!main.key || !priv.key) throw new Error('Crewbook storage is locked');
+    for (const slot of [main, priv]) {
+      if (slot.timer) clearTimeout(slot.timer);
+      slot.timer = null;
+      slot.isDirty = false;
+    }
+    // A save already in flight would otherwise land after the wipe.
+    await Promise.all([main.queue, priv.queue]);
+
+    overwriteWithRandom(STORAGE_DATA_KEY);
+    overwriteWithRandom(STORAGE_PRIVATE_KEY);
+    overwriteWithRandom(STORAGE_PRE_IMPORT_KEY);
+    clearPreImportBackup();
+    main.cache = {};
+    priv.cache = {};
+    try {
+      const [mainEnvelope, privateEnvelope] = await Promise.all([
+        encryptString('{}', main.key, main.iterations),
+        encryptString('{}', priv.key, priv.iterations),
+      ]);
+      writeEnvelope(STORAGE_DATA_KEY, mainEnvelope);
+      writeEnvelope(STORAGE_PRIVATE_KEY, privateEnvelope, true);
+    } catch (error) {
+      // The old text is already overwritten, so the empty state must be saved on the next write.
+      main.isDirty = true;
+      priv.isDirty = true;
+      throw error;
+    }
+  }
+
   private activate(
     mainKey: CryptoKey,
     mainIterations: number,
@@ -387,6 +546,7 @@ export class StorageManager {
     assertSafeKey(key);
     if (!slot.cache) throw new Error('Private data is not loaded; call loadPrivate() first');
     slot.cache[key] = value;
+    this.writeCount += 1;
     slot.isDirty = true;
     if (slot.timer) clearTimeout(slot.timer);
     slot.timer = setTimeout(() => void this.persist(slot), WRITE_DEBOUNCE_MS);

@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 
 import { leaveCoversDay, peopleOutOn } from '../data/leave';
 import type { LeaveEntry } from '../types/leave';
 import type { TeamMember } from '../types/TeamMember';
+import type { FirstDayOfWeek } from '../types/settings';
 import {
   addDays,
   addMonths,
@@ -32,11 +33,13 @@ interface CalendarGridProps {
   members: TeamMember[];
   /** YYYY-MM-DD */
   today: string;
+  /** The weekday the grid starts on. Defaults to Monday. */
+  firstDay?: FirstDayOfWeek;
   onSelectEntry: (entry: LeaveEntry) => void;
 }
 
 /** Where each key moves the focused day. */
-function moveFocus(key: string, day: string): string | null {
+function moveFocus(key: string, day: string, firstDay: FirstDayOfWeek): string | null {
   switch (key) {
     case 'ArrowLeft':
       return addDays(day, -1);
@@ -47,9 +50,9 @@ function moveFocus(key: string, day: string): string | null {
     case 'ArrowDown':
       return addDays(day, 7);
     case 'Home':
-      return startOfWeek(day);
+      return startOfWeek(day, firstDay);
     case 'End':
-      return addDays(startOfWeek(day), 6);
+      return addDays(startOfWeek(day, firstDay), 6);
     case 'PageUp':
       return addMonths(day, -1);
     case 'PageDown':
@@ -67,6 +70,7 @@ export function CalendarGrid({
   entries,
   members,
   today,
+  firstDay = 'monday',
   onSelectEntry,
 }: CalendarGridProps) {
   const baseId = useId();
@@ -84,7 +88,7 @@ export function CalendarGrid({
     [entries, peopleById],
   );
 
-  const rows = view === 'week' ? [getWeekDays(cursor)] : getMonthWeeks(cursor);
+  const rows = view === 'week' ? [getWeekDays(cursor, firstDay)] : getMonthWeeks(cursor, firstDay);
   const tabId = (value: CalendarView) => `${baseId}-tab-${value}`;
   const panelId = `${baseId}-panel`;
 
@@ -108,7 +112,7 @@ export function CalendarGrid({
       }
       return;
     }
-    const target = moveFocus(event.key, day);
+    const target = moveFocus(event.key, day, firstDay);
     if (target === null) return;
     event.preventDefault();
     shouldFocusCursor.current = true;
@@ -142,7 +146,7 @@ export function CalendarGrid({
           aria-label={`Leave calendar, ${view} view`}
         >
           <div className="calendar-grid__row" role="row">
-            {getWeekDays(cursor).map((day) => (
+            {getWeekDays(cursor, firstDay).map((day) => (
               <div key={day} className="calendar-grid__heading" role="columnheader">
                 {formatWeekday(day)}
               </div>

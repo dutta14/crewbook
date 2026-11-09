@@ -33,6 +33,8 @@ function failingStorage(settings: Record<string, string>): EncryptedStorageConte
     verifyPassphrase: async () => true,
     exportSnapshot: async () => ({ main: {}, private: {} }),
     replaceAll: async () => undefined,
+    changePassphrase: async () => undefined,
+    clearAllData: async () => undefined,
   };
 }
 

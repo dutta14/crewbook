@@ -536,3 +536,212 @@ describe('write failures', () => {
     expect(listener).not.toHaveBeenCalled();
   });
 });
+
+describe('changePassphrase', () => {
+  const NEW_PASSPHRASE = 'a brand new passphrase';
+
+  async function seeded(): Promise<StorageManager> {
+    const manager = await createUnlocked();
+    await manager.loadPrivate();
+    manager.setData('notes', 'main value');
+    manager.setPrivateData('flightRisk', { m1: 'high' });
+    await manager.flush();
+    return manager;
+  }
+
+  it('re-encrypts both envelopes so only the new passphrase unlocks them', async () => {
+    const manager = await seeded();
+    const progress = vi.fn();
+
+    await manager.changePassphrase(PASSPHRASE, NEW_PASSPHRASE, progress);
+
+    expect(progress).toHaveBeenLastCalledWith(1);
+    await manager.lock();
+    await expect(new StorageManager().unlock(PASSPHRASE)).rejects.toBeInstanceOf(
+      WrongPassphraseError,
+    );
+    const next = new StorageManager();
+    await next.unlock(NEW_PASSPHRASE);
+    await next.loadPrivate();
+    expect(next.getData('notes')).toBe('main value');
+    expect(next.getPrivateData('flightRisk')).toEqual({ m1: 'high' });
+  });
+
+  it('uses fresh salts', async () => {
+    const manager = await seeded();
+    const before = [stored(STORAGE_SALT_KEY), stored(STORAGE_PRIVATE_SALT_KEY)];
+
+    await manager.changePassphrase(PASSPHRASE, NEW_PASSPHRASE);
+
+    expect(stored(STORAGE_SALT_KEY)).not.toBe(before[0]);
+    expect(stored(STORAGE_PRIVATE_SALT_KEY)).not.toBe(before[1]);
+  });
+
+  it('keeps the session usable and saves later writes under the new passphrase', async () => {
+    const manager = await seeded();
+    await manager.changePassphrase(PASSPHRASE, NEW_PASSPHRASE);
+
+    manager.setData('notes', 'after change');
+    await manager.flush();
+
+    await manager.lock();
+    const next = new StorageManager();
+    await next.unlock(NEW_PASSPHRASE);
+    expect(next.getData('notes')).toBe('after change');
+  });
+
+  it('rejects a wrong current passphrase and changes nothing', async () => {
+    const manager = await seeded();
+    const salt = stored(STORAGE_SALT_KEY);
+
+    await expect(manager.changePassphrase('nope nope nope', NEW_PASSPHRASE)).rejects.toBeInstanceOf(
+      WrongPassphraseError,
+    );
+
+    expect(stored(STORAGE_SALT_KEY)).toBe(salt);
+    await manager.lock();
+    await new StorageManager().unlock(PASSPHRASE);
+  });
+
+  it('rejects an empty new passphrase', async () => {
+    const manager = await seeded();
+
+    await expect(manager.changePassphrase(PASSPHRASE, '')).rejects.toBeInstanceOf(RangeError);
+  });
+
+  it('refuses while locked', async () => {
+    await expect(new StorageManager().changePassphrase(PASSPHRASE, NEW_PASSPHRASE)).rejects.toThrow(
+      'locked',
+    );
+  });
+
+  it('puts the old files back when the new ones cannot be written', async () => {
+    const manager = await seeded();
+    const original = Storage.prototype.setItem;
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
+      this: Storage,
+      name: string,
+      value: string,
+    ) {
+      if (name === STORAGE_PRIVATE_KEY) throw new DOMException('full', 'QuotaExceededError');
+      original.call(this, name, value);
+    });
+
+    await expect(manager.changePassphrase(PASSPHRASE, NEW_PASSPHRASE)).rejects.toThrow();
+    vi.restoreAllMocks();
+
+    const next = await relock(manager);
+    await next.loadPrivate();
+    expect(next.getData('notes')).toBe('main value');
+    expect(next.getPrivateData('flightRisk')).toEqual({ m1: 'high' });
+  });
+
+  it('removes the pre-import safety copy, which the new key could not open', async () => {
+    const manager = await seeded();
+    writeEnvelope(
+      'crewbook-pre-import-backup',
+      await encryptString('{}', await keyFor(STORAGE_SALT_KEY)),
+    );
+
+    await manager.changePassphrase(PASSPHRASE, NEW_PASSPHRASE);
+
+    expect(stored('crewbook-pre-import-backup')).toBeNull();
+  });
+
+  it('seals again when a write lands while encrypting', async () => {
+    const manager = await seeded();
+    const pending = manager.changePassphrase(PASSPHRASE, NEW_PASSPHRASE);
+    manager.setData('notes', 'written during the change');
+
+    await pending;
+
+    await manager.lock();
+    const next = new StorageManager();
+    await next.unlock(NEW_PASSPHRASE);
+    expect(next.getData('notes')).toBe('written during the change');
+  });
+});
+
+describe('clearAllData', () => {
+  it('empties both envelopes, including share links, and keeps the session usable', async () => {
+    const manager = await createUnlocked();
+    await manager.loadPrivate();
+    manager.setData('members', [{ id: 'm1' }]);
+    manager.setData('shareTokens', [{ id: 't1' }]);
+    manager.setPrivateData('flightRisk', { m1: 'high' });
+    manager.setPrivateData('moods', [{ id: 'x' }]);
+    await manager.flush();
+
+    await manager.clearAllData();
+
+    expect(manager.isUnlocked).toBe(true);
+    expect(manager.getData('members')).toBeNull();
+    expect(manager.getPrivateData('flightRisk')).toBeNull();
+    const next = await relock(manager);
+    await next.loadPrivate();
+    for (const key of ['members', 'shareTokens']) expect(next.getData(key)).toBeNull();
+    for (const key of ['flightRisk', 'moods']) expect(next.getPrivateData(key)).toBeNull();
+  });
+
+  it('removes the pre-import safety copy', async () => {
+    const manager = await createUnlocked();
+    window.localStorage.setItem('crewbook-pre-import-backup', '{"v":1}');
+
+    await manager.clearAllData();
+
+    expect(stored('crewbook-pre-import-backup')).toBeNull();
+  });
+
+  it('leaves the passphrase working and accepts new data afterwards', async () => {
+    const manager = await createUnlocked();
+    manager.setData('members', [{ id: 'm1' }]);
+    await manager.flush();
+    await manager.clearAllData();
+
+    manager.setData('members', [{ id: 'm2' }]);
+    await manager.flush();
+
+    const next = await relock(manager);
+    expect(next.getData('members')).toEqual([{ id: 'm2' }]);
+  });
+
+  it('does not let a pending write bring old data back', async () => {
+    const manager = await createUnlocked();
+    manager.setData('members', [{ id: 'm1' }]);
+
+    await manager.clearAllData();
+    await manager.flush();
+
+    const next = await relock(manager);
+    expect(next.getData('members')).toBeNull();
+  });
+
+  it('refuses while locked', async () => {
+    await expect(new StorageManager().clearAllData()).rejects.toThrow('locked');
+  });
+
+  it('reports a failed wipe and saves the empty state on the next write', async () => {
+    const manager = await createUnlocked();
+    manager.setData('members', [{ id: 'm1' }]);
+    await manager.flush();
+    const original = Storage.prototype.setItem;
+    // The random overwrite is plain text; only the sealed envelope (JSON) fails to save.
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
+      this: Storage,
+      name: string,
+      value: string,
+    ) {
+      if (name === STORAGE_PRIVATE_KEY && value.startsWith('{')) {
+        throw new DOMException('full', 'QuotaExceededError');
+      }
+      original.call(this, name, value);
+    });
+
+    await expect(manager.clearAllData()).rejects.toThrow();
+    vi.restoreAllMocks();
+
+    await manager.flush();
+    const next = await relock(manager);
+    expect(next.getData('members')).toBeNull();
+  });
+});

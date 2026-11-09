@@ -47,6 +47,17 @@ describe('usePrivateViewGuard', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it('never closes on idle with a null timeout, but still closes when the tab is hidden', () => {
+    const onClose = vi.fn();
+    renderHook(() => usePrivateViewGuard(true, onClose, null));
+
+    act(() => vi.advanceTimersByTime(24 * 60 * 60 * 1000));
+    expect(onClose).not.toHaveBeenCalled();
+    act(() => setVisibility('hidden'));
+
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it('does nothing while inactive and cleans up when it stops being active', () => {
     const onClose = vi.fn();
     const { rerender } = renderHook(({ active }) => usePrivateViewGuard(active, onClose, 100), {

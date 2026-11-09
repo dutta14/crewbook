@@ -100,6 +100,17 @@ describe('envelope registry', () => {
     expect(SETTING_KEYS).toEqual(expect.arrayContaining(['reminderLeadTimes', 'lastBackupAt']));
   });
 
+  it('allows the configuration settings among the settings', () => {
+    expect(SETTING_KEYS).toEqual(
+      expect.arrayContaining([
+        'defaultCadence',
+        'dateFormat',
+        'firstDayOfWeek',
+        'privateAutoLockMinutes',
+      ]),
+    );
+  });
+
   it('has a count group for every key whose records are counted', () => {
     const grouped = new Set(COUNT_GROUPS.flatMap((group) => group.keys));
 

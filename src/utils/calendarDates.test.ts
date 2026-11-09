@@ -81,4 +81,12 @@ describe('calendarDates', () => {
   it('throws for something that is not a calendar day', () => {
     expect(() => addDays('nope', 1)).toThrow(RangeError);
   });
+
+  it('starts weeks on Sunday when asked to', () => {
+    expect(startOfWeek('2026-06-17', 'sunday')).toBe('2026-06-14');
+    expect(startOfWeek('2026-06-14', 'sunday')).toBe('2026-06-14');
+    expect(getWeekDays('2026-06-17', 'sunday')[0]).toBe('2026-06-14');
+    expect(getWeekDays('2026-06-17', 'sunday')[6]).toBe('2026-06-20');
+    expect(getMonthWeeks('2026-06-17', 'sunday')[0][0]).toBe('2026-05-31');
+  });
 });

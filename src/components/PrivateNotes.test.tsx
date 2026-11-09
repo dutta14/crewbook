@@ -1,7 +1,7 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { createMember } from '../test-utils/factories';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
@@ -209,6 +209,41 @@ describe('PrivateNotes', () => {
     await waitFor(() => expect(toggle()).toHaveAttribute('aria-expanded', 'false'));
 
     expect(screen.queryByText('Visible for now')).not.toBeInTheDocument();
+  });
+
+  describe('with the auto-lock setting', () => {
+    const renderAutoLock = (minutes?: string) =>
+      renderWithProviders(<PrivateNotes member={ALEX} />, {
+        initialData: {
+          members: [ALEX],
+          ...(minutes ? { settings: { privateAutoLockMinutes: minutes } } : {}),
+        },
+        initialPrivateData: { flightRisk: [] },
+      });
+
+    afterEach(() => vi.useRealTimers());
+
+    it('collapses after the chosen number of idle minutes', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      renderAutoLock('1');
+      await user.click(toggle());
+
+      await act(async () => void (await vi.advanceTimersByTimeAsync(61_000)));
+
+      expect(toggle()).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('stays open however long it is idle when set to Never', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      renderAutoLock('0');
+      await user.click(toggle());
+
+      await act(async () => void (await vi.advanceTimersByTimeAsync(60 * 60_000)));
+
+      expect(toggle()).toHaveAttribute('aria-expanded', 'true');
+    });
   });
 
   it('has no accessibility violations collapsed, listing notes, or with the form open', async () => {

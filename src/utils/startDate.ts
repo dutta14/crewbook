@@ -1,3 +1,5 @@
+import { DEFAULT_SETTINGS, type DateFormat } from '../types/settings';
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -24,9 +26,22 @@ export function toDateAttribute(startDate: string): string {
   return `${day.getFullYear()}-${month}-${date}`;
 }
 
-/** e.g. "Mar 13, 2023", or null when the stored value is not a date. */
-export function formatStartDate(startDate: string): string | null {
+let activeDateFormat: DateFormat = DEFAULT_SETTINGS.dateFormat;
+
+/** Sets the order every displayed date follows. The app shell calls this from the saved setting. */
+export function setActiveDateFormat(format: DateFormat): void {
+  activeDateFormat = format;
+}
+
+/** e.g. "Mar 13, 2023", or "13 Mar 2023" for DD/MM/YYYY; null when the stored value is not a date. */
+export function formatStartDate(
+  startDate: string,
+  format: DateFormat = activeDateFormat,
+): string | null {
   const day = startOfStartDay(startDate);
   if (Number.isNaN(day.getTime())) return null;
-  return day.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+  return format === 'DD/MM/YYYY'
+    ? day.toLocaleDateString('en-GB', options)
+    : day.toLocaleDateString(undefined, options);
 }

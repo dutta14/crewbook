@@ -42,3 +42,12 @@ export function readCollapseState(): CollapseState {
 export function setSectionCollapsed(id: string, isCollapsed: boolean): void {
   write({ ...readCollapseState(), [id]: isCollapsed });
 }
+
+/** Forgets which dashboard sections were collapsed, as part of Clear All Data. */
+export function clearCollapseState(): void {
+  try {
+    window.localStorage.removeItem(KEY);
+  } catch {
+    // Nothing was stored.
+  }
+}

@@ -184,6 +184,38 @@ describe('ScheduleCard', () => {
     expect(screen.queryByRole('button', { name: 'Skip next 1:1' })).not.toBeInTheDocument();
   });
 
+  it('starts a new schedule on the default cadence from Settings', async () => {
+    const user = userEvent.setup();
+    render(
+      <ScheduleCard
+        memberId={MEMBER_ID}
+        schedule={null}
+        defaultCadence="monthly"
+        onSave={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Set up schedule' }));
+
+    expect(screen.getByLabelText('Cadence')).toHaveValue('monthly');
+  });
+
+  it('keeps a saved schedule on its own cadence whatever the default is', async () => {
+    const user = userEvent.setup();
+    render(
+      <ScheduleCard
+        memberId={MEMBER_ID}
+        schedule={biweekly()}
+        defaultCadence="monthly"
+        onSave={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Edit 1:1 schedule' }));
+
+    expect(screen.getByLabelText('Cadence')).toHaveValue('biweekly');
+  });
+
   it('cancelling the first setup returns focus to the setup button', async () => {
     const user = userEvent.setup();
     renderCard(null);

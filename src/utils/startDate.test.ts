@@ -1,5 +1,11 @@
-import { describe, expect, it } from 'vitest';
-import { daysUntilStart, startOfStartDay, toDateAttribute } from './startDate';
+import { afterEach, describe, expect, it } from 'vitest';
+import {
+  daysUntilStart,
+  formatStartDate,
+  setActiveDateFormat,
+  startOfStartDay,
+  toDateAttribute,
+} from './startDate';
 
 const noon = new Date(2025, 5, 10, 12, 0, 0);
 
@@ -46,5 +52,30 @@ describe('startOfStartDay', () => {
     const day = startOfStartDay('2025-06-15');
 
     expect([day.getHours(), day.getMinutes(), day.getDate()]).toEqual([0, 0, 15]);
+  });
+});
+
+describe('formatStartDate', () => {
+  afterEach(() => setActiveDateFormat('MM/DD/YYYY'));
+
+  it('puts the month first by default and the day first for DD/MM/YYYY', () => {
+    expect(formatStartDate('2023-03-13', 'MM/DD/YYYY')).toBe(
+      new Date(2023, 2, 13).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }),
+    );
+    expect(formatStartDate('2023-03-13', 'DD/MM/YYYY')).toBe('13 Mar 2023');
+  });
+
+  it('follows the active format when none is passed', () => {
+    setActiveDateFormat('DD/MM/YYYY');
+
+    expect(formatStartDate('2023-03-13')).toBe('13 Mar 2023');
+  });
+
+  it('returns null for a value that is not a date', () => {
+    expect(formatStartDate('not a date')).toBeNull();
   });
 });

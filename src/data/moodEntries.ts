@@ -31,7 +31,7 @@ function isMoodEntry(value: unknown): value is MoodEntry {
   );
 }
 
-function readEntries(storage: MoodStorage): MoodEntry[] {
+function readEntries(storage: Pick<MoodStorage, 'getPrivate'>): MoodEntry[] {
   const stored = storage.getPrivate<unknown>(STORAGE_KEY);
   return Array.isArray(stored) ? stored.filter(isMoodEntry) : [];
 }
@@ -116,6 +116,20 @@ export function deleteMoodEntry(noteId: string, storage: MoodStorage): Promise<v
       previous,
       previous.filter((entry) => entry.noteId !== noteId),
     );
+  });
+}
+
+/** How many ratings are stored, for telling the manager what turning tracking off would leave. */
+export function countMoodEntries(storage: Pick<MoodStorage, 'getPrivate'>): number {
+  return readEntries(storage).length;
+}
+
+/** Removes every rating for everyone, for when the manager turns mood tracking off and purges. */
+export function deleteAllMoodEntries(storage: MoodStorage): Promise<void> {
+  return enqueue(async () => {
+    const previous = readEntries(storage);
+    if (previous.length === 0) return;
+    await commit(storage, previous, []);
   });
 }
 

@@ -137,6 +137,45 @@ export function clearAllStorage(): void {
   }
 }
 
+/** Raw stored text for every Crewbook key, null where a key is absent. */
+export type RawStorageSnapshot = Record<string, string | null>;
+
+export function snapshotRawStorage(): RawStorageSnapshot {
+  return Object.fromEntries(
+    [...ALL_STORAGE_KEYS, STORAGE_PRE_IMPORT_KEY].map((key) => [key, readRaw(key)]),
+  );
+}
+
+/** Puts raw values back exactly as captured. Best effort: used only while undoing a failed write. */
+export function restoreRawStorage(snapshot: RawStorageSnapshot): void {
+  for (const [key, value] of Object.entries(snapshot)) {
+    try {
+      if (value === null) window.localStorage.removeItem(key);
+      else window.localStorage.setItem(key, value);
+    } catch {
+      // The caller reports the original failure; there is nothing more to try here.
+    }
+  }
+}
+
+/**
+ * Best effort at making a stored value unrecoverable before it is replaced or removed: writes the
+ * same number of random characters over it. localStorage gives no guarantee about the old bytes.
+ */
+export function overwriteWithRandom(key: string): void {
+  const length = readRaw(key)?.length;
+  if (!length) return;
+  const bytes = new Uint8Array(Math.ceil((length * 3) / 4));
+  for (let offset = 0; offset < bytes.length; offset += 65536) {
+    window.crypto.getRandomValues(bytes.subarray(offset, offset + 65536));
+  }
+  try {
+    window.localStorage.setItem(key, bytesToBase64(bytes).slice(0, length));
+  } catch {
+    // The value is removed or replaced right after, so a failed overwrite changes nothing.
+  }
+}
+
 /*
  * Before a restore replaces everything, the current data is kept here, encrypted with the main
  * key, for a day. It is not part of getStorageStatus because an app with only this key is still a

@@ -1,3 +1,4 @@
+import type { FirstDayOfWeek } from '../types/settings';
 import { parseIsoDate, toIsoDate } from './scheduleCalculator';
 
 // All dates are YYYY-MM-DD strings in local time. Arithmetic goes through Date's calendar methods,
@@ -26,26 +27,27 @@ export function addMonths(day: string, months: number): string {
   return toIsoDate(target);
 }
 
-/** The Monday of the week the day falls in. */
-export function startOfWeek(day: string): string {
+/** The first day of the week the day falls in: a Monday unless the week is set to start on Sunday. */
+export function startOfWeek(day: string, firstDay: FirstDayOfWeek = 'monday'): string {
   const date = toDate(day);
-  return addDays(day, -((date.getDay() + 6) % 7));
+  const offset = firstDay === 'sunday' ? date.getDay() : (date.getDay() + 6) % 7;
+  return addDays(day, -offset);
 }
 
-/** Monday to Sunday of the week the day falls in. */
-export function getWeekDays(day: string): string[] {
-  const monday = startOfWeek(day);
-  return Array.from({ length: 7 }, (_, index) => addDays(monday, index));
+/** Seven days from the start of the week the day falls in. */
+export function getWeekDays(day: string, firstDay: FirstDayOfWeek = 'monday'): string[] {
+  const first = startOfWeek(day, firstDay);
+  return Array.from({ length: 7 }, (_, index) => addDays(first, index));
 }
 
-/** Whole weeks (Monday to Sunday) covering the month the day falls in, 4 to 6 rows of 7 days. */
-export function getMonthWeeks(day: string): string[][] {
+/** Whole weeks covering the month the day falls in, 4 to 6 rows of 7 days. */
+export function getMonthWeeks(day: string, firstDay: FirstDayOfWeek = 'monday'): string[][] {
   const date = toDate(day);
   const first = toIsoDate(new Date(date.getFullYear(), date.getMonth(), 1));
   const last = toIsoDate(new Date(date.getFullYear(), date.getMonth() + 1, 0));
   const weeks: string[][] = [];
-  for (let monday = startOfWeek(first); monday <= last; monday = addDays(monday, 7)) {
-    weeks.push(getWeekDays(monday));
+  for (let start = startOfWeek(first, firstDay); start <= last; start = addDays(start, 7)) {
+    weeks.push(getWeekDays(start, firstDay));
   }
   return weeks;
 }

@@ -29,6 +29,8 @@ import { NextOneOnOne } from './NextOneOnOne';
 interface ScheduleCardProps {
   memberId: string;
   schedule: Schedule | null;
+  /** The cadence a new schedule starts with. Defaults to weekly. */
+  defaultCadence?: Cadence;
   /** May return a promise; the card stays in edit mode and shows an error if it rejects. */
   onSave: (schedule: Schedule) => void | Promise<unknown>;
 }
@@ -50,8 +52,8 @@ interface DraftErrors {
 
 const SAVE_FAILED = "Couldn't save the schedule. Try again.";
 
-const toDraft = (schedule: Schedule | null): Draft => ({
-  cadence: schedule?.cadence ?? 'weekly',
+const toDraft = (schedule: Schedule | null, defaultCadence: Cadence): Draft => ({
+  cadence: schedule?.cadence ?? defaultCadence,
   dayOfWeek: schedule?.dayOfWeek ?? 'monday',
   time: schedule?.time ?? '10:00',
   interval: String(schedule?.customIntervalDays ?? 14),
@@ -66,10 +68,15 @@ function validateDraft(draft: Draft): DraftErrors {
   return errors;
 }
 
-export function ScheduleCard({ memberId, schedule, onSave }: ScheduleCardProps) {
+export function ScheduleCard({
+  memberId,
+  schedule,
+  defaultCadence = 'weekly',
+  onSave,
+}: ScheduleCardProps) {
   const prefix = `schedule-${memberId}`;
   const [mode, setMode] = useState<Mode>('display');
-  const [draft, setDraft] = useState<Draft>(() => toDraft(schedule));
+  const [draft, setDraft] = useState<Draft>(() => toDraft(schedule, defaultCadence));
   const [errors, setErrors] = useState<DraftErrors>({});
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [rescheduleError, setRescheduleError] = useState('');
@@ -99,7 +106,7 @@ export function ScheduleCard({ memberId, schedule, onSave }: ScheduleCardProps) 
   }, [mode, schedule]);
 
   const startEdit = () => {
-    setDraft(toDraft(schedule));
+    setDraft(toDraft(schedule, defaultCadence));
     setErrors({});
     setSaveError('');
     setAnnouncement('');

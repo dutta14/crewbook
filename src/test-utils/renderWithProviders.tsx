@@ -1,5 +1,5 @@
 import { render, type RenderResult } from '@testing-library/react';
-import { useMemo, useState, type ReactElement, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import {
   EncryptedStorageContext,
@@ -7,6 +7,7 @@ import {
 } from '../components/EncryptedStorageProvider';
 import { ToastProvider } from '../components/Toast';
 import type { AppData } from '../types';
+import { WrongPassphraseError } from '../utils/encryptedStorage';
 
 export interface RenderWithProvidersOptions {
   route?: string;
@@ -18,6 +19,8 @@ export interface RenderWithProvidersOptions {
   signingKey?: CryptoKey | null;
   // The passphrase verifyPassphrase accepts.
   passphrase?: string;
+  // Makes changePassphrase reject after the current passphrase checks out, like a failed write.
+  failPassphraseChange?: boolean;
 }
 
 // An always-unlocked, in-memory stand-in for EncryptedStorageProvider: no lock screen, no crypto.
@@ -26,18 +29,21 @@ function InMemoryEncryptedStorage({
   initialPrivateData,
   signingKey,
   passphrase,
+  failPassphraseChange,
   children,
 }: {
   initialData: Partial<AppData>;
   initialPrivateData: Record<string, unknown>;
   signingKey: CryptoKey | null;
   passphrase: string;
+  failPassphraseChange: boolean;
   children: ReactNode;
 }) {
   const [data] = useState(() => new Map<string, unknown>(Object.entries(initialData)));
   const [privateData] = useState(
     () => new Map<string, unknown>(Object.entries(initialPrivateData)),
   );
+  const currentPassphrase = useRef(passphrase);
   const [version, setVersion] = useState(0);
 
   const value = useMemo<EncryptedStorageContextValue>(
@@ -64,7 +70,7 @@ function InMemoryEncryptedStorage({
       },
       getShareSigningKey: () => signingKey,
       flush: async () => null,
-      verifyPassphrase: async (candidate: string) => candidate === passphrase,
+      verifyPassphrase: async (candidate: string) => candidate === currentPassphrase.current,
       exportSnapshot: async () => ({
         main: Object.fromEntries(data),
         private: Object.fromEntries(privateData),
@@ -77,10 +83,21 @@ function InMemoryEncryptedStorage({
         onProgress?.(1);
         setVersion((current) => current + 1);
       },
+      changePassphrase: async (current, next, onProgress) => {
+        if (current !== currentPassphrase.current) throw new WrongPassphraseError();
+        if (failPassphraseChange) throw new Error('Re-encryption failed');
+        onProgress?.(1);
+        currentPassphrase.current = next;
+      },
+      clearAllData: async () => {
+        data.clear();
+        privateData.clear();
+        setVersion((current) => current + 1);
+      },
     }),
     // `version` gives consumers a fresh context value after each write, like the real provider.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data, privateData, signingKey, passphrase, version],
+    [data, privateData, signingKey, failPassphraseChange, version],
   );
 
   return (
@@ -96,6 +113,7 @@ export function renderWithProviders(
     initialPrivateData = {},
     signingKey = null,
     passphrase = 'test passphrase',
+    failPassphraseChange = false,
   }: RenderWithProvidersOptions = {},
 ): RenderResult {
   const Wrapper = ({ children }: { children: ReactNode }) => (
@@ -106,6 +124,7 @@ export function renderWithProviders(
           initialPrivateData={initialPrivateData}
           signingKey={signingKey}
           passphrase={passphrase}
+          failPassphraseChange={failPassphraseChange}
         >
           {children}
         </InMemoryEncryptedStorage>

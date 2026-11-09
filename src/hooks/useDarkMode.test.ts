@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useDarkMode } from './useDarkMode';
+import { resetTheme, useDarkMode } from './useDarkMode';
 
 const stubSystemTheme = (prefersDark: boolean) => {
   vi.stubGlobal(
@@ -85,6 +85,31 @@ describe('useDarkMode', () => {
     const { result } = renderHook(() => useDarkMode());
 
     expect(result.current.isDark).toBe(false);
+  });
+
+  it('sets the theme directly and keeps every hook instance in step', () => {
+    const first = renderHook(() => useDarkMode());
+    const second = renderHook(() => useDarkMode());
+
+    act(() => first.result.current.setDark(true));
+
+    expect(second.result.current.isDark).toBe(true);
+    expect(localStorage.getItem('theme')).toBe('dark');
+    act(() => second.result.current.setDark(false));
+    expect(first.result.current.isDark).toBe(false);
+    expect(document.body).not.toHaveClass('dark');
+  });
+
+  it('forgets the saved theme and returns to the system preference on reset', () => {
+    const { result } = renderHook(() => useDarkMode());
+    act(() => result.current.setDark(true));
+    stubSystemTheme(false);
+
+    act(() => resetTheme());
+
+    expect(localStorage.getItem('theme')).toBeNull();
+    expect(result.current.isDark).toBe(false);
+    expect(document.body).not.toHaveClass('dark');
   });
 
   it('still toggles for the session when storage is unavailable', () => {

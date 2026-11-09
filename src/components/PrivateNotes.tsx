@@ -1,4 +1,6 @@
 import { useId, useState } from 'react';
+import { getPrivateAutoLockMinutes } from '../data/settings';
+import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { usePrivateViewGuard } from '../hooks/usePrivateViewGuard';
 import type { TeamMember } from '../types/TeamMember';
 import '../styles/flight-risk.css';
@@ -7,7 +9,7 @@ import { PrivateNotesPanel } from './PrivateNotesPanel';
 
 interface PrivateNotesProps {
   member: Pick<TeamMember, 'id' | 'name'>;
-  /** Idle time before the section closes itself. Defaults to five minutes. */
+  /** Idle time before the section closes itself. Defaults to the auto-lock setting in Settings. */
   idleMs?: number;
 }
 
@@ -18,8 +20,12 @@ interface PrivateNotesProps {
 export function PrivateNotes({ member, idleMs }: PrivateNotesProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const panelId = useId();
+  const storage = useEncryptedStorage();
+  const minutes = getPrivateAutoLockMinutes(storage);
+  // 0 is "Never": no idle timer, but hiding the tab still closes the section.
+  const configuredIdleMs = minutes === 0 ? null : minutes * 60 * 1000;
 
-  usePrivateViewGuard(isExpanded, () => setIsExpanded(false), idleMs);
+  usePrivateViewGuard(isExpanded, () => setIsExpanded(false), idleMs ?? configuredIdleMs);
 
   return (
     <section className="private-notes" aria-label={`Private notes for ${member.name}`}>

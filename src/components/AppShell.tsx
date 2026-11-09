@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { getDateFormat } from '../data/settings';
 import { useDarkMode } from '../hooks/useDarkMode';
+import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
+import { setActiveDateFormat } from '../utils/startDate';
 import { ErrorBoundary } from './ErrorBoundary';
 import { FeedbackFab } from './FeedbackFab';
 import { MenuIcon } from './icons';
@@ -8,6 +11,9 @@ import { Sidebar } from './Sidebar';
 
 export function AppShell() {
   const { isDark, toggle } = useDarkMode();
+  const storage = useEncryptedStorage();
+  // Read during render so dates drawn below already follow the saved format.
+  setActiveDateFormat(getDateFormat(storage));
   const { pathname } = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);

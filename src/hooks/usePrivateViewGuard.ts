@@ -8,11 +8,12 @@ const ACTIVITY_EVENTS = ['pointerdown', 'pointermove', 'keydown', 'wheel'] as co
 /**
  * While `isActive`, calls `onClose` when the tab is hidden or when nothing has been touched for
  * `idleMs`. Used to take sensitive content off the screen after an Alt+Tab or a walk away.
+ * Pass `null` to switch the idle timer off; hiding the tab still closes the view.
  */
 export function usePrivateViewGuard(
   isActive: boolean,
   onClose: () => void,
-  idleMs: number = PRIVATE_VIEW_IDLE_MS,
+  idleMs: number | null = PRIVATE_VIEW_IDLE_MS,
 ): void {
   const onCloseRef = useRef(onClose);
   useEffect(() => {
@@ -21,9 +22,10 @@ export function usePrivateViewGuard(
 
   useEffect(() => {
     if (!isActive) return undefined;
-    let timer: ReturnType<typeof setTimeout>;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const close = () => onCloseRef.current();
     const restart = () => {
+      if (idleMs === null) return;
       clearTimeout(timer);
       timer = setTimeout(close, idleMs);
     };

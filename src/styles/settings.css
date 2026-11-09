@@ -129,9 +129,117 @@
   font-size: var(--text-body);
 }
 
+.settings-row + .settings-row,
+.settings-row + .settings-choice,
+.settings-choice + .settings-row {
+  margin-top: var(--space-4);
+}
+
+.settings-row__control {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.settings-select {
+  min-width: 140px;
+  min-height: 44px;
+}
+
+/* Reserves its width so the control does not shift when "Saved" appears. */
+.settings-saved {
+  min-width: 3.5em;
+  color: var(--success-fg);
+  font-size: var(--text-caption);
+  text-align: right;
+  opacity: 0;
+  transition: opacity var(--transition-fast) var(--ease-out);
+}
+
+.settings-saved[data-visible='true'] {
+  opacity: 1;
+}
+
+.settings-subtitle {
+  margin: 0;
+  color: var(--fg);
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.passphrase-form,
+.danger-zone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+}
+
+.passphrase-form .settings-row__description {
+  margin: 0;
+}
+
+.passphrase-strength {
+  margin: calc(var(--space-2) * -1) 0 0;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+.password-field {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.password-field__input {
+  flex: 1;
+  min-width: 0;
+}
+
+.password-field__toggle {
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+
+.password-field__toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.settings-reminder {
+  margin: 0;
+}
+
+@media (max-width: 767px) {
+  .settings-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settings-row__control {
+    justify-content: space-between;
+  }
+
+  .settings-select {
+    flex: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .switch__track,
-  .switch__knob {
+  .switch__knob,
+  .settings-saved {
     transition: none;
   }
 }

@@ -1,6 +1,8 @@
-import { useCallback, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 
 const STORAGE_KEY = 'theme';
+// Lets every mounted copy of the hook (sidebar toggle, Settings switch) follow the same choice.
+const THEME_EVENT = 'crewbook:theme';
 
 function readStoredTheme(): string | null {
   try {
@@ -10,29 +12,58 @@ function readStoredTheme(): string | null {
   }
 }
 
+function prefersDark(): boolean {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
 function getInitialIsDark(): boolean {
   const stored = readStoredTheme();
   if (stored === 'dark') return true;
   if (stored === 'light') return false;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return prefersDark();
 }
 
-export function useDarkMode(): { isDark: boolean; toggle: () => void } {
+function announce(isDark: boolean): void {
+  window.dispatchEvent(new CustomEvent<boolean>(THEME_EVENT, { detail: isDark }));
+}
+
+/** Forgets the saved theme so the system preference applies again, as after Clear All Data. */
+export function resetTheme(): void {
+  try {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Nothing was stored.
+  }
+  announce(prefersDark());
+}
+
+export function useDarkMode(): {
+  isDark: boolean;
+  toggle: () => void;
+  setDark: (isDark: boolean) => void;
+} {
   const [isDark, setIsDark] = useState(getInitialIsDark);
 
   useLayoutEffect(() => {
     document.body.classList.toggle('dark', isDark);
   }, [isDark]);
 
-  const toggle = useCallback(() => {
-    const next = !isDark;
-    setIsDark(next);
+  useEffect(() => {
+    const onTheme = (event: Event) => setIsDark((event as CustomEvent<boolean>).detail);
+    window.addEventListener(THEME_EVENT, onTheme);
+    return () => window.removeEventListener(THEME_EVENT, onTheme);
+  }, []);
+
+  const setDark = useCallback((next: boolean) => {
     try {
       window.localStorage.setItem(STORAGE_KEY, next ? 'dark' : 'light');
     } catch {
-      // Storage can be unavailable (private mode); the toggle still works for this session.
+      // Storage can be unavailable (private mode); the switch still works for this session.
     }
-  }, [isDark]);
+    announce(next);
+  }, []);
 
-  return { isDark, toggle };
+  const toggle = useCallback(() => setDark(!isDark), [isDark, setDark]);
+
+  return { isDark, toggle, setDark };
 }

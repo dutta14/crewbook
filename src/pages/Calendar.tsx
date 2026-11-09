@@ -6,6 +6,7 @@ import { EmptyState } from '../components/EmptyState';
 import { CalendarIcon } from '../components/icons';
 import { LeaveForm } from '../components/LeaveForm';
 import { listMembers } from '../data/members';
+import { getFirstDayOfWeek } from '../data/settings';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import { useLeave } from '../hooks/useLeave';
 import { usePrivateEnvelope } from '../hooks/usePrivateEnvelope';
@@ -115,6 +116,7 @@ function CalendarContent() {
           entries={entries}
           members={members}
           today={today}
+          firstDay={getFirstDayOfWeek(storage)}
           onSelectEntry={(entry) => setForm({ isOpen: true, entry })}
         />
       </div>

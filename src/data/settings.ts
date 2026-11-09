@@ -1,5 +1,17 @@
 import type { EncryptedStorageContextValue } from '../components/EncryptedStorageProvider';
 import type { NoteVisibility } from '../types/Note';
+import {
+  AUTO_LOCK_OPTIONS,
+  CADENCE_OPTIONS,
+  DATE_FORMATS,
+  DEFAULT_SETTINGS,
+  FIRST_DAYS_OF_WEEK,
+  type AppSettings,
+  type CadenceOption,
+  type DateFormat,
+  type FirstDayOfWeek,
+  type PrivateAutoLockTimeout,
+} from '../types/settings';
 import { ValidationError } from './errors';
 
 /** A property on the decrypted `crewbook_data` object; AppData types its values as strings. */
@@ -11,6 +23,10 @@ const LIVE_NOTICE_KEY = 'liveModeNoticeDismissed';
 const LAST_BACKUP_KEY = 'lastBackupAt';
 const MANAGER_NAME_KEY = 'managerName';
 const DEFAULT_NOTE_VISIBILITY_KEY = 'defaultNoteVisibility';
+const DEFAULT_CADENCE_KEY = 'defaultCadence';
+const DATE_FORMAT_KEY = 'dateFormat';
+const FIRST_DAY_KEY = 'firstDayOfWeek';
+const AUTO_LOCK_KEY = 'privateAutoLockMinutes';
 
 export type SettingsStorage = Pick<EncryptedStorageContextValue, 'get' | 'set' | 'flush'>;
 
@@ -88,6 +104,101 @@ export function setDefaultNoteVisibility(
     return Promise.reject(new ValidationError('Choose shared or private'));
   }
   return writeSetting(DEFAULT_NOTE_VISIBILITY_KEY, visibility, storage);
+}
+
+/** Fails back to the default for anything missing, corrupt or not one of the known choices. */
+export function getDefaultCadence(storage: Pick<SettingsStorage, 'get'>): CadenceOption {
+  const stored = readSettings(storage)[DEFAULT_CADENCE_KEY];
+  return CADENCE_OPTIONS.find((option) => option === stored) ?? DEFAULT_SETTINGS.defaultCadence;
+}
+
+export function setDefaultCadence(cadence: CadenceOption, storage: SettingsStorage): Promise<void> {
+  if (!CADENCE_OPTIONS.includes(cadence)) {
+    return Promise.reject(new ValidationError('Choose weekly, biweekly or monthly'));
+  }
+  return writeSetting(DEFAULT_CADENCE_KEY, cadence, storage);
+}
+
+export function getDateFormat(storage: Pick<SettingsStorage, 'get'>): DateFormat {
+  const stored = readSettings(storage)[DATE_FORMAT_KEY];
+  return DATE_FORMATS.find((option) => option === stored) ?? DEFAULT_SETTINGS.dateFormat;
+}
+
+export function setDateFormat(format: DateFormat, storage: SettingsStorage): Promise<void> {
+  if (!DATE_FORMATS.includes(format)) {
+    return Promise.reject(new ValidationError('Choose a date format'));
+  }
+  return writeSetting(DATE_FORMAT_KEY, format, storage);
+}
+
+export function getFirstDayOfWeek(storage: Pick<SettingsStorage, 'get'>): FirstDayOfWeek {
+  const stored = readSettings(storage)[FIRST_DAY_KEY];
+  return FIRST_DAYS_OF_WEEK.find((option) => option === stored) ?? DEFAULT_SETTINGS.firstDayOfWeek;
+}
+
+export function setFirstDayOfWeek(day: FirstDayOfWeek, storage: SettingsStorage): Promise<void> {
+  if (!FIRST_DAYS_OF_WEEK.includes(day)) {
+    return Promise.reject(new ValidationError('Choose Sunday or Monday'));
+  }
+  return writeSetting(FIRST_DAY_KEY, day, storage);
+}
+
+export function getPrivateAutoLockMinutes(
+  storage: Pick<SettingsStorage, 'get'>,
+): PrivateAutoLockTimeout {
+  const stored = readSettings(storage)[AUTO_LOCK_KEY];
+  return (
+    AUTO_LOCK_OPTIONS.find((option) => String(option) === stored) ??
+    DEFAULT_SETTINGS.privateAutoLockMinutes
+  );
+}
+
+export function setPrivateAutoLockMinutes(
+  minutes: PrivateAutoLockTimeout,
+  storage: SettingsStorage,
+): Promise<void> {
+  if (!AUTO_LOCK_OPTIONS.includes(minutes)) {
+    return Promise.reject(new ValidationError('Choose a timeout from the list'));
+  }
+  return writeSetting(AUTO_LOCK_KEY, String(minutes), storage);
+}
+
+/** Every preference at once, each already checked against its allowed values. */
+export function readAppSettings(storage: Pick<SettingsStorage, 'get'>): AppSettings {
+  return {
+    defaultCadence: getDefaultCadence(storage),
+    dateFormat: getDateFormat(storage),
+    firstDayOfWeek: getFirstDayOfWeek(storage),
+    defaultNoteVisibility: getDefaultNoteVisibility(storage),
+    moodTrackingEnabled: isMoodTrackingEnabled(storage),
+    hideRiskIndicators: areRiskIndicatorsHidden(storage),
+    liveShortcutsEnabled: areLiveShortcutsEnabled(storage),
+    privateAutoLockMinutes: getPrivateAutoLockMinutes(storage),
+    managerName: getManagerName(storage),
+  };
+}
+
+const SETTERS: {
+  [K in keyof AppSettings]: (value: AppSettings[K], s: SettingsStorage) => Promise<void>;
+} = {
+  defaultCadence: setDefaultCadence,
+  dateFormat: setDateFormat,
+  firstDayOfWeek: setFirstDayOfWeek,
+  defaultNoteVisibility: setDefaultNoteVisibility,
+  moodTrackingEnabled: setMoodTrackingEnabled,
+  hideRiskIndicators: setRiskIndicatorsHidden,
+  liveShortcutsEnabled: setLiveShortcutsEnabled,
+  privateAutoLockMinutes: setPrivateAutoLockMinutes,
+  managerName: setManagerName,
+};
+
+/** Validates, applies and persists one preference; rolls it back if the write fails. */
+export function updateAppSetting<K extends keyof AppSettings>(
+  key: K,
+  value: AppSettings[K],
+  storage: SettingsStorage,
+): Promise<void> {
+  return SETTERS[key](value, storage);
 }
 
 /** On unless the manager turns them off, because live mode's shortcuts can clash with a browser's. */

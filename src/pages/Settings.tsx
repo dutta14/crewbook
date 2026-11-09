@@ -1,64 +1,52 @@
 import { useState } from 'react';
+import { ChangePassphrase } from '../components/ChangePassphrase';
+import { ClearAllData } from '../components/ClearAllData';
 import { CustomFieldSettings } from '../components/CustomFieldSettings';
 import { DataManagement } from '../components/DataManagement';
-import { DefaultVisibilitySetting } from '../components/DefaultVisibilitySetting';
+import { GeneralSettings } from '../components/GeneralSettings';
 import { LeadTimeSettings } from '../components/LeadTimeSettings';
-import { SettingsSwitchRow } from '../components/SettingsSwitchRow';
-import {
-  areRiskIndicatorsHidden,
-  isMoodTrackingEnabled,
-  setMoodTrackingEnabled,
-  setRiskIndicatorsHidden,
-} from '../data/settings';
+import { PrivacySettings } from '../components/PrivacySettings';
 import { useCustomFields } from '../hooks/useCustomFields';
-import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
-import { useToast } from '../hooks/useToast';
 import '../styles/settings.css';
 
-const SAVE_FAILED = "Couldn't save that setting. Try again.";
-
-/** Remounts the sections after a restore, so forms that copied a setting into a draft reload it. */
+/**
+ * Remounts the sections after a restore or a clear, so forms that copied a setting into a draft
+ * reload it. The reminder after a clear lives here so it survives that remount.
+ */
 export function Settings() {
-  const [restoreCount, setRestoreCount] = useState(0);
+  const [reloadCount, setReloadCount] = useState(0);
+  const [hasCleared, setHasCleared] = useState(false);
+  const reload = () => setReloadCount((count) => count + 1);
   return (
-    <SettingsContent key={restoreCount} onRestored={() => setRestoreCount((count) => count + 1)} />
+    <SettingsContent
+      key={reloadCount}
+      hasCleared={hasCleared}
+      onRestored={() => {
+        setHasCleared(false);
+        reload();
+      }}
+      onCleared={() => {
+        setHasCleared(true);
+        reload();
+      }}
+    />
   );
 }
 
-function SettingsContent({ onRestored }: { onRestored: () => void }) {
-  const storage = useEncryptedStorage();
-  const { showToast } = useToast();
+interface SettingsContentProps {
+  hasCleared: boolean;
+  onRestored: () => void;
+  onCleared: () => void;
+}
+
+function SettingsContent({ hasCleared, onRestored, onCleared }: SettingsContentProps) {
   const customFields = useCustomFields();
 
-  const save = async (write: () => Promise<void>) => {
-    try {
-      await write();
-    } catch {
-      showToast(SAVE_FAILED, 'error');
-    }
-  };
-
   return (
-    <>
+    <div className="settings-page">
       <h1>Settings</h1>
-      <section className="settings-section" aria-labelledby="settings-privacy-heading">
-        <h2 id="settings-privacy-heading" className="settings-section__title">
-          Privacy
-        </h2>
-        <SettingsSwitchRow
-          label="Track energy/mood after 1:1s"
-          description="Only visible to you. Never shared."
-          checked={isMoodTrackingEnabled(storage)}
-          onChange={(next) => void save(() => setMoodTrackingEnabled(next, storage))}
-        />
-        <SettingsSwitchRow
-          label="Hide risk indicators"
-          description="Hides the dots on the roster, for example while sharing your screen. Your private notes stay saved."
-          checked={areRiskIndicatorsHidden(storage)}
-          onChange={(next) => void save(() => setRiskIndicatorsHidden(next, storage))}
-        />
-        <DefaultVisibilitySetting />
-      </section>
+      <GeneralSettings />
+      <PrivacySettings />
       <LeadTimeSettings />
       <CustomFieldSettings
         definitions={customFields.definitions}
@@ -73,7 +61,9 @@ function SettingsContent({ onRestored }: { onRestored: () => void }) {
           Data Management
         </h2>
         <DataManagement onRestored={onRestored} />
+        <ChangePassphrase />
+        <ClearAllData showReminder={hasCleared} onCleared={onCleared} />
       </section>
-    </>
+    </div>
   );
 }

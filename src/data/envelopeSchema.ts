@@ -161,6 +161,10 @@ const settingsShape = {
   liveModeNoticeDismissed: optional(SETTING_BOOLEAN),
   managerName: optional(str({ max: 200 })),
   defaultNoteVisibility: optional(oneOf(['shared', 'private'] as const)),
+  defaultCadence: optional(oneOf(['weekly', 'biweekly', 'monthly'] as const)),
+  dateFormat: optional(oneOf(['MM/DD/YYYY', 'DD/MM/YYYY'] as const)),
+  firstDayOfWeek: optional(oneOf(['sunday', 'monday'] as const)),
+  privateAutoLockMinutes: optional(oneOf(['0', '1', '2', '5', '10', '15'] as const)),
   reminderLeadTimes: optional(leadTimesText),
   lastBackupAt: optionalDate,
 };
