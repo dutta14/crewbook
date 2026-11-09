@@ -18,7 +18,7 @@ const files = Object.entries(sources).map(([path, code]) => ({
   code,
 }));
 
-const SHARE_FILE = /(shar(e|ing)|ExpiredLink)/i;
+const SHARE_FILE = /(shar(e|ing)|ExpiredLink|ActiveTokensList|QRCode)/i;
 const shareFiles = files.filter(({ path }) => SHARE_FILE.test(path));
 
 // The only code that decides what leaves the device, and the link format itself.
@@ -29,12 +29,21 @@ const PAYLOAD_FILES = [
 ];
 
 const ALLOWED_DATA = new Set(['actionItems', 'agenda', 'errors', 'members', 'notes', 'settings']);
-const ALLOWED_HOOKS = new Set(['useEncryptedStorage', 'useToast', 'useDarkMode', 'useSharedView']);
+const ALLOWED_HOOKS = new Set([
+  'useEncryptedStorage',
+  'useToast',
+  'useDarkMode',
+  'useSharedView',
+  'useNow',
+]);
 const ALLOWED_COMPONENTS = new Set([
   'Modal',
+  'ConfirmDialog',
   'icons',
-  'ShareDialog',
+  'ShareLinkPopover',
   'ShareButton',
+  'ActiveTokensList',
+  'QRCode',
   // Only for the storage type the data modules are written against.
   'EncryptedStorageProvider',
 ]);
@@ -62,7 +71,10 @@ describe('share isolation', () => {
       'src/hooks/useSharedView.ts',
       'src/pages/SharedOneOnOne.tsx',
       'src/pages/ExpiredLink.tsx',
-      'src/components/ShareDialog.tsx',
+      'src/components/ShareLinkPopover.tsx',
+      'src/components/ActiveTokensList.tsx',
+      'src/components/QRCode.tsx',
+      'src/utils/shareExpiry.ts',
     ]) {
       expect(paths).toContain(expected);
     }
@@ -155,6 +167,9 @@ describe('share isolation', () => {
       'src/hooks/useSharedView.ts',
       'src/pages/SharedOneOnOne.tsx',
       'src/pages/ExpiredLink.tsx',
+      'src/components/ActiveTokensList.tsx',
+      'src/components/QRCode.tsx',
+      'src/utils/shareExpiry.ts',
     ]) {
       expect(sources[`/${path}`], path).not.toMatch(PRIVATE_DOMAIN);
     }

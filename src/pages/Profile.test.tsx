@@ -445,6 +445,54 @@ describe('Profile', () => {
     expect(within(panel).queryByText(/L9/)).toBeNull();
   });
 
+  it('deleting a member also drops the share links made for them but keeps everyone else’s', async () => {
+    const user = userEvent.setup();
+    const link = (id: string, engineerId: string) => ({
+      id,
+      engineerId,
+      createdAt: new Date(Date.now() - 1000).toISOString(),
+      expiresAt: new Date(Date.now() + 24 * 3_600_000 - 1000).toISOString(),
+      revoked: false,
+      ttl: '24h' as const,
+    });
+    function Remaining() {
+      const { get } = useEncryptedStorage();
+      const links = get<Array<{ id: string }>>('shareTokens') ?? [];
+      return <output aria-label="Remaining links">{links.map(({ id }) => id).join(',')}</output>;
+    }
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/roster" element={<h1>Roster page</h1>} />
+          <Route path="/person/:id" element={<Profile />} />
+        </Routes>
+        <Remaining />
+      </>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: {
+          members: team(),
+          shareTokens: [link('alex-link', ALEX), link('priya-link', PRIYA)],
+        },
+      },
+    );
+    expect(await screen.findByText('alex-lin')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Delete Alex Chen' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Remaining links' })).toHaveTextContent(
+        'priya-link',
+      ),
+    );
+    expect(screen.getByRole('status', { name: 'Remaining links' })).not.toHaveTextContent(
+      'alex-link',
+    );
+  });
+
   it('deleting a member also purges their growth entries but keeps everyone else’s', async () => {
     const user = userEvent.setup();
     function Remaining() {

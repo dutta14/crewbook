@@ -18,6 +18,9 @@ const OTHER_PERSON_NOTE = 'OTHER-PERSON-SENTINEL';
 const PRIVATE_AGENDA = 'PRIVATE-AGENDA-SENTINEL';
 
 const expectNoViolations = async (page: Page) => {
+  await page.evaluate(() =>
+    Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))),
+  );
   const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
   expect(violations).toEqual([]);
 };

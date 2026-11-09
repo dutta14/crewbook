@@ -1,0 +1,121 @@
+/* Share link options, QR code and the list of active links. Colours come from the tokens. */
+.share-dialog__expiry {
+  flex: 0 1 10rem;
+}
+
+.share-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.share-qr__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.share-qr__code {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.share-qr__unavailable {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+.share-tokens {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+}
+
+.share-tokens__title {
+  margin: 0 0 var(--space-3);
+  color: var(--fg2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.share-tokens__title:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.share-tokens__empty {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+.share-tokens__scroll {
+  overflow-x: auto;
+}
+
+.share-tokens__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-body);
+}
+
+.share-tokens__table th {
+  padding: var(--space-2) var(--space-3);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  text-align: left;
+}
+
+.share-tokens__table td {
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.share-tokens__id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--text-caption);
+}
+
+.share-tokens__time {
+  color: var(--fg);
+}
+
+.share-tokens__time--soon {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+body.dark .share-tokens__time--soon {
+  color: #fca5a5;
+}
+
+.share-tokens__actions {
+  text-align: right;
+}
+
+.share-tokens__revoke {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+@keyframes share-tokens-pulse {
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .share-tokens__time--soon {
+    animation: share-tokens-pulse 2s ease-in-out infinite;
+  }
+}

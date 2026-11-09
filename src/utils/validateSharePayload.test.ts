@@ -35,6 +35,11 @@ describe('validateSharePayload', () => {
     ],
     ['too many initials', mutate({ engineerAvatar: { initials: 'ABCDE', color: '#112233' } })],
     ['a bad expiry', mutate({ expiresAt: 'soon' })],
+    [
+      'a lifetime that is not a preset',
+      mutate({ expiresAt: '2026-01-09T10:00:00.000Z', createdAt: '2026-01-08T11:00:00.000Z' }),
+    ],
+    ['an expiry before the creation time', mutate({ createdAt: '2026-01-10T10:00:00.000Z' })],
     ['notes that are not a list', mutate({ sharedNotes: {} })],
     [
       'too many notes',

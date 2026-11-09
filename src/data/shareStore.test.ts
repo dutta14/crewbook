@@ -1,9 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createActionItem, createMember } from '../test-utils/factories';
+import { makePayload } from '../test-utils/sharePayload';
+import { StorageWriteError } from '../utils/encryptedStorage';
 import { NotFoundError, ValidationError } from './errors';
-import { ShareLockedError, cleanManagerName, createShareLink, getSharedData } from './shareStore';
+import {
+  ShareLockedError,
+  cleanManagerName,
+  createShareLink,
+  deleteShareTokensForMember,
+  getActiveTokens,
+  getSharedData,
+  isTokenValid,
+  recordShareToken,
+  revokeToken,
+} from './shareStore';
 import type { ShareStorage } from './shareStore';
-import { readShareToken } from '../utils/shareUrl';
+import { readShareToken, ShareUnsupportedError } from '../utils/shareUrl';
 
 const ALEX = createMember({ id: 'alex', name: 'Alex Chen' });
 const PRIYA = createMember({ id: 'priya', name: 'Priya Nair' });
@@ -111,5 +123,133 @@ describe('createShareLink', () => {
     await expect(createShareLink('alex', 'Morgan', storage)).rejects.toBeInstanceOf(
       ShareLockedError,
     );
+  });
+
+  it('lasts 24 hours unless a preset lifetime is chosen', async () => {
+    const { storage } = setup(await newKey());
+    const day = await createShareLink('alex', 'Morgan', storage);
+    const hour = await createShareLink('alex', 'Morgan', storage, { ttl: '1h' });
+    const lifetime = ({ payload }: { payload: { createdAt: string; expiresAt: string } }) =>
+      Date.parse(payload.expiresAt) - Date.parse(payload.createdAt);
+    expect(lifetime(day)).toBe(24 * 60 * 60 * 1000);
+    expect(lifetime(hour)).toBe(60 * 60 * 1000);
+  });
+
+  it('rejects a lifetime that is not a preset', async () => {
+    const { storage } = setup(await newKey());
+    await expect(
+      createShareLink('alex', 'Morgan', storage, { ttl: '72h' as never }),
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('reports an unsupported browser when random ids are unavailable', async () => {
+    const { storage } = setup(await newKey());
+    vi.stubGlobal('crypto', { subtle: crypto.subtle });
+    try {
+      await expect(createShareLink('alex', 'Morgan', storage)).rejects.toBeInstanceOf(
+        ShareUnsupportedError,
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe('share token registry', () => {
+  const NOW = new Date('2026-03-01T10:00:00.000Z');
+  const payloadFor = (id: string, hours = 24, from = NOW) =>
+    makePayload({
+      id,
+      createdAt: from.toISOString(),
+      expiresAt: new Date(from.getTime() + hours * 3_600_000).toISOString(),
+    });
+
+  it('records a token without any of the shared content', async () => {
+    const { storage } = setup(null);
+    const token = await recordShareToken('alex', payloadFor('t1'), storage, NOW);
+    expect(token).toMatchObject({ id: 't1', engineerId: 'alex', revoked: false, ttl: '24h' });
+    const stored = JSON.stringify(storage.get('shareTokens'));
+    expect(stored).not.toContain('Morgan');
+    expect(stored).not.toContain('Talked about');
+  });
+
+  it('lists live tokens for one person, soonest to expire first', async () => {
+    const { storage } = setup(null);
+    await recordShareToken('alex', payloadFor('long', 48), storage, NOW);
+    await recordShareToken('alex', payloadFor('short', 1), storage, NOW);
+    await recordShareToken('priya', payloadFor('other'), storage, NOW);
+    expect(getActiveTokens('alex', storage, NOW).map(({ id }) => id)).toEqual(['short', 'long']);
+  });
+
+  it('drops tokens past their expiry from the list and the store', async () => {
+    const { storage } = setup(null);
+    await recordShareToken('alex', payloadFor('old', 1), storage, NOW);
+    const later = new Date(NOW.getTime() + 2 * 3_600_000);
+    expect(getActiveTokens('alex', storage, later)).toEqual([]);
+    await recordShareToken('alex', payloadFor('new', 1, later), storage, later);
+    expect(isTokenValid('old', storage, later)).toEqual({ valid: false, reason: 'not_found' });
+  });
+
+  it('revokes a token and reports why it is no longer valid', async () => {
+    const { storage } = setup(null);
+    await recordShareToken('alex', payloadFor('t1'), storage, NOW);
+    expect(isTokenValid('t1', storage, NOW)).toEqual({ valid: true });
+    await revokeToken('t1', storage, NOW);
+    expect(isTokenValid('t1', storage, NOW)).toEqual({ valid: false, reason: 'revoked' });
+    expect(getActiveTokens('alex', storage, NOW)).toEqual([]);
+  });
+
+  it('reports an expired and an unknown token', async () => {
+    const { storage } = setup(null);
+    await recordShareToken('alex', payloadFor('t1', 1), storage, NOW);
+    const later = new Date(NOW.getTime() + 2 * 3_600_000);
+    expect(isTokenValid('t1', storage, later)).toEqual({ valid: false, reason: 'expired' });
+    expect(isTokenValid('missing', storage, NOW)).toEqual({ valid: false, reason: 'not_found' });
+  });
+
+  it('refuses to revoke a token it does not know', async () => {
+    const { storage } = setup(null);
+    await expect(revokeToken('missing', storage, NOW)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it('refuses a payload whose lifetime is not a preset', async () => {
+    const { storage } = setup(null);
+    const odd = makePayload({
+      createdAt: NOW.toISOString(),
+      expiresAt: '2026-03-01T10:05:00.000Z',
+    });
+    await expect(recordShareToken('alex', odd, storage, NOW)).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+  });
+
+  it('ignores stored entries that are not well-formed tokens', () => {
+    const { storage } = setup(null);
+    storage.set('shareTokens', [null, { id: 5 }, 'x']);
+    expect(getActiveTokens('alex', storage, NOW)).toEqual([]);
+    storage.set('shareTokens', 'nope');
+    expect(getActiveTokens('alex', storage, NOW)).toEqual([]);
+  });
+
+  it('puts the list back when saving fails', async () => {
+    const { storage } = setup(null);
+    await recordShareToken('alex', payloadFor('t1'), storage, NOW);
+    const failing = { ...storage, flush: async () => new StorageWriteError(false, false) };
+    await expect(revokeToken('t1', failing, NOW)).rejects.toBeInstanceOf(StorageWriteError);
+    expect(isTokenValid('t1', storage, NOW)).toEqual({ valid: true });
+    await expect(recordShareToken('alex', payloadFor('t2'), failing, NOW)).rejects.toBeInstanceOf(
+      StorageWriteError,
+    );
+    expect(isTokenValid('t2', storage, NOW).reason).toBe('not_found');
+  });
+
+  it('removes only the tokens made for a deleted person', async () => {
+    const { storage } = setup(null);
+    await recordShareToken('alex', payloadFor('a1'), storage, NOW);
+    await recordShareToken('priya', payloadFor('p1'), storage, NOW);
+    await deleteShareTokensForMember('alex', storage);
+    expect(isTokenValid('a1', storage, NOW).reason).toBe('not_found');
+    expect(isTokenValid('p1', storage, NOW).valid).toBe(true);
+    await expect(deleteShareTokensForMember('nobody', storage)).resolves.toBeUndefined();
   });
 });

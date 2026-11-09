@@ -6,6 +6,7 @@ import type {
   SharePerson,
 } from '../types/sharing';
 import { parseIsoDate } from './scheduleCalculator';
+import { ttlForLifetime } from './shareExpiry';
 
 export const SHARE_LIMITS = {
   nameLength: 100,
@@ -103,6 +104,8 @@ export function validateSharePayload(value: unknown): SharedViewPayload | null {
   if (!isRecord(value) || !hasOnlyKeys(value, PAYLOAD_KEYS) || value.v !== 1) return null;
   const { id, managerName, engineerName, engineerAvatar, createdAt, expiresAt } = value;
   if (!isId(id) || !isMoment(createdAt) || !isMoment(expiresAt)) return null;
+  // Only the preset lifetimes exist, so any other gap between the two moments was not made here.
+  if (ttlForLifetime(Date.parse(expiresAt) - Date.parse(createdAt)) === null) return null;
   if (!isText(managerName, SHARE_LIMITS.nameLength) || managerName.trim() === '') return null;
   if (!isText(engineerName, SHARE_LIMITS.nameLength) || engineerName.trim() === '') return null;
   if (!isRecord(engineerAvatar) || !hasOnlyKeys(engineerAvatar, AVATAR_KEYS)) return null;

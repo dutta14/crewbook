@@ -1,13 +1,15 @@
 import { useEffect, useRef, type MouseEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import '../styles/shared-view.css';
-import { EyeIcon } from '../components/icons';
+import { EyeIcon, ClockIcon } from '../components/icons';
 import { useDarkMode } from '../hooks/useDarkMode';
+import { useNow } from '../hooks/useNow';
 import { useSharedView } from '../hooks/useSharedView';
 import type { SharedActionItem, SharedViewPayload } from '../types/sharing';
 import { formatNoteDate } from '../utils/noteFormat';
 import { isOverdue } from '../utils/scheduleCalculator';
 import { formatScheduleDate } from '../utils/scheduleFormat';
+import { describeTimeLeft, isExpiringSoon } from '../utils/shareExpiry';
 import { ExpiredLink } from './ExpiredLink';
 
 function SharedAvatar({
@@ -62,6 +64,7 @@ function ActionRow({ item, managerName }: { item: SharedActionItem; managerName:
 
 function SharedContent({ data }: { data: SharedViewPayload }) {
   const agendaHeading = useRef<HTMLHeadingElement>(null);
+  const now = useNow();
   const { managerName, engineerName, engineerAvatar } = data;
 
   useEffect(() => {
@@ -90,6 +93,14 @@ function SharedContent({ data }: { data: SharedViewPayload }) {
             <SharedAvatar name={engineerName} {...engineerAvatar} />
             <span className="shared-view__name">{engineerName}</span>
           </div>
+          <p
+            className={`shared-view__expiry${isExpiringSoon(data.expiresAt, now) ? ' shared-view__expiry--soon' : ''}`}
+          >
+            <ClockIcon size={14} />
+            <time dateTime={data.expiresAt}>
+              Expires in {describeTimeLeft(data.expiresAt, now)}
+            </time>
+          </p>
         </header>
 
         <section className="shared-view__section" aria-labelledby="shared-notes-title">

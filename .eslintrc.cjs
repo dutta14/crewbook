@@ -54,6 +54,8 @@ module.exports = {
         'src/**/*Sharing*.{ts,tsx}',
         'src/**/*shar*.{ts,tsx}',
         'src/pages/ExpiredLink.tsx',
+        'src/components/ActiveTokensList.tsx',
+        'src/components/QRCode.tsx',
         'src/hooks/useSharedView.ts',
       ],
       excludedFiles: ['*.test.ts', '*.test.tsx'],

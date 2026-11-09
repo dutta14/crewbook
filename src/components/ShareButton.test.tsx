@@ -193,7 +193,7 @@ describe('ShareButton', () => {
     expect(
       within(dialog).getByText(/Anything you change later is not included/),
     ).toBeInTheDocument();
-    expect(within(dialog).getByText(/Expires/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Expires\s.*About \d+ KB/)).toBeInTheDocument();
   });
 
   it('refuses to create a link while the app is locked', async () => {

@@ -1,8 +1,15 @@
 import type { EncryptedStorageContextValue } from '../components/EncryptedStorageProvider';
-import type { SharedViewPayload } from '../types/sharing';
+import type { ShareToken, ShareTokenTTL, SharedViewPayload } from '../types/sharing';
 import { SHARE_LIMITS } from '../utils/validateSharePayload';
 import { serializeForSharing, type SerializeOptions } from '../utils/serializeForSharing';
-import { createShareUrl } from '../utils/shareUrl';
+import {
+  DEFAULT_SHARE_TTL,
+  isPastExpiry,
+  isShareTokenTTL,
+  ttlForLifetime,
+  ttlToMs,
+} from '../utils/shareExpiry';
+import { ShareUnsupportedError, createShareUrl } from '../utils/shareUrl';
 import { listAgendaForMember } from './agenda';
 import { listByMember } from './actionItems';
 import { NotFoundError, ValidationError } from './errors';
@@ -27,7 +34,8 @@ export interface ShareLink {
   tokenLength: number;
 }
 
-export type ShareOptions = Pick<SerializeOptions, 'now' | 'ttlMs' | 'id'>;
+/** `ttl` is one of the presets; a free length is not offered, so none can be asked for. */
+export type ShareOptions = Pick<SerializeOptions, 'now' | 'id'> & { ttl?: ShareTokenTTL };
 
 export class ShareLockedError extends Error {
   constructor() {
@@ -52,6 +60,8 @@ export function getSharedData(
   storage: ShareStorage,
   options: ShareOptions = {},
 ): SharedViewPayload {
+  const { ttl = DEFAULT_SHARE_TTL, ...rest } = options;
+  if (!isShareTokenTTL(ttl)) throw new ValidationError('Choose how long the link lasts');
   const member = getMember(memberId, storage);
   if (!member) throw new NotFoundError(memberId);
   return serializeForSharing(
@@ -59,7 +69,7 @@ export function getSharedData(
     listNotes(memberId, storage),
     listByMember(memberId, storage),
     listAgendaForMember(memberId, storage),
-    { ...options, managerName: cleanManagerName(managerName) },
+    { ...rest, ttlMs: ttlToMs(ttl), managerName: cleanManagerName(managerName) },
   );
 }
 
@@ -70,6 +80,10 @@ export async function createShareLink(
   storage: ShareStorage,
   options: ShareOptions = {},
 ): Promise<ShareLink> {
+  // Link ids come from the browser's random source, which only exists on a secure page.
+  if (options.id === undefined && typeof crypto.randomUUID !== 'function') {
+    throw new ShareUnsupportedError();
+  }
   await storage.loadPrivate();
   const key = storage.getShareSigningKey();
   if (key === null) throw new ShareLockedError();
@@ -77,4 +91,126 @@ export async function createShareLink(
   const url = await createShareUrl(payload, key);
   const marker = '#/shared/';
   return { url, payload, tokenLength: url.length - url.indexOf(marker) - marker.length };
+}
+
+/*
+ * The manager's list of links they have created. A link carries its own data, so this list is not
+ * what makes a link work; it lets the manager see their links and refuse one in this browser. A
+ * link opened anywhere else cannot be refused, because nothing outside this browser knows.
+ */
+const TOKENS_KEY = 'shareTokens';
+
+export type ShareTokenReason = 'expired' | 'revoked' | 'not_found';
+
+function isShareToken(value: unknown): value is ShareToken {
+  if (typeof value !== 'object' || value === null) return false;
+  const token = value as Record<string, unknown>;
+  return (
+    typeof token.id === 'string' &&
+    typeof token.engineerId === 'string' &&
+    typeof token.createdAt === 'string' &&
+    typeof token.expiresAt === 'string' &&
+    !Number.isNaN(Date.parse(token.expiresAt)) &&
+    typeof token.revoked === 'boolean' &&
+    isShareTokenTTL(token.ttl)
+  );
+}
+
+function readTokens(storage: Pick<ShareStorage, 'get'>): ShareToken[] {
+  const stored = storage.get<unknown>(TOKENS_KEY);
+  return Array.isArray(stored) ? stored.filter(isShareToken) : [];
+}
+
+async function writeTokens(
+  next: ShareToken[],
+  storage: Pick<ShareStorage, 'get' | 'set' | 'flush'>,
+): Promise<void> {
+  const previous = storage.get<unknown>(TOKENS_KEY);
+  storage.set(TOKENS_KEY, next);
+  const failure = await storage.flush();
+  if (!failure) return;
+  try {
+    storage.set(TOKENS_KEY, previous ?? []);
+  } catch {
+    // Storage was locked meanwhile; locking already dropped the in-memory copy.
+  }
+  throw failure;
+}
+
+/** Past expiry a record has nothing left to say, so it is dropped whenever the list is written. */
+const alive = (tokens: ShareToken[], now: Date) =>
+  tokens.filter((token) => !isPastExpiry(token.expiresAt, now.getTime()));
+
+/** Notes a link the manager has seen. Call it once the link is on screen. */
+export async function recordShareToken(
+  engineerId: string,
+  payload: SharedViewPayload,
+  storage: Pick<ShareStorage, 'get' | 'set' | 'flush'>,
+  now: Date = new Date(),
+): Promise<ShareToken> {
+  const ttl = ttlForLifetime(Date.parse(payload.expiresAt) - Date.parse(payload.createdAt));
+  if (ttl === null) throw new ValidationError('Choose how long the link lasts');
+  const token: ShareToken = {
+    id: payload.id,
+    engineerId,
+    createdAt: payload.createdAt,
+    expiresAt: payload.expiresAt,
+    revoked: false,
+    ttl,
+  };
+  const others = alive(readTokens(storage), now).filter(({ id }) => id !== token.id);
+  await writeTokens([...others, token], storage);
+  return token;
+}
+
+/** Links for one person that still work, soonest to expire first. */
+export function getActiveTokens(
+  engineerId: string,
+  storage: Pick<ShareStorage, 'get'>,
+  now: Date = new Date(),
+): ShareToken[] {
+  return readTokens(storage)
+    .filter((token) => token.engineerId === engineerId && !token.revoked)
+    .filter((token) => !isPastExpiry(token.expiresAt, now.getTime()))
+    .sort((a, b) => Date.parse(a.expiresAt) - Date.parse(b.expiresAt));
+}
+
+/** Stops this browser from showing the link. It cannot reach a copy opened on someone else's device. */
+export async function revokeToken(
+  tokenId: string,
+  storage: Pick<ShareStorage, 'get' | 'set' | 'flush'>,
+  now: Date = new Date(),
+): Promise<void> {
+  const tokens = readTokens(storage);
+  if (!tokens.some(({ id }) => id === tokenId)) throw new NotFoundError(tokenId);
+  await writeTokens(
+    alive(
+      tokens.map((token) => (token.id === tokenId ? { ...token, revoked: true } : token)),
+      now,
+    ),
+    storage,
+  );
+}
+
+export function isTokenValid(
+  tokenId: string,
+  storage: Pick<ShareStorage, 'get'>,
+  now: Date = new Date(),
+): { valid: boolean; reason?: ShareTokenReason } {
+  const token = readTokens(storage).find(({ id }) => id === tokenId);
+  if (!token) return { valid: false, reason: 'not_found' };
+  if (token.revoked) return { valid: false, reason: 'revoked' };
+  if (isPastExpiry(token.expiresAt, now.getTime())) return { valid: false, reason: 'expired' };
+  return { valid: true };
+}
+
+/** Removing a person removes the list of links made for them. */
+export async function deleteShareTokensForMember(
+  engineerId: string,
+  storage: Pick<ShareStorage, 'get' | 'set' | 'flush'>,
+): Promise<void> {
+  const tokens = readTokens(storage);
+  const kept = tokens.filter((token) => token.engineerId !== engineerId);
+  if (kept.length === tokens.length) return;
+  await writeTokens(kept, storage);
 }

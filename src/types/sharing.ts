@@ -47,4 +47,25 @@ export interface SharedViewPayload {
   expiresAt: string;
 }
 
+/** How long a link works. The only lifetimes a manager can choose. */
+export type ShareTokenTTL = '1h' | '6h' | '24h' | '48h';
+
+/**
+ * The manager's own record of a link they created, kept in their encrypted storage. It never
+ * travels in a link and holds no content: only enough to list the link and to refuse it later in
+ * this browser.
+ */
+export interface ShareToken {
+  /** The `id` inside the link's payload. */
+  id: string;
+  engineerId: string;
+  /** ISO 8601. */
+  createdAt: string;
+  /** ISO 8601. */
+  expiresAt: string;
+  revoked: boolean;
+  ttl: ShareTokenTTL;
+}
+
+/** A revoked link and an expired one both end up as 'expired', so a link never says which. */
 export type SharedViewStatus = 'loading' | 'valid' | 'expired' | 'invalid';

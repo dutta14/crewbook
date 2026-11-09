@@ -7,6 +7,7 @@ import { EmptyState } from '../components/EmptyState';
 import { FeedbackPanel } from '../components/FeedbackPanel';
 import { GrowthPanel } from '../components/GrowthPanel';
 import { TeamIcon } from '../components/icons';
+import { ActiveTokensList } from '../components/ActiveTokensList';
 import { KeyDates } from '../components/KeyDates';
 import { LiveMode } from '../components/LiveMode';
 import { MeetingsPanel } from '../components/MeetingsPanel';
@@ -34,6 +35,7 @@ import { deleteMoodEntriesForMember } from '../data/moodEntries';
 import { deleteNotesForMember } from '../data/notes';
 import { deletePrivateNotesForMember } from '../data/privateStore';
 import { deleteRemindersForMember } from '../data/reminders';
+import { deleteShareTokensForMember } from '../data/shareStore';
 import { deleteTodosForMember } from '../data/todos';
 import { isMoodTrackingEnabled } from '../data/settings';
 import { buildTimeline } from '../data/timeline';
@@ -125,6 +127,7 @@ export function Profile() {
   // encrypted store. Best effort: the person is already gone, so a failure here must not turn a
   // successful delete into an error.
   const purgePrivateData = async (memberId: string) => {
+    await deleteShareTokensForMember(memberId, storage).catch(() => undefined);
     try {
       await storage.loadPrivate();
     } catch {
@@ -218,6 +221,7 @@ export function Profile() {
               <>
                 <ProfileOverview member={member} manager={manager} />
                 <KeyDates key={member.id} member={member} />
+                <ActiveTokensList key={`tokens-${member.id}`} memberId={member.id} />
                 <PrivateNotes key={member.id} member={member} />
               </>
             ),

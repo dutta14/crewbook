@@ -2,7 +2,7 @@ import { useState } from 'react';
 import '../styles/button.css';
 import '../styles/share.css';
 import type { TeamMember } from '../types/TeamMember';
-import { ShareDialog } from './ShareDialog';
+import { ShareLinkPopover } from './ShareLinkPopover';
 import { ShareIcon } from './icons';
 
 export function ShareButton({ member }: { member: TeamMember }) {
@@ -19,7 +19,7 @@ export function ShareButton({ member }: { member: TeamMember }) {
         <ShareIcon size={16} />
         Share 1:1
       </button>
-      {isOpen ? <ShareDialog member={member} onClose={() => setIsOpen(false)} /> : null}
+      {isOpen ? <ShareLinkPopover member={member} onClose={() => setIsOpen(false)} /> : null}
     </>
   );
 }

@@ -1,10 +1,11 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { makePayload } from '../test-utils/sharePayload';
 import { renderWithProviders } from '../test-utils/renderWithProviders';
+import type { AppData } from '../types';
 import type { SharedViewPayload } from '../types/sharing';
 import { createShareToken } from '../utils/shareUrl';
 import { SharedOneOnOne } from './SharedOneOnOne';
@@ -17,7 +18,11 @@ const newKey = () =>
 
 async function renderShared(
   overrides: Partial<SharedViewPayload> = {},
-  { token, signingKey = null }: { token?: string; signingKey?: CryptoKey | null } = {},
+  {
+    token,
+    signingKey = null,
+    initialData,
+  }: { token?: string; signingKey?: CryptoKey | null; initialData?: Partial<AppData> } = {},
 ) {
   const encoded =
     token ??
@@ -26,7 +31,7 @@ async function renderShared(
     <Routes>
       <Route path="/shared/:token?" element={<SharedOneOnOne />} />
     </Routes>,
-    { route: encoded === '' ? '/shared' : `/shared/${encoded}`, signingKey },
+    { route: encoded === '' ? '/shared' : `/shared/${encoded}`, signingKey, initialData },
   );
 }
 
@@ -287,5 +292,114 @@ describe('SharedOneOnOne with a link that cannot be used', () => {
 
     await screen.findByRole('heading', { level: 1 });
     expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it('tells the reader to ask for a new link, without naming the manager', async () => {
+    await renderShared({ expiresAt: PAST });
+
+    expect(
+      await screen.findByText('Ask your manager to generate a new share link.'),
+    ).toBeInTheDocument();
+    expectNoData();
+  });
+
+  it('treats a link that is only just past its expiry as still open, for clock differences', async () => {
+    await renderShared({ expiresAt: new Date(Date.now() - 5_000).toISOString() });
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '1:1 with Morgan Lee' }),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the invalid page for an expiry further out than any link can have', async () => {
+    const far = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+    await renderShared({ expiresAt: far });
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /This link is invalid/ }),
+    ).toBeInTheDocument();
+    expectNoData();
+  });
+});
+
+describe('SharedOneOnOne expiry and revocation', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const entry = (id: string, revoked: boolean) => ({
+    id,
+    engineerId: 'alice',
+    createdAt: PAST,
+    expiresAt: FUTURE,
+    revoked,
+    ttl: '24h' as const,
+  });
+
+  it('shows the time left at the top of the page', async () => {
+    await renderShared({ expiresAt: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() });
+
+    expect(await screen.findByText('Expires in 3 hours')).toBeInTheDocument();
+  });
+
+  it('counts down in minutes in the last hour', async () => {
+    await renderShared({ expiresAt: new Date(Date.now() + 12 * 60 * 1000).toISOString() });
+
+    expect(await screen.findByText('Expires in 12 minutes')).toBeInTheDocument();
+  });
+
+  it('replaces the content with the expired page when the link runs out while it is open', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    await renderShared({ expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString() });
+    await screen.findByRole('heading', { level: 1, name: '1:1 with Morgan Lee' });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(61 * 60 * 1000);
+    });
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'This link has expired' }),
+    ).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent('Alice Park');
+  });
+
+  it('shows a link the manager revoked as expired in the manager’s own session', async () => {
+    const key = await newKey();
+    const token = await createShareToken(makePayload({ id: 'gone', expiresAt: FUTURE }), key);
+
+    await renderShared(
+      {},
+      { token, signingKey: key, initialData: { shareTokens: [entry('gone', true)] } },
+    );
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'This link has expired' }),
+    ).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent('Alice Park');
+  });
+
+  it('keeps showing a link that is not revoked', async () => {
+    const key = await newKey();
+    const token = await createShareToken(makePayload({ id: 'live', expiresAt: FUTURE }), key);
+
+    await renderShared(
+      {},
+      { token, signingKey: key, initialData: { shareTokens: [entry('live', false)] } },
+    );
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '1:1 with Morgan Lee' }),
+    ).toBeInTheDocument();
+  });
+
+  it('cannot tell a recipient’s browser about a revocation it has no record of', async () => {
+    const key = await newKey();
+    const token = await createShareToken(makePayload({ id: 'gone', expiresAt: FUTURE }), key);
+
+    await renderShared({}, { token, signingKey: null });
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '1:1 with Morgan Lee' }),
+    ).toBeInTheDocument();
   });
 });
