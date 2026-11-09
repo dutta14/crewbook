@@ -1,5 +1,6 @@
 import type {
   ActionItem,
+  Connection,
   Decision,
   FeedbackEntry,
   FollowUp,
@@ -153,6 +154,17 @@ export function createSkill(overrides: Partial<Skill> = {}): Skill {
     visibility: 'private',
     createdAt: timestamp,
     updatedAt: timestamp,
+    ...overrides,
+  };
+}
+
+export function createConnection(overrides: Partial<Connection> = {}): Connection {
+  return {
+    id: crypto.randomUUID(),
+    sourceMemberId: crypto.randomUUID(),
+    targetMemberId: crypto.randomUUID(),
+    targetName: 'Priya Nair',
+    relationship: 'collaborator',
     ...overrides,
   };
 }

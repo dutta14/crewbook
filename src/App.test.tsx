@@ -48,6 +48,8 @@ describe('App', () => {
       'Dashboard',
       'Team',
       'Skills Matrix',
+      'Network',
+      '360 Planning',
       'Action Items',
       'Decisions & Follow-ups',
       'Feedback',
@@ -124,6 +126,22 @@ describe('App', () => {
       await screen.findByRole('heading', { level: 1, name: 'Skills Matrix' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Skills Matrix' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
+
+  it('navigates to the network and 360 planning pages from the sidebar', async () => {
+    const { user } = await renderUnlocked();
+
+    await user.click(screen.getByRole('link', { name: 'Network' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Network' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('link', { name: '360 Planning' }));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '360 Planning' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '360 Planning' })).toHaveAttribute(
       'aria-current',
       'page',
     );

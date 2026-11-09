@@ -349,3 +349,14 @@ export function GridIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function NetworkIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="5" r="2.5" />
+      <circle cx="5" cy="19" r="2.5" />
+      <circle cx="19" cy="19" r="2.5" />
+      <path d="m10.8 7.3-4.6 9.4M13.2 7.3l4.6 9.4M7.5 19h9" />
+    </Icon>
+  );
+}

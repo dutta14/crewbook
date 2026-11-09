@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AddMemberModal } from '../components/AddMemberModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { ConnectionsPanel } from '../components/ConnectionsPanel';
 import { DecisionsPanel } from '../components/DecisionsPanel';
 import { EmptyState } from '../components/EmptyState';
 import { FeedbackPanel } from '../components/FeedbackPanel';
@@ -27,6 +28,7 @@ import { SkillsPanel } from '../components/SkillsPanel';
 import { Tabs } from '../components/Tabs';
 import { Timeline } from '../components/Timeline';
 import { deleteActionItemsForMember } from '../data/actionItems';
+import { deleteConnectionsForMember } from '../data/connectionsStore';
 import { deleteDecisionsForMember } from '../data/decisions';
 import { deleteDateEventsForMember } from '../data/dateEvents';
 import { deleteFeedbackForMember } from '../data/feedbackStore';
@@ -127,7 +129,7 @@ export function Profile() {
 
   const goToRoster = () => navigate('/roster');
 
-  // A removed person's 1:1 history, action items, decisions, tasks, reminders, key dates, leave, growth history, skills, feedback, private notes and mood ratings must not linger in the
+  // A removed person's 1:1 history, action items, decisions, tasks, reminders, key dates, leave, growth history, skills, connections, feedback, private notes and mood ratings must not linger in the
   // encrypted store. Best effort: the person is already gone, so a failure here must not turn a
   // successful delete into an error.
   const purgePrivateData = async (memberId: string) => {
@@ -150,6 +152,8 @@ export function Profile() {
     await deleteLeaveForMember(memberId, storage).catch(() => undefined);
     await deleteGrowthForMember(memberId, storage).catch(() => undefined);
     await deleteSkillsForMember(memberId, storage).catch(() => undefined);
+    // Removes links the person added and links others added to them, so none points at nobody.
+    await deleteConnectionsForMember(memberId, storage).catch(() => undefined);
     await deleteFeedbackForMember(memberId, storage).catch(() => undefined);
     await deletePrivateNotesForMember(memberId, storage).catch(() => undefined);
   };
@@ -234,9 +238,9 @@ export function Profile() {
             content: (
               <>
                 <ProfileOverview member={member} manager={manager} />
-                <KeyDates key={member.id} member={member} />
+                <KeyDates key={`dates-${member.id}`} member={member} />
                 <ActiveTokensList key={`tokens-${member.id}`} memberId={member.id} />
-                <PrivateNotes key={member.id} member={member} />
+                <PrivateNotes key={`private-notes-${member.id}`} member={member} />
               </>
             ),
           },
@@ -279,6 +283,15 @@ export function Profile() {
             // Mounted only while open, like growth: assessments stay out of the page until asked for.
             content:
               activeTab === 'skills' ? <SkillsPanel key={member.id} memberId={member.id} /> : null,
+          },
+          {
+            id: 'connections',
+            label: 'Connections',
+            // Mounted only while open, like growth: who works with whom stays out of the page until asked for.
+            content:
+              activeTab === 'connections' ? (
+                <ConnectionsPanel key={member.id} memberId={member.id} />
+              ) : null,
           },
           {
             id: 'feedback',

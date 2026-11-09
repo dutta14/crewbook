@@ -1,0 +1,387 @@
+/* Loading and page chrome */
+.connections__loading {
+  margin: 0;
+  padding: var(--space-4) 0;
+  color: var(--fg2);
+  font-size: var(--text-body);
+}
+
+.connections-page__title {
+  margin: 0 0 var(--space-2);
+}
+
+.connections-page__title:focus {
+  outline: none;
+}
+
+.connections-page__notice {
+  margin: 0 0 var(--space-4);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+/* Profile section */
+.connections__title {
+  margin: 0 0 var(--space-2);
+  color: var(--fg2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.connections__title:focus {
+  outline: none;
+}
+
+.connections-card {
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.connections-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.connection-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+  animation: connection-row-in var(--transition-normal) var(--ease-out) both;
+}
+
+.connection-row__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.connection-row__name {
+  color: var(--fg);
+  font-size: 0.875rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.connection-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.connection-row__notes {
+  margin: 0;
+  color: var(--fg2);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.connection-row__actions {
+  display: flex;
+  flex: none;
+  /* The 44px buttons would otherwise make every row taller than its text needs. */
+  margin: calc(-1 * var(--space-3)) 0;
+}
+
+/* Where there is a real pointer the icons wait for hover or focus; touch always shows them. */
+@media (hover: hover) and (pointer: fine) {
+  .connection-row__actions {
+    opacity: 0;
+    transition: opacity var(--transition-fast) var(--ease-out);
+  }
+
+  .connection-row:hover .connection-row__actions,
+  .connection-row:focus-within .connection-row__actions {
+    opacity: 1;
+  }
+}
+
+.connections__add {
+  margin-top: var(--space-2);
+  min-height: 44px;
+  color: var(--accent);
+}
+
+/* Form */
+.connection-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.connection-form__notes {
+  resize: vertical;
+}
+
+.peer-combobox {
+  position: relative;
+}
+
+.peer-combobox__list {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  left: 0;
+  z-index: 10;
+  max-height: 200px;
+  margin: 0;
+  padding: var(--space-1);
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  list-style: none;
+  animation: peer-combobox-in var(--transition-fast) var(--ease-out) both;
+}
+
+.peer-combobox__option {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  color: var(--fg);
+  font-size: var(--text-body);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.peer-combobox__option:hover,
+.peer-combobox__option[aria-selected='true'] {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+.peer-combobox__option--cross-team {
+  color: var(--fg2);
+  font-style: italic;
+}
+
+/* Network */
+.network-card__details {
+  margin-top: var(--space-4);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+.network-card__details summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.network-card__details summary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-control);
+}
+
+.network-graph__frame {
+  width: 100%;
+}
+
+.network-graph__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.network-edge__line {
+  stroke: var(--border);
+  stroke-width: 1.5px;
+  transition: opacity var(--transition-normal) var(--ease-out);
+}
+
+/* A wider invisible line makes the thin edge easy to hover. */
+.network-edge__hit {
+  stroke: transparent;
+  stroke-width: 12px;
+  pointer-events: stroke;
+}
+
+.network-edge__label {
+  fill: var(--fg2);
+  font-size: 0.75rem;
+  opacity: 0;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: var(--card-bg);
+  stroke-width: 4px;
+  transition: opacity var(--transition-fast) var(--ease-out);
+}
+
+.network-edge:hover .network-edge__label {
+  opacity: 1;
+}
+
+.network-edge[data-dimmed] .network-edge__line {
+  opacity: 0.3;
+}
+
+.network-node {
+  cursor: pointer;
+  transition: opacity var(--transition-normal) var(--ease-out);
+}
+
+.network-node[data-dimmed] {
+  opacity: 0.3;
+}
+
+.network-node__circle {
+  stroke: var(--accent);
+  stroke-width: 0;
+  transition: stroke-width var(--transition-normal) var(--ease-out);
+}
+
+.network-node[data-selected] .network-node__circle {
+  stroke-width: 3px;
+}
+
+.network-node__initials {
+  fill: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.network-node__label {
+  fill: var(--fg);
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+
+.network-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.network-list__person {
+  margin: 0 0 var(--space-1);
+  color: var(--fg);
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.network-list__items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.network-list__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.network-list__peer {
+  color: var(--fg);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+/* 360 planning */
+.three-sixty__warning {
+  margin: 0 0 var(--space-4);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+.three-sixty__select {
+  max-width: 360px;
+  margin-bottom: var(--space-4);
+}
+
+.three-sixty__check {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+
+.three-sixty__check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+.three-sixty__check input:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.three-sixty__row {
+  align-items: center;
+}
+
+.three-sixty__summary {
+  margin: var(--space-3) 0 0;
+  color: var(--fg);
+  font-size: var(--text-body);
+  font-weight: 500;
+  font-feature-settings: 'tnum';
+}
+
+@keyframes connection-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes peer-combobox-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (max-width: 767px) {
+  .connection-row {
+    flex-wrap: wrap;
+  }
+
+  .three-sixty__row .three-sixty__check {
+    width: 100%;
+    padding-left: calc(32px + var(--space-3));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .connection-row,
+  .peer-combobox__list {
+    animation: none;
+  }
+
+  .connection-row__actions,
+  .network-edge__line,
+  .network-edge__label,
+  .network-node,
+  .network-node__circle {
+    transition: none;
+  }
+}

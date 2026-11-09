@@ -2,6 +2,14 @@ export type { ActionItem, ActionItemStatus } from './ActionItem';
 export type { AppData } from './AppData';
 export type { MoodEntry, MoodScore } from './MoodEntry';
 export type { Decision, DecisionFollowUpFilter, FollowUp, FollowUpStatus } from './decisions';
+export type {
+  Connection,
+  ConnectionInput,
+  ConnectionView,
+  GraphEdge,
+  GraphNode,
+  RelationshipType,
+} from './connection';
 export type { GapAlertData, MeetingStats, MeetingTimelineEntry, WeeklyFrequency } from './meeting';
 export type {
   DateEvent,

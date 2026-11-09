@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 /*
  * A share link carries a person's 1:1 data out of the encrypted store, so the code that builds,
  * reads and shows it is held to a short list of things it may touch. Everything not on a list
- * below (private notes, flight risk, moods, growth, skills, reminders, leave, key dates, to-dos,
+ * below (private notes, flight risk, moods, growth, skills, peer connections, reminders, leave,
+ * key dates, to-dos,
  * decisions, the other people on the team) is out of reach by construction. Adding an entry to an
  * allowlist must be a deliberate edit, in review, and the same module list lives in .eslintrc.cjs.
  */
@@ -53,7 +54,7 @@ const ALLOWED_COMPONENTS = new Set([
 ]);
 
 const PRIVATE_DOMAIN =
-  /feedback|flight|mood|growth|skill|proficien|reminder|private|leaveEntr|keyDate/i;
+  /feedback|flight|mood|growth|skill|proficien|reminder|private|leaveEntr|keyDate|connection|peer|network|threeSixty|relationship/i;
 
 const specifiers = (code: string) =>
   [...code.matchAll(/(?:from|import\()\s*['"]([^'"]+)['"]/g)].map((match) => match[1]);
@@ -141,7 +142,7 @@ describe('share isolation', () => {
 
   it('does not reach private storage keys by name', () => {
     const keys =
-      /['"`](flightRisk|moods?|moodEntries|growth\w*|skills?|feedback\w*|reminders|leave|dateEvents|todos|decisions|followUps)['"`]/i;
+      /['"`](flightRisk|moods?|moodEntries|growth\w*|skills?|connections?|feedback\w*|reminders|leave|dateEvents|todos|decisions|followUps)['"`]/i;
     for (const { path, code } of shareFiles) {
       expect(code, path).not.toMatch(keys);
     }

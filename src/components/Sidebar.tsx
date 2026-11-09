@@ -11,7 +11,9 @@ import {
   GridIcon,
   MessageSquareIcon,
   MoonIcon,
+  NetworkIcon,
   SettingsIcon,
+  StarIcon,
   SunIcon,
   TeamIcon,
 } from './icons';
@@ -27,6 +29,8 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: <DashboardIcon />, end: true },
   { to: '/roster', label: 'Team', icon: <TeamIcon /> },
   { to: '/skills-matrix', label: 'Skills Matrix', icon: <GridIcon /> },
+  { to: '/network', label: 'Network', icon: <NetworkIcon /> },
+  { to: '/360-planning', label: '360 Planning', icon: <StarIcon /> },
   { to: '/actions', label: 'Action Items', icon: <ChecklistIcon /> },
   { to: '/decisions', label: 'Decisions & Follow-ups', icon: <GavelIcon /> },
   { to: '/feedback', label: 'Feedback', icon: <MessageSquareIcon /> },

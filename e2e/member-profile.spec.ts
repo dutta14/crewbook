@@ -187,12 +187,12 @@ test.describe('member profile', () => {
 test.describe('member profile on a narrow screen', () => {
   test.use({ viewport: { width: 390, height: 800 } });
 
-  test('stacks the header and keeps all nine tabs reachable', async ({ unlockedApp: page }) => {
+  test('stacks the header and keeps all ten tabs reachable', async ({ unlockedApp: page }) => {
     await seedMembers(page, TEAM);
     await openProfile(page);
 
     await expect(page.getByRole('heading', { level: 1, name: 'Alex Chen' })).toBeVisible();
-    await expect(page.getByRole('tab')).toHaveCount(9);
+    await expect(page.getByRole('tab')).toHaveCount(10);
     const noOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
     );

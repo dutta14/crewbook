@@ -9,11 +9,13 @@ import { Dashboard } from './pages/Dashboard';
 import { DecisionsGlobalView } from './pages/DecisionsGlobalView';
 import { Feedback } from './pages/Feedback';
 import { GlobalActions } from './pages/GlobalActions';
+import { NetworkPage } from './pages/NetworkPage';
 import { Profile } from './pages/Profile';
 import { Roster } from './pages/Roster';
 import { Settings } from './pages/Settings';
 import { SkillsMatrixPage } from './pages/SkillsMatrixPage';
 import { TeamTenure } from './pages/TeamTenure';
+import { ThreeSixtyPage } from './pages/ThreeSixtyPage';
 import { Todos } from './pages/Todos';
 
 // Split out so the recipient of a share link loads none of the manager's pages.
@@ -42,6 +44,8 @@ export default function App() {
                 <Route path="roster" element={<Roster />} />
                 <Route path="team/tenure" element={<TeamTenure />} />
                 <Route path="skills-matrix" element={<SkillsMatrixPage />} />
+                <Route path="network" element={<NetworkPage />} />
+                <Route path="360-planning" element={<ThreeSixtyPage />} />
                 <Route path="person/:id" element={<Profile />} />
                 <Route path="actions" element={<GlobalActions />} />
                 <Route path="decisions" element={<DecisionsGlobalView />} />

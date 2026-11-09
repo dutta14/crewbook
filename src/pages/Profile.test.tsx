@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { useEncryptedStorage } from '../hooks/useEncryptedStorage';
 import {
   createActionItem,
+  createConnection,
   createDecision,
   createFeedback,
   createFollowUp,
@@ -278,11 +279,13 @@ describe('Profile', () => {
       'Goals',
       'Growth',
       'Skills',
+      'Connections',
       'Feedback',
       'Timeline',
     ]);
     expect(tabs.map((tab) => tab.getAttribute('aria-selected'))).toEqual([
       'true',
+      'false',
       'false',
       'false',
       'false',
@@ -353,7 +356,7 @@ describe('Profile', () => {
     expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('Arrow keys move between Goals, Growth, Skills, Feedback and Timeline', async () => {
+  it('Arrow keys move between Goals, Growth, Skills, Connections, Feedback and Timeline', async () => {
     const user = userEvent.setup();
     renderProfile(ALEX);
     screen.getByRole('tab', { name: 'Goals' }).focus();
@@ -367,12 +370,19 @@ describe('Profile', () => {
     expect(await screen.findByRole('heading', { name: 'Strengths' })).toBeInTheDocument();
 
     await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: 'Connections' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(await screen.findByRole('heading', { name: 'Connections' })).toBeInTheDocument();
+
+    await user.keyboard('{ArrowRight}');
     expect(screen.getByRole('tab', { name: 'Feedback' })).toHaveAttribute('aria-selected', 'true');
     expect(await screen.findByRole('heading', { name: 'Feedback' })).toBeInTheDocument();
 
     await user.keyboard('{ArrowRight}');
     expect(screen.getByRole('tab', { name: 'Timeline' })).toHaveAttribute('aria-selected', 'true');
-    await user.keyboard('{ArrowLeft}{ArrowLeft}{ArrowLeft}{ArrowLeft}');
+    await user.keyboard('{ArrowLeft}{ArrowLeft}{ArrowLeft}{ArrowLeft}{ArrowLeft}');
     expect(screen.getByRole('tab', { name: 'Goals' })).toHaveAttribute('aria-selected', 'true');
   });
 
@@ -611,6 +621,87 @@ describe('Profile', () => {
       ),
     );
     expect(screen.getByRole('status', { name: 'Remaining skills' })).not.toHaveTextContent(ALEX);
+  });
+
+  it('shows connections from either side on the Connections tab', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Routes>
+        <Route path="/person/:id" element={<Profile />} />
+      </Routes>,
+      {
+        route: `/person/${PRIYA}`,
+        initialData: { members: team() },
+        initialPrivateData: {
+          connections: [
+            createConnection({
+              sourceMemberId: ALEX,
+              targetMemberId: PRIYA,
+              targetName: 'Priya Nair',
+              relationship: 'mentor',
+            }),
+          ],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('tab', { name: 'Connections' }));
+
+    const panel = await screen.findByRole('tabpanel', { name: 'Connections' });
+    expect(await within(panel).findByText('Alex Chen')).toBeInTheDocument();
+    expect(within(panel).getByText('Mentee')).toBeInTheDocument();
+  });
+
+  it('deleting a member also purges connections on either side but keeps unrelated ones', async () => {
+    const user = userEvent.setup();
+    const KAI = '33333333-3333-4333-8333-333333333333';
+    function Remaining() {
+      const { getPrivate } = useEncryptedStorage();
+      const connections =
+        getPrivate<Array<{ sourceMemberId: string; targetName: string }>>('connections') ?? [];
+      return (
+        <output aria-label="Remaining connections">
+          {connections.map((entry) => `${entry.sourceMemberId}>${entry.targetName}`).join(',')}
+        </output>
+      );
+    }
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/roster" element={<h1>Roster page</h1>} />
+          <Route path="/person/:id" element={<Profile />} />
+        </Routes>
+        <Remaining />
+      </>,
+      {
+        route: `/person/${ALEX}`,
+        initialData: {
+          members: [...team(), createMember({ id: KAI, name: 'Kai Lund' })],
+        },
+        initialPrivateData: {
+          connections: [
+            createConnection({ sourceMemberId: ALEX, targetMemberId: PRIYA, targetName: 'Priya' }),
+            createConnection({ sourceMemberId: PRIYA, targetMemberId: ALEX, targetName: 'Alex' }),
+            createConnection({ sourceMemberId: ALEX, targetMemberId: null, targetName: 'Jo' }),
+            createConnection({ sourceMemberId: PRIYA, targetMemberId: KAI, targetName: 'Kai' }),
+          ],
+        },
+      },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Delete Alex Chen' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Remaining connections' })).toHaveTextContent(
+        `${PRIYA}>Kai`,
+      ),
+    );
+    const remaining = screen.getByRole('status', { name: 'Remaining connections' });
+    expect(remaining).not.toHaveTextContent(ALEX);
+    expect(remaining.textContent).toBe(`${PRIYA}>Kai`);
   });
 
   it('deleting a member also purges their feedback but keeps everyone else’s', async () => {

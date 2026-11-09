@@ -364,6 +364,52 @@ export async function seedSkills(page: Page, skills: SeedSkill[], passphrase = T
   ).toBeVisible();
 }
 
+export interface SeedConnection {
+  sourceIndex: number;
+  /** Roster index of the peer, or a name for a cross-team peer. */
+  target: number | string;
+  relationship: 'collaborator' | 'mentor' | 'mentee' | 'stakeholder';
+  notes?: string;
+}
+
+/** Writes connections into the private encrypted envelope. Seed members first. */
+export async function seedConnections(
+  page: Page,
+  connections: SeedConnection[],
+  names: string[],
+  passphrase = TEST_PASSPHRASE,
+) {
+  const stored = connections.map(({ sourceIndex, target, relationship, notes }, index) => ({
+    id: `00000000-0000-4000-f000-${String(index).padStart(12, '0')}`,
+    sourceMemberId: seedId(sourceIndex),
+    targetMemberId: typeof target === 'number' ? seedId(target) : null,
+    targetName: typeof target === 'number' ? names[target] : target,
+    relationship,
+    notes: notes ?? '',
+  }));
+  await page.evaluate(
+    async ({ data, secret }) => {
+      const modulePath = '/src/data/StorageManager.ts';
+      const { StorageManager } = (await import(
+        /* @vite-ignore */ modulePath
+      )) as typeof import('../../src/data/StorageManager');
+      const manager = new StorageManager();
+      await manager.unlock(secret);
+      await manager.loadPrivate();
+      manager.setPrivateData('connections', data);
+      const failure = await manager.flush();
+      if (failure) throw failure;
+      await manager.lock();
+    },
+    { data: stored, secret: passphrase },
+  );
+  await page.reload();
+  await unlock(page, passphrase);
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
+}
+
 export interface SeedFeedback {
   memberIndex: number;
   /** ISO date (YYYY-MM-DD) of the observation. */
