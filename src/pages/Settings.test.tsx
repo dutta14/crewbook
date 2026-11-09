@@ -102,4 +102,16 @@ describe('Settings', () => {
 
     expect(screen.getByRole('radio', { name: /Private/ })).toBeChecked();
   });
+
+  it('has a Data Management section with the export, CSV and import controls', () => {
+    renderSettings();
+
+    const section = screen.getByRole('region', { name: 'Data Management' });
+    expect(within(section).getByRole('button', { name: 'Export Data' })).toBeInTheDocument();
+    expect(
+      within(section).getByRole('button', { name: 'Download CSV (Unencrypted)' }),
+    ).toBeInTheDocument();
+    expect(within(section).getByRole('button', { name: 'Import Data' })).toBeInTheDocument();
+    expect(within(section).getByLabelText('Select backup file to import')).toBeInTheDocument();
+  });
 });

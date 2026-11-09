@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { CustomFieldSettings } from '../components/CustomFieldSettings';
+import { DataManagement } from '../components/DataManagement';
 import { DefaultVisibilitySetting } from '../components/DefaultVisibilitySetting';
 import { LeadTimeSettings } from '../components/LeadTimeSettings';
 import { SettingsSwitchRow } from '../components/SettingsSwitchRow';
@@ -15,7 +17,15 @@ import '../styles/settings.css';
 
 const SAVE_FAILED = "Couldn't save that setting. Try again.";
 
+/** Remounts the sections after a restore, so forms that copied a setting into a draft reload it. */
 export function Settings() {
+  const [restoreCount, setRestoreCount] = useState(0);
+  return (
+    <SettingsContent key={restoreCount} onRestored={() => setRestoreCount((count) => count + 1)} />
+  );
+}
+
+function SettingsContent({ onRestored }: { onRestored: () => void }) {
   const storage = useEncryptedStorage();
   const { showToast } = useToast();
   const customFields = useCustomFields();
@@ -58,6 +68,12 @@ export function Settings() {
         onRemoveField={customFields.removeField}
         onReorder={customFields.reorderFields}
       />
+      <section className="settings-section" aria-labelledby="settings-data-heading">
+        <h2 id="settings-data-heading" className="settings-section__title">
+          Data Management
+        </h2>
+        <DataManagement onRestored={onRestored} />
+      </section>
     </>
   );
 }

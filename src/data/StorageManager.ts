@@ -1,3 +1,4 @@
+import type { DataSnapshot } from '../utils/backupSchema';
 import {
   decryptString,
   deriveKey,
@@ -10,9 +11,11 @@ import {
 import {
   CHECK_SENTINEL,
   clearAllStorage,
+  clearPreImportBackup,
   CorruptedDataError,
   CryptoUnavailableError,
   getStorageStatus,
+  purgeExpiredPreImportBackup,
   readEnvelope,
   readSalt,
   STORAGE_CHECK_KEY,
@@ -23,6 +26,7 @@ import {
   StorageWriteError,
   WrongPassphraseError,
   writeEnvelope,
+  writePreImportBackup,
   writeSalt,
 } from '../utils/encryptedStorage';
 
@@ -58,6 +62,11 @@ function createSlot(storageKey: string, isPrivate: boolean): Slot {
 
 function assertSafeKey(key: string): void {
   if (key === '__proto__') throw new RangeError('Invalid storage key');
+}
+
+/** A deep copy through JSON, so a snapshot never shares objects with the live caches. */
+function cloneData(data: DataObject): DataObject {
+  return JSON.parse(JSON.stringify(data)) as DataObject;
 }
 
 function parseDataObject(plaintext: string): DataObject | null {
@@ -193,6 +202,7 @@ export class StorageManager {
 
     this.activate(mainKey, check.iterations, data, privateKey, privateIterations, signingKey);
     this.recoveredFromCorruption = recovered;
+    purgeExpiredPreImportBackup(Date.now());
   }
 
   /** Decrypts the private envelope. Call before getPrivateData/setPrivateData; safe to repeat. */
@@ -264,6 +274,86 @@ export class StorageManager {
     return this.lockPromise;
   }
 
+  /**
+   * A copy of everything in memory, for building a backup. The private half is null when that
+   * envelope cannot be opened, so a damaged private envelope never blocks a backup of the rest.
+   */
+  async exportSnapshot(): Promise<DataSnapshot> {
+    this.assertUnlocked();
+    let privateData: DataObject | null = null;
+    try {
+      await this.loadPrivate();
+      privateData = this.priv.cache ? cloneData(this.priv.cache) : null;
+    } catch (error) {
+      if (!(error instanceof CorruptedDataError)) throw error;
+    }
+    this.assertUnlocked();
+    return { main: cloneData(this.main.cache ?? {}), private: privateData };
+  }
+
+  /** True when `passphrase` opens this browser's storage. The check value never leaves this class. */
+  async verifyPassphrase(passphrase: string): Promise<boolean> {
+    this.assertUnlocked();
+    const salt = readSalt(STORAGE_SALT_KEY);
+    const check = readEnvelope(STORAGE_CHECK_KEY);
+    if (!salt || !check) throw new CorruptedDataError();
+    try {
+      const key = await deriveKey(passphrase, salt, check.iterations);
+      return (await decryptString(check, key)) === CHECK_SENTINEL;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Replaces every record in both envelopes with `next`. The current data is first sealed into a
+   * 24-hour safety copy; if that or either write fails, the old data is put back and the error is
+   * thrown, so a restore either lands completely or not at all.
+   */
+  async replaceAll(next: DataSnapshot, onProgress?: (fraction: number) => void): Promise<void> {
+    this.assertUnlocked();
+    const nextPrivate = next.private ?? {};
+    try {
+      await this.loadPrivate();
+    } catch (error) {
+      // A damaged private envelope is the case a restore is for; its contents are not recoverable.
+      if (!(error instanceof CorruptedDataError)) throw error;
+    }
+    const { main, priv } = this;
+    if (!main.key || !main.cache) throw new Error('Crewbook storage is locked');
+    const previous = { main: main.cache, private: priv.cache };
+
+    const safety = await encryptString(
+      JSON.stringify({ main: previous.main, private: previous.private }),
+      main.key,
+      main.iterations,
+    );
+    onProgress?.(0.25);
+    writePreImportBackup(safety, Date.now());
+
+    main.cache = cloneData(next.main);
+    priv.cache = cloneData(nextPrivate);
+    main.isDirty = true;
+    priv.isDirty = true;
+    try {
+      const mainFailure = await this.persist(main, false);
+      if (mainFailure) throw mainFailure;
+      onProgress?.(0.6);
+      const privateFailure = await this.persist(priv, false);
+      if (privateFailure) throw privateFailure;
+      if (!this.unlocked) throw new Error('Crewbook storage was locked during the import');
+      onProgress?.(1);
+    } catch (error) {
+      main.cache = previous.main;
+      priv.cache = previous.private;
+      main.isDirty = true;
+      priv.isDirty = previous.private !== null;
+      const restored = await Promise.all([this.persist(main, false), this.persist(priv, false)]);
+      if (restored.every((failure) => failure === null)) clearPreImportBackup();
+      throw error;
+    }
+  }
+
   private activate(
     mainKey: CryptoKey,
     mainIterations: number,
@@ -302,7 +392,7 @@ export class StorageManager {
     slot.timer = setTimeout(() => void this.persist(slot), WRITE_DEBOUNCE_MS);
   }
 
-  private persist(slot: Slot): Promise<StorageWriteError | null> {
+  private persist(slot: Slot, notify = true): Promise<StorageWriteError | null> {
     if (slot.timer) {
       clearTimeout(slot.timer);
       slot.timer = null;
@@ -332,7 +422,7 @@ export class StorageManager {
       }
       slot.isDirty = true;
       outcome = failure;
-      if (failure) this.listeners.forEach((listener) => listener(failure));
+      if (failure && notify) this.listeners.forEach((listener) => listener(failure));
     };
     slot.queue = slot.queue.then(run);
     return slot.queue.then(() => outcome);

@@ -16,6 +16,8 @@ export interface RenderWithProvidersOptions {
   initialPrivateData?: Record<string, unknown>;
   // The key getShareSigningKey returns; null (the default) behaves like a locked session.
   signingKey?: CryptoKey | null;
+  // The passphrase verifyPassphrase accepts.
+  passphrase?: string;
 }
 
 // An always-unlocked, in-memory stand-in for EncryptedStorageProvider: no lock screen, no crypto.
@@ -23,11 +25,13 @@ function InMemoryEncryptedStorage({
   initialData,
   initialPrivateData,
   signingKey,
+  passphrase,
   children,
 }: {
   initialData: Partial<AppData>;
   initialPrivateData: Record<string, unknown>;
   signingKey: CryptoKey | null;
+  passphrase: string;
   children: ReactNode;
 }) {
   const [data] = useState(() => new Map<string, unknown>(Object.entries(initialData)));
@@ -60,10 +64,23 @@ function InMemoryEncryptedStorage({
       },
       getShareSigningKey: () => signingKey,
       flush: async () => null,
+      verifyPassphrase: async (candidate: string) => candidate === passphrase,
+      exportSnapshot: async () => ({
+        main: Object.fromEntries(data),
+        private: Object.fromEntries(privateData),
+      }),
+      replaceAll: async (next, onProgress) => {
+        data.clear();
+        privateData.clear();
+        Object.entries(next.main).forEach(([key, item]) => data.set(key, item));
+        Object.entries(next.private ?? {}).forEach(([key, item]) => privateData.set(key, item));
+        onProgress?.(1);
+        setVersion((current) => current + 1);
+      },
     }),
     // `version` gives consumers a fresh context value after each write, like the real provider.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data, privateData, signingKey, version],
+    [data, privateData, signingKey, passphrase, version],
   );
 
   return (
@@ -78,6 +95,7 @@ export function renderWithProviders(
     initialData = {},
     initialPrivateData = {},
     signingKey = null,
+    passphrase = 'test passphrase',
   }: RenderWithProvidersOptions = {},
 ): RenderResult {
   const Wrapper = ({ children }: { children: ReactNode }) => (
@@ -87,6 +105,7 @@ export function renderWithProviders(
           initialData={initialData}
           initialPrivateData={initialPrivateData}
           signingKey={signingKey}
+          passphrase={passphrase}
         >
           {children}
         </InMemoryEncryptedStorage>

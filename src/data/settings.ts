@@ -8,6 +8,7 @@ const MOOD_TRACKING_KEY = 'moodTrackingEnabled';
 const HIDE_RISK_KEY = 'hideRiskIndicators';
 const LIVE_SHORTCUTS_KEY = 'liveModeShortcuts';
 const LIVE_NOTICE_KEY = 'liveModeNoticeDismissed';
+const LAST_BACKUP_KEY = 'lastBackupAt';
 const MANAGER_NAME_KEY = 'managerName';
 const DEFAULT_NOTE_VISIBILITY_KEY = 'defaultNoteVisibility';
 
@@ -105,4 +106,13 @@ export function isLiveNoticeDismissed(storage: Pick<SettingsStorage, 'get'>): bo
 
 export function dismissLiveNotice(storage: SettingsStorage): Promise<void> {
   return writeSetting(LIVE_NOTICE_KEY, 'true', storage);
+}
+
+/** When the last full backup was made, as an ISO timestamp, or undefined if there has not been one. */
+export function getLastBackupAt(storage: Pick<SettingsStorage, 'get'>): string | undefined {
+  return getSetting(storage, LAST_BACKUP_KEY);
+}
+
+export function setLastBackupAt(iso: string, storage: SettingsStorage): Promise<void> {
+  return writeSetting(LAST_BACKUP_KEY, iso, storage);
 }

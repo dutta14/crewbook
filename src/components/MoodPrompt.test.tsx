@@ -30,6 +30,9 @@ function failingStorage(settings: Record<string, string>): EncryptedStorageConte
     setPrivate: <T,>(key: string, value: T) => void priv.set(key, value),
     getShareSigningKey: () => null,
     flush: async () => new StorageWriteError(false, true),
+    verifyPassphrase: async () => true,
+    exportSnapshot: async () => ({ main: {}, private: {} }),
+    replaceAll: async () => undefined,
   };
 }
 

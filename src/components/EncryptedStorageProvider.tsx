@@ -2,6 +2,7 @@ import { createContext, useCallback, useEffect, useMemo, useState, type ReactNod
 import { clearPrepDismissal } from '../data/prepDismissal';
 import { StorageManager } from '../data/StorageManager';
 import { useToast } from '../hooks/useToast';
+import type { DataSnapshot } from '../utils/backupSchema';
 import { isCryptoAvailable } from '../utils/crypto';
 import {
   clearAllStorage,
@@ -35,6 +36,12 @@ export interface EncryptedStorageContextValue {
   getShareSigningKey: () => CryptoKey | null;
   /** Resolves with the failure when a write did not land, or null when everything is saved. */
   flush: () => Promise<StorageWriteError | null>;
+  /** True when `passphrase` is the one that unlocks this browser's data. */
+  verifyPassphrase: (passphrase: string) => Promise<boolean>;
+  /** A deep copy of both envelopes for building a backup; `private` is null if it cannot be read. */
+  exportSnapshot: () => Promise<DataSnapshot>;
+  /** Replaces all data at once, keeping a 24-hour safety copy. Rejects with the old data intact. */
+  replaceAll: (next: DataSnapshot, onProgress?: (fraction: number) => void) => Promise<void>;
 }
 
 export const EncryptedStorageContext = createContext<EncryptedStorageContextValue | null>(null);
@@ -149,6 +156,22 @@ export function EncryptedStorageProvider({ children }: { children: ReactNode }) 
 
   const flush = useCallback(() => manager.flush(), [manager]);
 
+  const verifyPassphrase = useCallback(
+    (passphrase: string) => manager.verifyPassphrase(passphrase),
+    [manager],
+  );
+
+  const exportSnapshot = useCallback(() => manager.exportSnapshot(), [manager]);
+
+  const replaceAll = useCallback(
+    async (next: DataSnapshot, onProgress?: (fraction: number) => void) => {
+      await manager.replaceAll(next, onProgress);
+      setIsPrivateUnlocked(true);
+      setVersion((current) => current + 1);
+    },
+    [manager],
+  );
+
   const value = useMemo<EncryptedStorageContextValue>(
     () => ({
       isUnlocked,
@@ -167,6 +190,9 @@ export function EncryptedStorageProvider({ children }: { children: ReactNode }) 
       setPrivate,
       getShareSigningKey,
       flush,
+      verifyPassphrase,
+      exportSnapshot,
+      replaceAll,
     }),
     // `version` is intentional: it gives consumers a new context value after each write.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -187,6 +213,9 @@ export function EncryptedStorageProvider({ children }: { children: ReactNode }) 
       setPrivate,
       getShareSigningKey,
       flush,
+      verifyPassphrase,
+      exportSnapshot,
+      replaceAll,
     ],
   );
 

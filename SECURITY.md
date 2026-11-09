@@ -45,7 +45,16 @@ A manager can create a link to a read-only 1:1 page for one engineer. There is n
 - **Action item announcements.** The shared page announces only a count ("3 items done") through a polite live region, never a title, because the text is read aloud and may be on a shared screen.
 - **Known limitations.** Anyone holding the link can read it until it expires, and only the manager's own browser can refuse it early. It is a snapshot: later changes are not reflected. Expiry is enforced by the viewer's clock, so a recipient who sets their clock back can keep reading; it limits accidental exposure and is not access control. The link stays in browser history and chat logs for as long as those keep it, and the address is not rewritten because the page needs it to reload. Very large histories can produce a link too long for some chat apps or for a QR code; the dialog says so. Browsers without `CompressionStream` or `crypto.randomUUID` (including pages not served over HTTPS) cannot create or open links. The QR code is drawn by `qrcode-generator` (MIT, no dependencies).
 
-## 4. Threat model
+## 4. Backup and export
+
+- **Full backup.** "Export Data" in Settings writes one file, `crewbook-backup-YYYY-MM-DD.json.enc`, holding every collection in both envelopes (team members, settings, notes, drafts, action items, moods, decisions, follow-ups, to-dos, reminders, date events, leave, growth, flight risk, skills, connections, document links, agenda items, custom fields, shared notes and the share-link registry). Everything is encrypted with AES-256-GCM using a key derived with PBKDF2-SHA-256 (310,000 to 1,000,000 iterations, a random salt and IV per file). The file is built and encrypted in the browser and never leaves the device unless the user moves it.
+- **Passphrase.** The user types a passphrase for every export and every import. The export passphrase is checked against the unlock check, so a typo cannot produce a backup the user cannot open. The import passphrase is the one the backup was made with, which may differ from this device's passphrase. Passphrases are never stored and never written to the file or the logs.
+- **Warnings.** The export dialog states that the file contains private data, shows what is included, and advises against cloud-synced folders. The roster CSV is a separate, unencrypted file with names, roles, levels, emails and status only; it asks for confirmation and reminds the user to delete it. Private data never goes into the CSV.
+- **Strict restore.** An import accepts only the exact file format, version and key set. It rejects files over 10 MB, unknown top-level keys, prototype-pollution keys, wrong types or lengths, duplicate ids, dangling or circular manager links, HTML in member and custom-field text, and a file marked as having no private data that contains some. Error messages never repeat the file's contents. A wrong passphrase and a damaged file both fail authentication and change nothing.
+- **Safe replace.** Restoring replaces all current data after an explicit confirmation. Before writing, the app saves an encrypted safety copy of the current data and rolls back if any write fails. The copy is deleted after 24 hours. There is no screen to restore from it yet.
+- **Guard.** `src/data/envelopeSchema.ts` is the single registry of stored keys. A unit test scans the source and fails if a store is added without being registered, so a new collection cannot be silently left out of a backup.
+
+## 5. Threat model
 
 | Threat                            | Mitigation                                            |
 | --------------------------------- | ----------------------------------------------------- |
@@ -57,7 +66,7 @@ A manager can create a link to a read-only 1:1 page for one engineer. There is n
 | Unlocked device, shoulder surfing | Out of scope; use OS screen lock and the app lock     |
 | Compromised browser or extensions | Out of scope                                          |
 
-## 5. Data classification
+## 6. Data classification
 
 | Tier        | Examples                              | Handling                                      |
 | ----------- | ------------------------------------- | --------------------------------------------- |
@@ -65,16 +74,16 @@ A manager can create a link to a read-only 1:1 page for one engineer. There is n
 | Shared      | Shared notes, action items            | Encrypted at rest, includable in shared links |
 | Private     | Private notes, mood, performance data | Encrypted at rest, never exported shared      |
 
-## 6. Input validation
+## 7. Input validation
 
 All user input is treated as untrusted. Imported data is validated against the expected shape before it is stored. Text is rendered through React, which escapes by default, and Markdown goes through DOMPurify.
 
-## 7. Known limitations
+## 8. Known limitations
 
 - A forgotten passphrase cannot be recovered. This is intentional.
 - Browser storage can be cleared by the browser or the user, so keep exported backups.
 - JavaScript cannot reliably wipe memory, so keys live in memory while the app is unlocked.
 
-## 8. Responsible disclosure
+## 9. Responsible disclosure
 
 Please report vulnerabilities privately through GitHub security advisories on this repository. Do not open a public issue. Include steps to reproduce and the affected version. You can expect an acknowledgement within a few days.

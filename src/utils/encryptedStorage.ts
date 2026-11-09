@@ -128,11 +128,66 @@ export function writeEnvelope(key: string, envelope: EncryptedEnvelope, isPrivat
 }
 
 export function clearAllStorage(): void {
-  for (const key of ALL_STORAGE_KEYS) {
+  for (const key of [...ALL_STORAGE_KEYS, STORAGE_PRE_IMPORT_KEY]) {
     try {
       window.localStorage.removeItem(key);
     } catch {
       // Nothing to clear when storage is unavailable.
     }
+  }
+}
+
+/*
+ * Before a restore replaces everything, the current data is kept here, encrypted with the main
+ * key, for a day. It is not part of getStorageStatus because an app with only this key is still a
+ * first launch. There is no screen to restore from it yet; it exists so a bad import is never the
+ * only copy of someone's data.
+ */
+export const STORAGE_PRE_IMPORT_KEY = 'crewbook-pre-import-backup';
+export const PRE_IMPORT_TTL_MS = 24 * 60 * 60 * 1000;
+
+export interface PreImportBackup {
+  v: 1;
+  createdAt: number;
+  envelope: EncryptedEnvelope;
+}
+
+export function writePreImportBackup(envelope: EncryptedEnvelope, createdAt: number): void {
+  const record: PreImportBackup = { v: 1, createdAt, envelope };
+  writeRaw(STORAGE_PRE_IMPORT_KEY, JSON.stringify(record), true);
+}
+
+export function readPreImportBackup(): PreImportBackup | null {
+  const raw = readRaw(STORAGE_PRE_IMPORT_KEY);
+  if (raw === null) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<PreImportBackup> | null;
+    if (
+      parsed?.v === 1 &&
+      typeof parsed.createdAt === 'number' &&
+      isEncryptedEnvelope(parsed.envelope)
+    ) {
+      return { v: 1, createdAt: parsed.createdAt, envelope: parsed.envelope };
+    }
+  } catch {
+    // An unreadable copy is treated like an old one and removed by the purge below.
+  }
+  return null;
+}
+
+export function clearPreImportBackup(): void {
+  try {
+    window.localStorage.removeItem(STORAGE_PRE_IMPORT_KEY);
+  } catch {
+    // Nothing to clear when storage is unavailable.
+  }
+}
+
+/** Removes the safety copy once it is a day old, or at once when it cannot be read. */
+export function purgeExpiredPreImportBackup(now: number): void {
+  if (readRaw(STORAGE_PRE_IMPORT_KEY) === null) return;
+  const backup = readPreImportBackup();
+  if (backup === null || now - backup.createdAt >= PRE_IMPORT_TTL_MS || backup.createdAt > now) {
+    clearPreImportBackup();
   }
 }
