@@ -79,12 +79,14 @@ export interface SeedNote {
   content: string;
   /** How long before now the note was written. */
   hoursAgo: number;
+  /** Only 'shared' notes can appear in a share link. Omit for a private note. */
+  visibility?: 'shared' | 'private';
 }
 
 /** Writes 1:1 notes into the private encrypted envelope. Seed members first, then call this. */
 export async function seedNotes(page: Page, notes: SeedNote[], passphrase = TEST_PASSPHRASE) {
   const now = Date.now();
-  const stored = notes.map(({ memberIndex, content, hoursAgo }, index) => {
+  const stored = notes.map(({ memberIndex, content, hoursAgo, visibility }, index) => {
     const at = new Date(now - hoursAgo * 60 * 60 * 1000).toISOString();
     return {
       id: `00000000-0000-4000-9000-${String(index).padStart(12, '0')}`,
@@ -92,6 +94,7 @@ export async function seedNotes(page: Page, notes: SeedNote[], passphrase = TEST
       content,
       createdAt: at,
       updatedAt: at,
+      ...(visibility === undefined ? {} : { visibility }),
     };
   });
   await page.evaluate(
@@ -377,6 +380,50 @@ export async function seedMoods(page: Page, moods: SeedMood[], passphrase = TEST
       await manager.unlock(secret);
       await manager.loadPrivate();
       manager.setPrivateData('moods', data);
+      const failure = await manager.flush();
+      if (failure) throw failure;
+      await manager.lock();
+    },
+    { data: stored, secret: passphrase },
+  );
+  await page.reload();
+  await unlock(page, passphrase);
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening)$/ }),
+  ).toBeVisible();
+}
+
+export interface SeedAgendaItem {
+  /** Index into the seeded list of members. */
+  memberIndex: number;
+  text: string;
+  addedBy: 'manager' | 'engineer';
+  includeInShare?: boolean;
+}
+
+/** Writes agenda topics into the private envelope. Seed members first. */
+export async function seedAgenda(
+  page: Page,
+  items: SeedAgendaItem[],
+  passphrase = TEST_PASSPHRASE,
+) {
+  const at = new Date().toISOString();
+  const stored = items.map(({ memberIndex, ...item }, index) => ({
+    id: `00000000-0000-4000-c000-${String(index).padStart(12, '0')}`,
+    memberId: seedId(memberIndex),
+    createdAt: at,
+    ...item,
+  }));
+  await page.evaluate(
+    async ({ data, secret }) => {
+      const modulePath = '/src/data/StorageManager.ts';
+      const { StorageManager } = (await import(
+        /* @vite-ignore */ modulePath
+      )) as typeof import('../../src/data/StorageManager');
+      const manager = new StorageManager();
+      await manager.unlock(secret);
+      await manager.loadPrivate();
+      manager.setPrivateData('agendaItems', data);
       const failure = await manager.flush();
       if (failure) throw failure;
       await manager.lock();

@@ -61,6 +61,47 @@ export async function deriveKey(
   );
 }
 
+export const SHARE_SIGNING_CONTEXT = 'share-signing';
+
+/**
+ * An HMAC-SHA256 key for signing share links. The passphrase goes through the same PBKDF2 as the
+ * storage keys, then HKDF with a fixed context, so the signing key is unrelated to the AES keys.
+ */
+export async function deriveSigningKey(
+  passphrase: string,
+  salt: Uint8Array<ArrayBuffer>,
+  iterations: number = PBKDF2_ITERATIONS,
+): Promise<CryptoKey> {
+  if (iterations < PBKDF2_ITERATIONS) {
+    throw new RangeError(`PBKDF2 iterations must be at least ${PBKDF2_ITERATIONS}`);
+  }
+  const material = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(passphrase),
+    'PBKDF2',
+    false,
+    ['deriveBits'],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+    material,
+    256,
+  );
+  const hkdfKey = await crypto.subtle.importKey('raw', bits, 'HKDF', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: new Uint8Array(),
+      info: new TextEncoder().encode(SHARE_SIGNING_CONTEXT),
+    },
+    hkdfKey,
+    { name: 'HMAC', hash: 'SHA-256', length: 256 },
+    false,
+    ['sign', 'verify'],
+  );
+}
+
 export async function encryptString(
   plaintext: string,
   key: CryptoKey,

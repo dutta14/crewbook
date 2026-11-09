@@ -1,0 +1,88 @@
+.share-button {
+  gap: var(--space-1);
+  transition:
+    border-color var(--transition-fast) var(--ease-out),
+    color var(--transition-fast) var(--ease-out);
+}
+
+.share-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.share-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.share-dialog__form {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.share-dialog__form .form-field {
+  flex: 1 1 14rem;
+}
+
+.share-dialog__hint {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.share-dialog__hint--warn {
+  color: #92400e;
+}
+
+body.dark .share-dialog__hint--warn {
+  color: #fcd34d;
+}
+
+.share-dialog__warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid #b45309;
+  border-radius: var(--radius-card);
+  background: var(--warning-bg);
+  color: #92400e;
+}
+
+body.dark .share-dialog__warning {
+  color: #fcd34d;
+}
+
+.share-dialog__warning-text {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.share-dialog__link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.share-dialog__link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.share-dialog__link-row .form-input {
+  flex: 1 1 14rem;
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share-button {
+    transition: none;
+  }
+}

@@ -17,8 +17,8 @@ import { StorageManager, WRITE_DEBOUNCE_MS } from './StorageManager';
 
 vi.mock('../utils/crypto', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../utils/crypto')>();
-  const { fastDeriveKey: fast } = await import('../test-utils/fastCrypto');
-  return { ...actual, deriveKey: fast };
+  const { fastDeriveKey: fast, fastDeriveSigningKey } = await import('../test-utils/fastCrypto');
+  return { ...actual, deriveKey: fast, deriveSigningKey: fastDeriveSigningKey };
 });
 
 const PASSPHRASE = 'correct horse battery staple';
@@ -346,6 +346,33 @@ describe('lock', () => {
     await locking;
 
     expect(manager.getData('notes')).toBe('kept');
+  });
+});
+
+describe('share signing key', () => {
+  it('is available while unlocked and gone after locking', async () => {
+    const manager = await createUnlocked();
+    expect(manager.shareSigningKey?.algorithm.name).toBe('HMAC');
+
+    await manager.lock();
+
+    expect(manager.shareSigningKey).toBeNull();
+  });
+
+  it('is null before anything is unlocked', () => {
+    expect(new StorageManager().shareSigningKey).toBeNull();
+  });
+
+  it('is the same key in every session for the same passphrase', async () => {
+    const data = new TextEncoder().encode('payload');
+    const first = await createUnlocked();
+    const signature = await crypto.subtle.sign('HMAC', first.shareSigningKey as CryptoKey, data);
+
+    const second = await relock(first);
+
+    expect(
+      await crypto.subtle.verify('HMAC', second.shareSigningKey as CryptoKey, signature, data),
+    ).toBe(true);
   });
 });
 

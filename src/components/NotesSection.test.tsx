@@ -19,8 +19,8 @@ import { ToastProvider } from './Toast';
 
 vi.mock('../utils/crypto', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../utils/crypto')>();
-  const { fastDeriveKey } = await import('../test-utils/fastCrypto');
-  return { ...actual, deriveKey: fastDeriveKey };
+  const { fastDeriveKey, fastDeriveSigningKey } = await import('../test-utils/fastCrypto');
+  return { ...actual, deriveKey: fastDeriveKey, deriveSigningKey: fastDeriveSigningKey };
 });
 
 const MEMBER = '11111111-1111-4111-8111-111111111111';

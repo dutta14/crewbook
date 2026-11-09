@@ -20,6 +20,7 @@ import { PrivateNotes } from '../components/PrivateNotes';
 import { ReminderForm } from '../components/ReminderForm';
 import { ReminderList } from '../components/ReminderList';
 import { ScheduleCard } from '../components/ScheduleCard';
+import { ShareButton } from '../components/ShareButton';
 import { Tabs } from '../components/Tabs';
 import { Timeline } from '../components/Timeline';
 import { deleteActionItemsForMember } from '../data/actionItems';
@@ -188,6 +189,7 @@ export function Profile() {
         onAddReminder={() => setIsReminderOpen(true)}
         onLogFeedback={() => void openQuickAdd(member.id)}
         onDelete={() => setIsDeleteOpen(true)}
+        shareAction={<ShareButton member={member} />}
       />
       <ScheduleCard
         key={`schedule-${member.id}`}

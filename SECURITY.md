@@ -20,9 +20,16 @@ Crewbook stores sensitive notes about people, so security is a design constraint
 - There is no passphrase recovery. A forgotten passphrase means the data cannot be read; the only option is to erase it and start over.
 - Writes are debounced (500ms) and flushed when the app locks or the page is about to unload. The unload flush is best effort because encryption is asynchronous.
 
-## 3. Shared view security (planned)
+## 3. Shared view security
 
-Exports meant for a report to read contain only items explicitly marked shared. Private notes are filtered out before export, not hidden in the UI.
+A manager can create a link to a read-only 1:1 page for one engineer. There is no backend, so the link itself carries the data: `#/shared/<token>`, where the token is the compressed payload plus an HMAC-SHA256 signature. Nothing is uploaded; the fragment is never sent to a server.
+
+- **Allowlist, not filter.** `serializeForSharing` copies named fields into a new object. It never spreads a record, so a field added to a model later is not shared by accident. Only notes marked `visibility: 'shared'` (absent means private), action items owned by the manager or that engineer, and agenda items marked `includeInShare` are included. Moods, flight risk, growth, feedback, reminders, leave, key dates, private notes, email, role and avatar images never leave the device.
+- **Isolation is enforced.** Sharing code reads data only through `shareStore`, and `shareIsolation.test.ts` plus an ESLint rule fail the build if share files import private stores or name private storage keys. The feedback equivalent is `feedbackIsolation.test.ts`.
+- **Strict validation.** The viewer rejects unknown fields, wrong types, oversized payloads (64 KB, also when decompressed, so a small link cannot expand into a large one) and malformed values. Text renders as plain text.
+- **Expiry.** A link is valid for 24 hours from creation (checked on the viewer's clock) and shows a plain expired page afterwards.
+- **Signature.** The signing key is derived from the manager's passphrase and exists only while unlocked. The recipient has no key, so the signature is verified only in the manager's own unlocked session; a recipient's browser relies on the validation above.
+- **Known limitations.** Anyone holding the link can read it until it expires, and it cannot be revoked early. It is a snapshot: later changes are not reflected. Expiry is enforced by the viewer's clock, so it is a courtesy, not access control. The link stays in browser history and chat logs. Very large histories can produce a link too long for some chat apps; the dialog warns when that happens. Browsers without `CompressionStream` cannot create or open links.
 
 ## 4. Threat model
 
@@ -38,11 +45,11 @@ Exports meant for a report to read contain only items explicitly marked shared. 
 
 ## 5. Data classification
 
-| Tier        | Examples                              | Handling                                 |
-| ----------- | ------------------------------------- | ---------------------------------------- |
-| Preferences | Theme                                 | Plain `localStorage`, no personal data   |
-| Shared      | Shared notes, action items            | Encrypted at rest, includable in exports |
-| Private     | Private notes, mood, performance data | Encrypted at rest, never exported shared |
+| Tier        | Examples                              | Handling                                      |
+| ----------- | ------------------------------------- | --------------------------------------------- |
+| Preferences | Theme                                 | Plain `localStorage`, no personal data        |
+| Shared      | Shared notes, action items            | Encrypted at rest, includable in shared links |
+| Private     | Private notes, mood, performance data | Encrypted at rest, never exported shared      |
 
 ## 6. Input validation
 

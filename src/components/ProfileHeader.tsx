@@ -1,4 +1,4 @@
-import type { Ref } from 'react';
+import type { ReactNode, Ref } from 'react';
 import type { TeamMember } from '../types/TeamMember';
 import { toMailtoHref } from '../utils/email';
 import { formatStartDate, toDateAttribute } from '../utils/startDate';
@@ -19,6 +19,8 @@ interface ProfileHeaderProps {
   onLogFeedback?: () => void;
   /** The delete button is only shown when a handler is provided. */
   onDelete?: () => void;
+  /** Rendered before Edit, for example the share control. */
+  shareAction?: ReactNode;
   headingRef?: Ref<HTMLHeadingElement>;
 }
 
@@ -29,6 +31,7 @@ export function ProfileHeader({
   onAddReminder,
   onLogFeedback,
   onDelete,
+  shareAction,
   headingRef,
 }: ProfileHeaderProps) {
   const roleAndLevel = [member.role, member.level].filter(Boolean).join(' · ');
@@ -91,6 +94,7 @@ export function ProfileHeader({
             Log feedback
           </button>
         ) : null}
+        {shareAction}
         <button
           type="button"
           className="btn btn-secondary"

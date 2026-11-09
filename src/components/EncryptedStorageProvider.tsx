@@ -31,6 +31,8 @@ export interface EncryptedStorageContextValue {
   loadPrivate: () => Promise<void>;
   getPrivate: <T>(key: string) => T | null;
   setPrivate: <T>(key: string, value: T) => void;
+  /** HMAC key for signing share links, derived from the passphrase. Null while locked. */
+  getShareSigningKey: () => CryptoKey | null;
   /** Resolves with the failure when a write did not land, or null when everything is saved. */
   flush: () => Promise<StorageWriteError | null>;
 }
@@ -143,6 +145,8 @@ export function EncryptedStorageProvider({ children }: { children: ReactNode }) 
     [manager],
   );
 
+  const getShareSigningKey = useCallback(() => manager.shareSigningKey, [manager]);
+
   const flush = useCallback(() => manager.flush(), [manager]);
 
   const value = useMemo<EncryptedStorageContextValue>(
@@ -161,6 +165,7 @@ export function EncryptedStorageProvider({ children }: { children: ReactNode }) 
       loadPrivate,
       getPrivate,
       setPrivate,
+      getShareSigningKey,
       flush,
     }),
     // `version` is intentional: it gives consumers a new context value after each write.
@@ -180,6 +185,7 @@ export function EncryptedStorageProvider({ children }: { children: ReactNode }) 
       loadPrivate,
       getPrivate,
       setPrivate,
+      getShareSigningKey,
       flush,
     ],
   );

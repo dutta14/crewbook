@@ -5,3 +5,16 @@ export async function fastDeriveKey(passphrase: string, salt: Uint8Array): Promi
   const digest = await crypto.subtle.digest('SHA-256', input);
   return crypto.subtle.importKey('raw', digest, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
 }
+
+// The same stand-in for deriveSigningKey: a real HMAC key, without the PBKDF2 cost.
+export async function fastDeriveSigningKey(
+  passphrase: string,
+  salt: Uint8Array,
+): Promise<CryptoKey> {
+  const input = new Uint8Array([...new TextEncoder().encode(`signing:${passphrase}`), ...salt]);
+  const digest = await crypto.subtle.digest('SHA-256', input);
+  return crypto.subtle.importKey('raw', digest, { name: 'HMAC', hash: 'SHA-256' }, false, [
+    'sign',
+    'verify',
+  ]);
+}

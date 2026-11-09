@@ -11,8 +11,8 @@ import { ToastProvider } from './Toast';
 
 vi.mock('../utils/crypto', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../utils/crypto')>();
-  const { fastDeriveKey } = await import('../test-utils/fastCrypto');
-  return { ...actual, deriveKey: fastDeriveKey };
+  const { fastDeriveKey, fastDeriveSigningKey } = await import('../test-utils/fastCrypto');
+  return { ...actual, deriveKey: fastDeriveKey, deriveSigningKey: fastDeriveSigningKey };
 });
 
 const PASSPHRASE = 'correct horse battery staple';

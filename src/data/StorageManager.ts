@@ -1,6 +1,7 @@
 import {
   decryptString,
   deriveKey,
+  deriveSigningKey,
   encryptString,
   generateSalt,
   isCryptoAvailable,
@@ -83,9 +84,15 @@ export class StorageManager {
   private unlocked = false;
   private lockPromise: Promise<void> | null = null;
   private recoveredFromCorruption = false;
+  private signingKey: CryptoKey | null = null;
 
   get isUnlocked(): boolean {
     return this.unlocked;
+  }
+
+  /** The HMAC key for share links, derived from the passphrase. Null while locked. */
+  get shareSigningKey(): CryptoKey | null {
+    return this.unlocked ? this.signingKey : null;
   }
 
   get isPrivateUnlocked(): boolean {
@@ -113,9 +120,10 @@ export class StorageManager {
 
     const mainSalt = generateSalt();
     const privateSalt = generateSalt();
-    const [mainKey, privateKey] = await Promise.all([
+    const [mainKey, privateKey, signingKey] = await Promise.all([
       deriveKey(passphrase, mainSalt),
       deriveKey(passphrase, privateSalt),
+      deriveSigningKey(passphrase, mainSalt),
     ]);
     const [check, mainEnvelope, privateEnvelope] = await Promise.all([
       encryptString(CHECK_SENTINEL, mainKey),
@@ -134,7 +142,7 @@ export class StorageManager {
       throw error;
     }
 
-    this.activate(mainKey, PBKDF2_ITERATIONS, {}, privateKey, PBKDF2_ITERATIONS);
+    this.activate(mainKey, PBKDF2_ITERATIONS, {}, privateKey, PBKDF2_ITERATIONS, signingKey);
     this.recoveredFromCorruption = false;
   }
 
@@ -152,9 +160,10 @@ export class StorageManager {
     const privateEnvelope = readEnvelope(STORAGE_PRIVATE_KEY);
     const privateIterations = privateEnvelope?.iterations ?? PBKDF2_ITERATIONS;
 
-    const [mainKey, privateKey] = await Promise.all([
+    const [mainKey, privateKey, signingKey] = await Promise.all([
       deriveKey(passphrase, mainSalt, check.iterations),
       deriveKey(passphrase, privateSalt, privateIterations),
+      deriveSigningKey(passphrase, mainSalt, check.iterations),
     ]);
 
     let sentinel: string;
@@ -182,7 +191,7 @@ export class StorageManager {
       }
     }
 
-    this.activate(mainKey, check.iterations, data, privateKey, privateIterations);
+    this.activate(mainKey, check.iterations, data, privateKey, privateIterations, signingKey);
     this.recoveredFromCorruption = recovered;
   }
 
@@ -240,6 +249,7 @@ export class StorageManager {
   lock(): Promise<void> {
     if (!this.unlocked) return this.lockPromise ?? Promise.resolve();
     this.unlocked = false;
+    this.signingKey = null;
     this.lockPromise = this.flush()
       .then(() => {
         for (const slot of [this.main, this.priv]) {
@@ -260,7 +270,9 @@ export class StorageManager {
     data: DataObject,
     privateKey: CryptoKey,
     privateIterations: number,
+    signingKey: CryptoKey,
   ): void {
+    this.signingKey = signingKey;
     this.main.key = mainKey;
     this.main.iterations = mainIterations;
     this.main.cache = data;

@@ -4,9 +4,11 @@ import {
   areLiveShortcutsEnabled,
   areRiskIndicatorsHidden,
   dismissLiveNotice,
+  getManagerName,
   isLiveNoticeDismissed,
   isMoodTrackingEnabled,
   setLiveShortcutsEnabled,
+  setManagerName,
   setMoodTrackingEnabled,
   setRiskIndicatorsHidden,
   type SettingsStorage,
@@ -94,6 +96,19 @@ describe('live mode settings', () => {
       moodTrackingEnabled: 'true',
       liveModeShortcuts: 'false',
       liveModeNoticeDismissed: 'true',
+    });
+  });
+
+  it('has no manager name until one is saved, and keeps other settings when saving it', async () => {
+    const { storage, store } = createStorage({ moodTrackingEnabled: 'true' });
+    expect(getManagerName(storage)).toBe('');
+
+    await setManagerName('Morgan Lee', storage);
+
+    expect(getManagerName(storage)).toBe('Morgan Lee');
+    expect(store.get('settings')).toEqual({
+      moodTrackingEnabled: 'true',
+      managerName: 'Morgan Lee',
     });
   });
 });

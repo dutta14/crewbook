@@ -4,6 +4,7 @@ import {
   bytesToBase64,
   decryptString,
   deriveKey,
+  deriveSigningKey,
   encryptString,
   generateSalt,
   isEncryptedEnvelope,
@@ -106,6 +107,33 @@ describe('deriveKey', () => {
     const envelope = await encryptString('secret', key);
 
     await expect(decryptString(envelope, otherSaltKey)).rejects.toThrow();
+  });
+});
+
+describe('deriveSigningKey', () => {
+  const sign = async (signingKey: CryptoKey) =>
+    bytesToBase64(
+      new Uint8Array(await crypto.subtle.sign('HMAC', signingKey, new TextEncoder().encode('x'))),
+    );
+
+  it('derives a non-extractable HMAC key that is repeatable for the same passphrase and salt', async () => {
+    const first = await deriveSigningKey('correct horse', salt);
+    const second = await deriveSigningKey('correct horse', salt);
+
+    await expect(crypto.subtle.exportKey('raw', first)).rejects.toThrow();
+    expect(first.algorithm.name).toBe('HMAC');
+    expect(await sign(first)).toBe(await sign(second));
+  });
+
+  it('derives a different key for a different passphrase or salt', async () => {
+    const base = await sign(await deriveSigningKey('correct horse', salt));
+
+    expect(await sign(await deriveSigningKey('wrong horse', salt))).not.toBe(base);
+    expect(await sign(await deriveSigningKey('correct horse', generateSalt()))).not.toBe(base);
+  });
+
+  it('refuses an iteration count below the minimum', async () => {
+    await expect(deriveSigningKey('x', salt, PBKDF2_ITERATIONS - 1)).rejects.toThrow(RangeError);
   });
 });
 

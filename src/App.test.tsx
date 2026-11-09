@@ -7,8 +7,8 @@ import { setUpPassphrase } from './test-utils/unlockApp';
 
 vi.mock('./utils/crypto', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./utils/crypto')>();
-  const { fastDeriveKey } = await import('./test-utils/fastCrypto');
-  return { ...actual, deriveKey: fastDeriveKey };
+  const { fastDeriveKey, fastDeriveSigningKey } = await import('./test-utils/fastCrypto');
+  return { ...actual, deriveKey: fastDeriveKey, deriveSigningKey: fastDeriveSigningKey };
 });
 
 async function renderUnlocked() {

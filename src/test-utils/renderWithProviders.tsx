@@ -14,16 +14,20 @@ export interface RenderWithProvidersOptions {
   initialData?: Partial<AppData>;
   // Seeds the private envelope double, which holds notes and drafts.
   initialPrivateData?: Record<string, unknown>;
+  // The key getShareSigningKey returns; null (the default) behaves like a locked session.
+  signingKey?: CryptoKey | null;
 }
 
 // An always-unlocked, in-memory stand-in for EncryptedStorageProvider: no lock screen, no crypto.
 function InMemoryEncryptedStorage({
   initialData,
   initialPrivateData,
+  signingKey,
   children,
 }: {
   initialData: Partial<AppData>;
   initialPrivateData: Record<string, unknown>;
+  signingKey: CryptoKey | null;
   children: ReactNode;
 }) {
   const [data] = useState(() => new Map<string, unknown>(Object.entries(initialData)));
@@ -54,11 +58,12 @@ function InMemoryEncryptedStorage({
         privateData.set(key, next);
         setVersion((current) => current + 1);
       },
+      getShareSigningKey: () => signingKey,
       flush: async () => null,
     }),
     // `version` gives consumers a fresh context value after each write, like the real provider.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data, privateData, version],
+    [data, privateData, signingKey, version],
   );
 
   return (
@@ -68,12 +73,21 @@ function InMemoryEncryptedStorage({
 
 export function renderWithProviders(
   ui: ReactElement,
-  { route = '/', initialData = {}, initialPrivateData = {} }: RenderWithProvidersOptions = {},
+  {
+    route = '/',
+    initialData = {},
+    initialPrivateData = {},
+    signingKey = null,
+  }: RenderWithProvidersOptions = {},
 ): RenderResult {
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <MemoryRouter initialEntries={[route]}>
       <ToastProvider>
-        <InMemoryEncryptedStorage initialData={initialData} initialPrivateData={initialPrivateData}>
+        <InMemoryEncryptedStorage
+          initialData={initialData}
+          initialPrivateData={initialPrivateData}
+          signingKey={signingKey}
+        >
           {children}
         </InMemoryEncryptedStorage>
       </ToastProvider>

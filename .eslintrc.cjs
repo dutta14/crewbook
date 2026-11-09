@@ -46,6 +46,53 @@ module.exports = {
       files: ['*.test.ts', '*.test.tsx', 'vitest.setup.ts'],
       env: { node: true },
     },
+    // Share code decides what leaves the device. It may read people, notes, action items and the
+    // agenda, and nothing else. src/data/shareIsolation.test.ts holds the full allowlist.
+    {
+      files: [
+        'src/**/*Share*.{ts,tsx}',
+        'src/**/*Sharing*.{ts,tsx}',
+        'src/**/*shar*.{ts,tsx}',
+        'src/pages/ExpiredLink.tsx',
+        'src/hooks/useSharedView.ts',
+      ],
+      excludedFiles: ['*.test.ts', '*.test.tsx'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            patterns: [
+              {
+                group: [
+                  '**/privateStore',
+                  '**/feedbackStore',
+                  '**/useFeedback*',
+                  '**/moodEntries',
+                  '**/growthStore',
+                  '**/reminders',
+                  '**/leave',
+                  '**/dateEvents',
+                  '**/todos',
+                  '**/decisions',
+                  '**/timeline',
+                  '**/usePrivate*',
+                  '**/useGrowthEntries',
+                  '**/useLeave',
+                  '**/useReminders',
+                  '**/useTodos',
+                  '**/useDateEvents',
+                  '**/FlightRiskIndicator',
+                  '**/PrivateNotes',
+                  '**/Mood*',
+                ],
+                message:
+                  'Share code must not touch private notes, flight risk, moods, feedback, growth, reminders, leave or key dates.',
+              },
+            ],
+          },
+        ],
+      },
+    },
     // The raw storage layer, the theme preference, the prep-dismissed flag and the dashboard
     // collapse flags (no personal data).
     {

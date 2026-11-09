@@ -6,6 +6,7 @@ const MOOD_TRACKING_KEY = 'moodTrackingEnabled';
 const HIDE_RISK_KEY = 'hideRiskIndicators';
 const LIVE_SHORTCUTS_KEY = 'liveModeShortcuts';
 const LIVE_NOTICE_KEY = 'liveModeNoticeDismissed';
+const MANAGER_NAME_KEY = 'managerName';
 
 export type SettingsStorage = Pick<EncryptedStorageContextValue, 'get' | 'set' | 'flush'>;
 
@@ -55,6 +56,15 @@ export function areRiskIndicatorsHidden(storage: Pick<SettingsStorage, 'get'>): 
 
 export function setRiskIndicatorsHidden(hidden: boolean, storage: SettingsStorage): Promise<void> {
   return writeSetting(HIDE_RISK_KEY, String(hidden), storage);
+}
+
+/** The name the engineer sees on a shared 1:1 page. Empty until the manager enters one. */
+export function getManagerName(storage: Pick<SettingsStorage, 'get'>): string {
+  return readSettings(storage)[MANAGER_NAME_KEY] ?? '';
+}
+
+export function setManagerName(name: string, storage: SettingsStorage): Promise<void> {
+  return writeSetting(MANAGER_NAME_KEY, name, storage);
 }
 
 /** On unless the manager turns them off, because live mode's shortcuts can clash with a browser's. */

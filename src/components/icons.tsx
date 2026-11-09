@@ -218,6 +218,25 @@ export function ClipboardIcon(props: IconProps) {
   );
 }
 
+export function ShareIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7" />
+      <path d="m16 6-4-4-4 4" />
+      <path d="M12 2v13" />
+    </Icon>
+  );
+}
+
+export function EyeIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="3" />
+    </Icon>
+  );
+}
+
 export function MoreVerticalIcon(props: IconProps) {
   return (
     <Icon {...props}>

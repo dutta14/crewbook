@@ -16,8 +16,8 @@ import {
 
 vi.mock('../utils/crypto', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../utils/crypto')>();
-  const { fastDeriveKey: fast } = await import('../test-utils/fastCrypto');
-  return { ...actual, deriveKey: fast };
+  const { fastDeriveKey: fast, fastDeriveSigningKey } = await import('../test-utils/fastCrypto');
+  return { ...actual, deriveKey: fast, deriveSigningKey: fastDeriveSigningKey };
 });
 
 const PASSPHRASE = 'correct horse battery staple';
